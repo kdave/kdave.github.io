@@ -1,0 +1,40 @@
+---
+layout: navbar
+navorder: 1
+title: index.html
+permalink: /
+---
+
+<p>
+<ul>
+{% if site.host == "127.0.0.1" %}
+{% assign local = true %}
+{% endif %}
+
+{% assign today = site.time | date: "%s" | plus: 0 %}
+{% assign last = today %}
+
+{% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' | reverse %}
+{% for page in sortedPages %}
+<li>
+  {% assign pagets = page.date | date: "%s" | plus: 0 %}
+  {% if pagets < today and today < last %} <hr/> {% endif %}
+  {% if today < pagets or local %}
+    {{ page.date | date: "%Y-%m-%d" }} -
+    {% if page.status == "draft" %} <sup>*</sup> {% endif %}
+    <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a>
+  {% endif %}
+  {% assign last = pagets %}
+</li>
+{% endfor %}
+</ul>
+</p>
+
+<hr />
+
+<p>
+{% assign sortedPages = site.pages | where: 'layout', 'standalone' | sort: 'date' | reverse %}
+{% for page in sortedPages %}
+  <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a> (continued) last update: {{ page.date }}
+{% endfor %}
+</p>

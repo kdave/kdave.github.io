@@ -1,0 +1,5 @@
+/_site
+*.bak
+*.backup
+/.jekyll-cache
+/.jekyll-metadata

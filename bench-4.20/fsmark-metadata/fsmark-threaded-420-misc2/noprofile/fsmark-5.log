@@ -1,0 +1,40 @@
+
+#  ./fs_mark  -d  /tmp/fsmark-4298/1  -d  /tmp/fsmark-4298/2  -d  /tmp/fsmark-4298/3  -d  /tmp/fsmark-4298/4  -d  /tmp/fsmark-4298/5  -D  10000  -n  20000  -L  30  -t  5  -S0  -s  0 
+#	Version 3.3, 5 thread(s) starting at Thu Oct 18 06:08:00 2018
+#	Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
+#	Directories:  Time based hash between directories across 10000 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 0 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     5       100000            0      15474.7          2713001
+     5       200000            0      16206.0          2675084
+     5       300000            0      16209.7          2663814
+     2       400000            0      16081.2          2655069
+     2       500000            0      16262.9          2658590
+     2       600000            0      16386.8          2629400
+     2       700000            0      16218.2          2658762
+     2       800000            0      16307.8          2668926
+     2       900000            0      15876.5          2686179
+     2      1000000            0      16070.3          2717976
+     2      1100000            0      16364.8          2685071
+     2      1200000            0      16182.0          2730041
+     2      1300000            0      16174.4          2771949
+     2      1400000            0      15927.9          2802800
+     2      1500000            0      15670.8          2803196
+     2      1600000            0      15938.9          2790758
+     2      1700000            0      15854.5          2803861
+     2      1800000            0      15821.1          2811196
+     2      1900000            0      15854.4          2791279
+     2      2000000            0      15836.9          2794049
+     2      2100000            0      15913.8          2795195
+     5      2200000            0      15894.7          2832980
+     5      2300000            0      15827.2          2829083
+     5      2400000            0      15789.4          2849426
+     5      2500000            0      15325.0          2881884
+     5      2600000            0      15861.7          2825949
+     5      2700000            0      15787.1          2837180
+     5      2800000            0      15973.7          2831148
+     5      2900000            0      15771.2          2853720
+     5      3000000            0      15583.8          2850313

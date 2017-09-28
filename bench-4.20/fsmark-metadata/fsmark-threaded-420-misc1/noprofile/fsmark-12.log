@@ -1,0 +1,40 @@
+
+#  ./fs_mark  -d  /tmp/fsmark-2750/1  -d  /tmp/fsmark-2750/2  -d  /tmp/fsmark-2750/3  -d  /tmp/fsmark-2750/4  -d  /tmp/fsmark-2750/5  -d  /tmp/fsmark-2750/6  -d  /tmp/fsmark-2750/7  -d  /tmp/fsmark-2750/8  -d  /tmp/fsmark-2750/9  -d  /tmp/fsmark-2750/10  -d  /tmp/fsmark-2750/11  -d  /tmp/fsmark-2750/12  -D  10000  -n  8333  -L  30  -t  12  -S0  -s  0 
+#	Version 3.3, 12 thread(s) starting at Wed Oct 17 15:27:13 2018
+#	Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
+#	Directories:  Time based hash between directories across 10000 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 0 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     5        99996            0      11267.5          3345823
+     2       199992            0      14869.9          3697927
+     2       299988            0      15409.3          3473175
+     2       399984            0      15832.3          3498839
+     2       499980            0      14437.1          3520411
+     2       599976            0      15146.4          3530026
+     2       699972            0      14301.5          3550667
+     2       799968            0      14982.7          3707186
+     2       899964            0      14532.2          3900679
+     2       999960            0      15076.4          3651401
+     2      1099956            0      14598.7          3694770
+     2      1199952            0      14466.6          4799558
+     2      1299948            0      15521.2          3690012
+     2      1399944            0      14013.4          3681753
+     2      1499940            0      15063.9          3710936
+     2      1599936            0      13899.2          3743365
+     2      1699932            0      14894.5          3737043
+     2      1799928            0      15066.4          3687365
+     2      1899924            0      15063.6          3650344
+     2      1999920            0      14970.5          3679378
+     2      2099916            0      13930.6          3744850
+     5      2199912            0      14755.8          3668266
+     5      2299908            0      14335.3          3809031
+     5      2399904            0      14350.2          3771851
+     5      2499900            0      14962.1          3844072
+     5      2599896            0      14279.5          3937147
+     5      2699892            0      14579.6          3712994
+     5      2799888            0      15136.1          3709934
+     5      2899884            0      14087.9          3682985
+     5      2999880            0      15162.7          3727020

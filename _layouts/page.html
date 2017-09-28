@@ -1,0 +1,18 @@
+---
+layout: default
+---
+<script src="http://localhost:35729/livereload.js"></script>
+<div class="post">
+  <header class="post-header">
+    <h1 class="post-title">{{ page.title }}</h1>
+    [
+    {% if page.status == "draft" %} DRAFT || {% endif %}
+    date: <i>{{ page.date }}</i>{% if page.update1 %} || updated: <i>{{ page.update1 }}</i>{% endif %}
+    ||
+    tags: <i>{{ page.tags | join: "," }}</i>
+    ]
+  </header>
+  <article class="post-content">
+    {{ content }}
+  </article>
+</div>

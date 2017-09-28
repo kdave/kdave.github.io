@@ -1,0 +1,19 @@
+# Site settings
+title: (void)0;
+email: dave@jikos.cz
+description: > # this means to ignore newlines until "baseurl:"
+  aligned words
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "https://kdave.github.io"
+github_username: "kdave"
+gitlab_username: "kdave"
+twitter_username: "kdaveh"
+feed_update_period: "weekly"
+rss_name: "kdave"
+
+# Build settings
+markdown: kramdown
+
+permalink: pretty
+
+exclude: ["trash/" ]

@@ -1,0 +1,20 @@
+---
+layout: navbar
+navorder: 3
+title: index-long.html
+permalink: /l/
+---
+
+<p>
+<ul>
+{% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' | reverse %}
+{% for page in sortedPages %}
+<li>{{ page.date | date: "%Y-%m-%d" }} - <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a> <tt>[tags: {{ page.tags | sort | join: ", " }}]</tt></li>
+<p>
+{{ page.content | markdownify }}
+</p>
+<hr>
+</li>
+{% endfor %}
+</ul>
+</p>

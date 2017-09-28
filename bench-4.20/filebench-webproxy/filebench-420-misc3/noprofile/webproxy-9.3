@@ -1,0 +1,37 @@
+Filebench Version 1.4.9.1
+ 3518: 0.000: Allocated 458MB of shared memory
+ 3518: 0.053: Web proxy-server Version 3.0 personality successfully loaded
+ 3518: 0.053: Creating/pre-allocating files and filesets
+ 3518: 3.200: Fileset bigfileset: 1784736 files, 0 leafdirs, avg dir width = 1000000, avg dir depth = 1.0, 27919.965MB
+ 3518: 889.462: Removed any existing fileset bigfileset in 887 seconds
+ 3518: 889.463: making tree for filset /root/test/mmtests/work/testdisk/data/bigfileset
+ 3518: 889.463: Creating fileset bigfileset...
+ 3518: 2679.223: Preallocated 1428609 of 1784736 of fileset bigfileset in 1790 seconds
+ 3518: 2679.223: waiting for fileset pre-allocation to finish
+ 4426: 2679.227: Starting 1 proxycache instances
+ 4427: 2679.888: Starting 9 proxycache threads
+ 3518: 2680.926: Running...
+ 3518: 3610.968: Run took 929 seconds...
+ 3518: 3610.969: Per-Operation Breakdown
+limit                0ops        0ops/s   0.0mb/s      0.0ms/op        0us/op-cpu [0ms - 0ms]
+closefile6           122604ops      132ops/s   0.0mb/s      0.0ms/op      254us/op-cpu [0ms - 0ms]
+readfile6            122604ops      132ops/s   2.1mb/s     10.1ms/op    11553us/op-cpu [0ms - 4983ms]
+openfile6            122605ops      132ops/s   0.0mb/s      1.2ms/op      752us/op-cpu [0ms - 8577ms]
+closefile5           122605ops      132ops/s   0.0mb/s      0.0ms/op      258us/op-cpu [0ms - 0ms]
+readfile5            122605ops      132ops/s   2.1mb/s     10.2ms/op    11608us/op-cpu [0ms - 5021ms]
+openfile5            122606ops      132ops/s   0.0mb/s      1.4ms/op      760us/op-cpu [0ms - 8575ms]
+closefile4           122606ops      132ops/s   0.0mb/s      0.0ms/op      258us/op-cpu [0ms - 0ms]
+readfile4            122606ops      132ops/s   2.1mb/s     10.1ms/op    11532us/op-cpu [0ms - 2019ms]
+openfile4            122607ops      132ops/s   0.0mb/s      1.0ms/op      735us/op-cpu [0ms - 8575ms]
+closefile3           122607ops      132ops/s   0.0mb/s      0.0ms/op      259us/op-cpu [0ms - 0ms]
+readfile3            122607ops      132ops/s   2.1mb/s     10.2ms/op    11660us/op-cpu [0ms - 4642ms]
+openfile3            122610ops      132ops/s   0.0mb/s      0.9ms/op      774us/op-cpu [0ms - 8581ms]
+closefile2           122610ops      132ops/s   0.0mb/s      0.0ms/op      267us/op-cpu [0ms - 0ms]
+readfile2            122610ops      132ops/s   2.1mb/s     10.4ms/op    12067us/op-cpu [0ms - 3686ms]
+openfile2            122613ops      132ops/s   0.0mb/s      0.5ms/op      723us/op-cpu [0ms - 7079ms]
+closefile1           122613ops      132ops/s   0.0mb/s      0.0ms/op      277us/op-cpu [0ms - 0ms]
+appendfilerand1      122613ops      132ops/s   1.0mb/s      0.3ms/op     1027us/op-cpu [0ms - 15ms]
+createfile1          122613ops      132ops/s   0.0mb/s      1.1ms/op     1438us/op-cpu [0ms - 7079ms]
+deletefile1          122613ops      132ops/s   0.0mb/s      2.5ms/op     3205us/op-cpu [0ms - 8583ms]
+ 3518: 3610.969: IO Summary: 2329557 ops, 2507.207 ops/s, (660/132 r/w),  11.3mb/s,   2219us cpu/op,  10.0ms latency
+ 3518: 3610.969: Shutting down processes

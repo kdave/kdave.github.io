@@ -1,0 +1,40 @@
+
+#  ./fs_mark  -d  /tmp/fsmark-2750/1  -d  /tmp/fsmark-2750/2  -d  /tmp/fsmark-2750/3  -d  /tmp/fsmark-2750/4  -d  /tmp/fsmark-2750/5  -d  /tmp/fsmark-2750/6  -d  /tmp/fsmark-2750/7  -D  10000  -n  14285  -L  30  -t  7  -S0  -s  0 
+#	Version 3.3, 7 thread(s) starting at Wed Oct 17 15:03:10 2018
+#	Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
+#	Directories:  Time based hash between directories across 10000 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 0 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     2        99995            0      15078.2          2880560
+     2       199990            0      18269.0          2854748
+     2       299985            0      17339.6          2837287
+     2       399980            0      17776.2          2892930
+     2       499975            0      17478.8          2912360
+     2       599970            0      17469.7          2884928
+     2       699965            0      18398.5          2807121
+     2       799960            0      18226.4          2847096
+     2       899955            0      17736.5          2848505
+     2       999950            0      17304.3          2936601
+     2      1099945            0      17729.0          2839965
+     2      1199940            0      17803.8          2883423
+     2      1299935            0      17557.1          2883029
+     2      1399930            0      17775.8          2890758
+     2      1499925            0      17003.0          2945968
+     2      1599920            0      17953.5          2906894
+     2      1699915            0      17715.0          2897809
+     2      1799910            0      17663.6          2916859
+     2      1899905            0      17417.1          2900595
+     2      1999900            0      17363.4          2982314
+     2      2099895            0      16983.1          3016780
+     5      2199890            0      17257.7          2964465
+     5      2299885            0      17387.3          2943462
+     5      2399880            0      17615.8          2928767
+     5      2499875            0      18444.2          2908265
+     5      2599870            0      17051.0          3040460
+     5      2699865            0      16960.4          3068909
+     5      2799860            0      17569.7          2948622
+     5      2899855            0      17422.3          2917342
+     5      2999850            0      17873.0          2961811

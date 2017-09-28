@@ -1,0 +1,40 @@
+
+#  ./fs_mark  -d  /tmp/fsmark-7627/1  -d  /tmp/fsmark-7627/2  -d  /tmp/fsmark-7627/3  -D  10000  -n  33333  -L  30  -t  3  -S0  -s  0 
+#	Version 3.3, 3 thread(s) starting at Thu Oct 25 08:33:40 2018
+#	Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
+#	Directories:  Time based hash between directories across 10000 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 0 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     5        99999            0      10696.1          2537876
+     5       199998            0      10901.8          2504918
+     2       299997            0      10792.7          2508333
+     2       399996            0      10842.2          2522192
+     2       499995            0      10891.7          2504573
+     2       599994            0      10740.5          2534422
+     2       699993            0      10782.4          2542938
+     2       799992            0      10831.3          2557821
+     2       899991            0      10729.0          2597092
+     2       999990            0      10732.6          2592827
+     2      1099989            0      10564.2          2636378
+     2      1199988            0      10660.2          2631678
+     2      1299987            0      10447.4          2654763
+     2      1399986            0      10605.5          2648005
+     2      1499985            0      10640.8          2630751
+     2      1599984            0      10585.5          2653575
+     2      1699983            0      10613.6          2652896
+     2      1799982            0      10662.1          2641281
+     2      1899981            0      10706.7          2635053
+     2      1999980            0      10596.0          2628932
+     2      2099979            0      10665.9          2637796
+     5      2199978            0      10587.1          2674756
+     5      2299977            0      10512.9          2657837
+     5      2399976            0      10668.8          2649576
+     5      2499975            0      10569.1          2666870
+     5      2599974            0      10584.7          2669551
+     5      2699973            0      10567.4          2647268
+     5      2799972            0      10625.3          2666714
+     5      2899971            0      10471.0          2693333
+     5      2999970            0      10401.6          2695366

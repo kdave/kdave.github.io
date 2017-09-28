@@ -1,0 +1,1 @@
+./fs_mark -d /tmp/fsmark-2750/1 -d /tmp/fsmark-2750/2 -d /tmp/fsmark-2750/3 -d /tmp/fsmark-2750/4 -d /tmp/fsmark-2750/5 -D 10000 -n 20000 -L 30 -t 5 -S0 -s 0
