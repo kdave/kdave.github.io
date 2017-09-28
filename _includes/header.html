@@ -1,0 +1,10 @@
+<header>
+	<nav>
+		{% for pg in site.pages %}
+		{% if pg.layout == "navbar" %}
+		<a class="navlink" href="{{ pg.permalink | prepend: site.baseurl }}">[{% if pg.title_nav %}{{ pg.title_nav }}{% else %}{{ pg.title }}{% endif %}]</a>
+		{% endif %}
+		{% endfor %}
+	</nav>
+	<hr>
+</header>
