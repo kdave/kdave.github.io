@@ -2,14 +2,16 @@
 <html>
   <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>gitstats: btrfs-progs for v4.14</title>
-  <meta name="description" content="something
+  <meta name="description" content="aligned words
 ">
 
-  <link rel="stylesheet" href="/css/site.css">
-  <link rel="canonical" href="http://localhost:4000/gitstats-btrfs-progs-v4.14/">
-  <link rel="alternate" type="application/rss+xml" title="(void)0;" href="http://localhost:4000/feed.xml" />
+  <link rel="stylesheet" href="/css/site-dark.css" id="theme-style">
+  <link rel="canonical" href="https://kdave.github.io/gitstats-btrfs-progs-v4.14/">
+  <link rel="alternate" type="application/rss+xml" title="(void)VOID_MAX;" href="https://kdave.github.io/rss-all.xml" />
+  <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
 
   <body>
@@ -17,27 +19,38 @@
 	<nav>
 		
 		
-		<a class="navlink" href="/a/">[about]</a>
-		
-		
-		
-		
-		
 		<a class="navlink" href="/">[index.html]</a>
 		
+		<a class="navlink" href="/l/">[index-long.html]</a>
 		
+		<a class="navlink" href="/a/">[about]</a>
 		
+		<a class="navlink" href="/m/">[more]</a>
 		
+		<button id="theme-toggle">Switch theme</button>
+		<script>
+document.getElementById('theme-toggle').addEventListener('click', function() {
+	    var currentTheme = document.getElementById('theme-style').getAttribute('href');
+	    var newTheme = currentTheme === '/css/site-light.css' ? '/css/site-dark.css' : '/css/site-light.css';
+	    document.getElementById('theme-style').setAttribute('href', newTheme);
+});
+		</script>
 	</nav>
 	<hr>
 </header>
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="post">
+        <script src="http://localhost:35729/livereload.js"></script>
+<div class="post">
   <header class="post-header">
     <h1 class="post-title">gitstats: btrfs-progs for v4.14</h1>
-    [ date: <i>2017-12-06</i> || tags: <i>git,stats,btrfs-progs,draft</i> ]
+    [
+    
+    date: <i>2017-12-06</i>
+    ||
+    tags: <i>git,stats,btrfs-progs,draft</i>
+    ]
   </header>
   <article class="post-content">
     <p><a href="gitstats-index.html">gitstats</a></p>
@@ -51,13 +64,37 @@
 	<hr>
 	&#9993;
 	|
-	<img src="../images/github-logo.ico" width="16" height="16" />
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" viewBox="0 0 47.999998 48.000002" width="16" height="16"><style id="style3">.Round_x0020_Corners_x0020_2_x0020_pt{fill:#FFF;stroke:#000;stroke-miterlimit:10}.Live_x0020_Reflect_x0020_X{fill:none}.Bevel_x0020_Soft{fill:url(#SVGID_1_)}.Dusk{fill:#FFF}.Foliage_GS{fill:#FD0}.Pompadour_GS{fill:#44ade2}.Pompadour_GS,.st0{fill-rule:evenodd;clip-rule:evenodd}.st0{fill:#191717}</style><linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-216.625" y1="-385.75" x2="-215.918" y2="-385.043"><stop offset="0" id="stop6" stop-color="#dedfe3"/><stop offset=".174" id="stop8" stop-color="#d8d9dd"/><stop offset=".352" id="stop10" stop-color="#c9cacd"/><stop offset=".532" id="stop12" stop-color="#b4b5b8"/><stop offset=".714" id="stop14" stop-color="#989a9c"/><stop offset=".895" id="stop16" stop-color="#797c7e"/><stop offset="1" id="stop18" stop-color="#656b6c"/></linearGradient><path class="st0" d="M23.928 1.15C11 1.15.514 11.638.514 24.566c0 10.343 6.75 19.105 15.945 22.265 1.148.144 1.58-.574 1.58-1.15v-4.02c-6.465 1.436-7.902-3.16-7.902-3.16-1.005-2.73-2.586-3.45-2.586-3.45-2.154-1.435.144-1.435.144-1.435 2.298.144 3.59 2.442 3.59 2.442 2.156 3.59 5.46 2.586 6.753 2.01.142-1.58.86-2.585 1.435-3.16-5.17-.574-10.63-2.585-10.63-11.635 0-2.585.862-4.596 2.442-6.32-.287-.575-1.005-3.017.288-6.177 0 0 2.01-.574 6.464 2.442 1.866-.574 3.877-.718 5.888-.718 2.01 0 4.022.286 5.89.717 4.453-3.016 6.464-2.442 6.464-2.442 1.293 3.16.43 5.602.287 6.177a9.29 9.29 0 0 1 2.44 6.32c0 9.05-5.458 10.918-10.63 11.492.863.718 1.58 2.155 1.58 4.31v6.464c0 .574.432 1.292 1.58 1.15 9.338-3.16 15.946-11.924 15.946-22.266-.143-12.785-10.63-23.27-23.558-23.27z" id="path20" clip-rule="evenodd" fill="#191717" fill-rule="evenodd"/></svg>
 	<a href="https://github.com/kdave">github/kdave</a>
 	|
-	<svg id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" height="16" width="16" version="1.1" xmlns:cc="http://creativecommons.org/ns#" viewBox="0 0 182.66667 150.66667" xmlns:dc="http://purl.org/dc/elements/1.1/"><defs id="defs6"><clipPath id="clipPath20" clipPathUnits="userSpaceOnUse"><path id="path18" d="m0 10.012h1366.9v1110.9h-1366.9z"/></clipPath></defs><g id="g10" transform="matrix(1.3333 0 0 -1.3333 0 150.67)"><g id="g12" transform="scale(.1)"><g id="g14"><g id="g16" clip-path="url(#clipPath20)"><path id="path22" d="m1366.9 989.39c-50.27-22.309-104.33-37.387-161.05-44.18 57.89 34.723 102.34 89.679 123.28 155.15-54.18-32.15-114.18-55.47-178.09-68.04-51.13 54.49-124.02 88.55-204.68 88.55-154.89 0-280.43-125.55-280.43-280.43 0-21.988 2.457-43.398 7.258-63.91-233.08 11.68-439.72 123.36-578.04 293.01-24.141-41.4-37.969-89.567-37.969-140.97 0-97.308 49.489-183.13 124.76-233.44-45.969 1.437-89.218 14.058-127.03 35.078-0.043-1.18-0.043-2.348-0.043-3.52 0-135.9 96.68-249.22 224.96-275-23.512-6.41-48.281-9.8-73.86-9.8-18.089 0-35.628 1.711-52.781 5 35.711-111.41 139.26-192.5 262-194.77-96.058-75.23-216.96-120.04-348.36-120.04-22.621 0-44.961 1.332-66.918 3.91 124.16-79.568 271.55-125.98 429.94-125.98 515.82 0 797.86 427.31 797.86 797.93 0 12.153-0.28 24.223-0.79 36.25 54.77 39.571 102.31 88.95 139.93 145.2" fill="#55ACEE"/></g></g></g></g></svg>
-	<a href="https://twitter.com/kdaveh">@kdaveh</a>
+<!--
+<svg width="16px" height="16px" viewBox="0 0 256 236" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+    <g>
+        <path d="M128.07485,236.074667 L128.07485,236.074667 L175.17885,91.1043048 L80.9708495,91.1043048 L128.07485,236.074667 L128.07485,236.074667 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L80.9708495,91.104061 L14.9557638,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M14.9558857,91.1044267 L14.9558857,91.1044267 L0.641828571,135.159589 C-0.663771429,139.17757 0.766171429,143.57955 4.18438095,146.06275 L128.074971,236.074789 L14.9558857,91.1044267 L14.9558857,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M14.9558857,91.1045486 L80.9709714,91.1045486 L52.6000762,3.79026286 C51.1408762,-0.703146667 44.7847619,-0.701927619 43.3255619,3.79026286 L14.9558857,91.1045486 L14.9558857,91.1045486 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L175.17885,91.104061 L241.193935,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M241.193935,91.1044267 L241.193935,91.1044267 L255.507992,135.159589 C256.813592,139.17757 255.38365,143.57955 251.96544,146.06275 L128.07485,236.074789 L241.193935,91.1044267 L241.193935,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M241.193935,91.1045486 L175.17885,91.1045486 L203.549745,3.79026286 C205.008945,-0.703146667 211.365059,-0.701927619 212.824259,3.79026286 L241.193935,91.1045486 L241.193935,91.1045486 Z" fill="#E24329"></path>
+    </g>
+</svg>
+	<a href="https://gitlab.com/kdave">gitlab/kdave</a>
 	|
-	Content licensed under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+	-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 216.4144 232.00976"><path d="M211.80734 139.0875c-3.18125 16.36625-28.4925 34.2775-57.5625 37.74875-15.15875 1.80875-30.08375 3.47125-45.99875 2.74125-26.0275-1.1925-46.565-6.2125-46.565-6.2125 0 2.53375.15625 4.94625.46875 7.2025 3.38375 25.68625 25.47 27.225 46.39125 27.9425 21.11625.7225 39.91875-5.20625 39.91875-5.20625l.8675 19.09s-14.77 7.93125-41.08125 9.39c-14.50875.7975-32.52375-.365-53.50625-5.91875C9.23234 213.82 1.40609 165.31125.20859 116.09125c-.365-14.61375-.14-28.39375-.14-39.91875 0-50.33 32.97625-65.0825 32.97625-65.0825C49.67234 3.45375 78.20359.2425 107.86484 0h.72875c29.66125.2425 58.21125 3.45375 74.8375 11.09 0 0 32.975 14.7525 32.975 65.0825 0 0 .41375 37.13375-4.59875 62.915" fill="#3088d4"/><path d="M177.50984 80.077v60.94125h-24.14375v-59.15c0-12.46875-5.24625-18.7975-15.74-18.7975-11.6025 0-17.4175 7.5075-17.4175 22.3525v32.37625H96.20734V85.42325c0-14.845-5.81625-22.3525-17.41875-22.3525-10.49375 0-15.74 6.32875-15.74 18.7975v59.15H38.90484V80.077c0-12.455 3.17125-22.3525 9.54125-29.675 6.56875-7.3225 15.17125-11.07625 25.85-11.07625 12.355 0 21.71125 4.74875 27.8975 14.2475l6.01375 10.08125 6.015-10.08125c6.185-9.49875 15.54125-14.2475 27.8975-14.2475 10.6775 0 19.28 3.75375 25.85 11.07625 6.36875 7.3225 9.54 17.22 9.54 29.675" fill="#fff"/></svg>
+	<a href="https://social.kernel.org/kdave">@kdave@social.kernel.org</a>
+	|
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="16" height="16">
+<g>
+	<path style="fill:#FFB500;" d="M437,0H75C33.645,0,0,33.645,0,75v362c0,41.355,33.645,75,75,75h362c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z M106.176,446.374c-24.293,0-44.057-19.764-44.057-44.056c0-24.293,19.764-44.057,44.057-44.057   s44.057,19.764,44.057,44.057C150.232,426.61,130.469,446.374,106.176,446.374z M255.212,438.281c-22.056,0-40-17.944-40-40   c0-57.898-47.103-105-105-105c-22.056,0-40-17.944-40-40c0-22.056,17.944-40,40-40c102.009,0,185,82.99,185,185   C295.212,420.337,277.269,438.281,255.212,438.281z M405.212,438.281c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-48.163-48.163-112.199-74.688-180.313-74.688c-22.056,0-40-17.944-40-40   c0-22.056,17.944-40,40-40c89.481,0,173.607,34.846,236.881,98.119c63.273,63.273,98.12,147.399,98.12,236.881   C445.212,420.337,427.269,438.281,405.212,438.281z"/>
+	<path style="fill:#FF9300;" d="M437,0H257.712v97.335c32.691,16.058,62.871,37.555,89.381,64.065   c63.273,63.273,98.12,147.399,98.12,236.881c0,22.056-17.944,40-40,40c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-10.254-10.254-21.233-19.517-32.812-27.762v96.545   c23.522,31.032,37.5,69.677,37.5,111.53c0,21.215-16.605,38.618-37.5,39.914V512H437c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z"/>
+</g>
+</svg>
+	<a href="/rss-all.xml">RSS</a>
+	|
+	<img class="img-nav" src="https://kdave.github.io/images/cc-by-sa.svg" />
+	Content licensed under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY SA 4.0</a>
 </footer>
 
   </body>

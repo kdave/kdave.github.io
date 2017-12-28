@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Linux crypto: testing blake2s</title>
+  <meta name="description" content="aligned words
+">
+
+  <link rel="stylesheet" href="/css/site-dark.css" id="theme-style">
+  <link rel="canonical" href="https://kdave.github.io/linux-crypto-blake2s/">
+  <link rel="alternate" type="application/rss+xml" title="(void)VOID_MAX;" href="https://kdave.github.io/rss-all.xml" />
+  <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
+</head>
+
+  <body>
+    <header>
+	<nav>
+		
+		
+		<a class="navlink" href="/">[index.html]</a>
+		
+		<a class="navlink" href="/l/">[index-long.html]</a>
+		
+		<a class="navlink" href="/a/">[about]</a>
+		
+		<a class="navlink" href="/m/">[more]</a>
+		
+		<button id="theme-toggle">Switch theme</button>
+		<script>
+document.getElementById('theme-toggle').addEventListener('click', function() {
+	    var currentTheme = document.getElementById('theme-style').getAttribute('href');
+	    var newTheme = currentTheme === '/css/site-light.css' ? '/css/site-dark.css' : '/css/site-light.css';
+	    document.getElementById('theme-style').setAttribute('href', newTheme);
+});
+		</script>
+	</nav>
+	<hr>
+</header>
+
+    <div class="page-content">
+      <div class="wrapper">
+        <script src="http://localhost:35729/livereload.js"></script>
+<div class="post">
+  <header class="post-header">
+    <h1 class="post-title">Linux crypto: testing blake2s</h1>
+    [
+    
+    date: <i>2019-04-27</i>
+    ||
+    tags: <i>crypto,linux,blake2</i>
+    ]
+  </header>
+  <article class="post-content">
+    <p>The BLAKE2 algorithm is out for some time, yet there’s no port to linux crypto
+API. The recent push of WireGuard would add it to linux kernel, but using a
+different API (zinc) than the existing one. I haven’t explored zinc, I assume
+there will be a way to use it from inside kernel, but this would need another
+layer to switch the APIs according to the algorithm.</p>
+
+<p>As btrfs is going to use more hashing algos, we are in the process of
+selection.  One of the contenders is BLAKE2, though everybody would have a
+different suggestion.  In order to test it, a port is needed. Which basically is
+a glue code between the linux crypto API and the BLAKE2 implementation.</p>
+
+<p>I’m not going to reimplement crypto or anything, so the the default
+implementation is going to be the reference one found in blake2 git.</p>
+
+<p><em>Note: due to the maximum space of 32 bytes available in the btrfs metadata
+blocks, the version is BLAKE2s.</em></p>
+
+<h2 id="the-blake2s-sources">The BLAKE2s sources</h2>
+
+<p>From the repository <a href="https://github.com/BLAKE2/BLAKE2">https://github.com/BLAKE2/BLAKE2</a>:</p>
+
+<ul>
+  <li>ref/blake2s-ref.c</li>
+  <li>ref/blake2.h</li>
+  <li>ref/blake2-impl.h</li>
+</ul>
+
+<p>Briefly skimming over the sources, there’s nothing that’ll cause trouble.
+Standard C code, some definitions. Adapting for linux kernel would need to
+replace the <code class="language-plaintext highlighter-rouge">stdint.h</code> types (<code class="language-plaintext highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="language-plaintext highlighter-rouge">u8</code> etc) and change
+path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.</p>
+
+<h2 id="add-the-new-algorithm-definition-cra">Add the new algorithm definition (CRA)</h2>
+
+<p>Though it’s possible to prepare a module for an out-of-tree build (see below),
+let’s do it inside the <code class="language-plaintext highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
+sources to copy &amp; paste. I’ve used <code class="language-plaintext highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
+useful.</p>
+
+<p>The crypto hash description is defined in <code class="language-plaintext highlighter-rouge">struct shash_alg</code>, contains the
+technical description like type of the algorithm, length of the context and
+callbacks for various phases of the hash calculation (init, update, final), and
+identification of the algorithm and the implementation. The default
+implementations are C and use the string “-generic” in the name.</p>
+
+<p>The crc32c module came with a few stub callbacks (<code class="language-plaintext highlighter-rouge">checksum_init</code> etc), that
+will only call into the blake2 functions and the definition can stay. Simple
+search and replace from crc32c to blake2s will do most of the conversion.</p>
+
+<h2 id="add-the-glue-code-for-crypto-api">Add the glue code for crypto API</h2>
+
+<p>Now we have the <code class="language-plaintext highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
+definition. The glue code connects the API with the implementation. We need 2
+helper structures that hold the context once the user starts digest calculation.
+The private blake2s context is embedded into one of them.  The intermediate
+results will be stored there.</p>
+
+<p>And the rest is quite easy, each callback will call into the respective blake2s
+function, passing the context, data and lengths. One thing that I copied from
+the examples is the key initialization that’s in <code class="language-plaintext highlighter-rouge">blake2s_cra_init</code>, that
+appears to be global and copied to the context each time a new one is
+initialized.</p>
+
+<p>Here the choice of using <code class="language-plaintext highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
+the right parameters, calling the blake2s functions that can retain their
+original signature. This makes later updates easier.  All the functions are
+static so the compiler will most probably optimize the code that there will be
+no unnecessary overhead.</p>
+
+<p>Well and that’s it. Let’s try to compile it and insert the module:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
+...
+  CC [M]  crypto/blake2s.o
+linux.git$ make crypto/blake2s.ko
+...
+  CC      crypto/blake2s.mod.o
+  LD [M]  crypto/blake2s.ko
+...
+</code></pre></div></div>
+
+<p>Check that it’s been properly loaded</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
+</code></pre></div></div>
+
+<p>and registered</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
+name         : blake2s
+driver       : blake2s-generic
+module       : blake2s
+priority     : 100
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : shash
+blocksize    : 1
+digestsize   : 32
+...
+</code></pre></div></div>
+
+<p>The selftest says it passed, but there no such thing so far. There are test
+values provided in blake2 git so it would be nice to have too (tm). But
+otherwise it looks good.</p>
+
+<p>To do actual test, we’d need something inside kernel to utilize the new hash.
+One option is to implement a module that will do that or use the userspace
+library <code class="language-plaintext highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
+available kernel implementations.</p>
+
+<h2 id="test-it-with-libkcapi">Test it with libkcapi</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">libkcapi</code> project at
+<a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a>
+provides an API that uses the <code class="language-plaintext highlighter-rouge">AF_ALG</code> socket type to exchange data with
+kernel. The library provides a command line tool that we can use right away and
+don’t need to code anything.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
+48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
+</code></pre></div></div>
+
+<p>The test vectors provided by blake2 confirm that this is hash of empty string
+with the default key (0x000102..1f).</p>
+
+<h2 id="out-of-tree-build">Out-of-tree build</h2>
+
+<p>Sources in the linux.git require one additional line to Makefile, build it
+unconditionally as a module. Proper submission to linux kernel would need the
+Kconfig option.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
+</code></pre></div></div>
+
+<p>The standalone build needs a Makefile with a few targets that use the existing
+build of kernel. Note that you’d need a running kernel with the same built
+sources. This is usually provided by the <code class="language-plaintext highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
+if you build kernels from git, you know what to do, right?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
+obj-m := blake2s.o
+
+default:
+        $(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+        $(MAKE) -C $(KDIR) M=$$PWD clean
+
+modules_install:
+        $(MAKE) -C $(KDIR) M=$$PWD modules_install
+</code></pre></div></div>
+
+<p>After running <code class="language-plaintext highlighter-rouge">make</code>, the kernel module is ready for use.</p>
+
+<h2 id="what-next">What next?</h2>
+
+<p>Send it upstream. Well, after some work of course.</p>
+
+<ul>
+  <li>update the coding style of the blake2 sources</li>
+  <li>add Kconfig</li>
+  <li>write self-tests</li>
+  <li>optionally add the optimized implementations</li>
+</ul>
+
+<p>All the files can be found here:</p>
+
+<ul>
+  <li><a href="Makefile">Makefile</a>: out-of-tree build</li>
+  <li><a href="blake2.h">blake2.h</a>: copied and updated for linux</li>
+  <li><a href="blake2.h">blake2-impl.h</a>: copied and updated for linux</li>
+  <li><a href="blake2.h">blake2s.c</a>: copied and updated for linux</li>
+</ul>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li><a href="https://blake2.net">https://blake2.net</a></li>
+  <li><a href="https://github.com/BLAKE2/BLAKE2">https://github.com/BLAKE2/BLAKE2</a>:</li>
+  <li><a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a></li>
+  <li><a href="https://www.kernel.org/doc/html/latest/crypto/userspace-if.html">https://www.kernel.org/doc/html/latest/crypto/userspace-if.html</a></li>
+  <li><a href="https://www.kernel.org/doc/html/latest/crypto/intro.html">https://www.kernel.org/doc/html/latest/crypto/intro.html</a></li>
+</ul>
+
+  </article>
+</div>
+
+      </div>
+    </div>
+    <footer class="site-footer">
+	<hr>
+	&#9993;
+	|
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" viewBox="0 0 47.999998 48.000002" width="16" height="16"><style id="style3">.Round_x0020_Corners_x0020_2_x0020_pt{fill:#FFF;stroke:#000;stroke-miterlimit:10}.Live_x0020_Reflect_x0020_X{fill:none}.Bevel_x0020_Soft{fill:url(#SVGID_1_)}.Dusk{fill:#FFF}.Foliage_GS{fill:#FD0}.Pompadour_GS{fill:#44ade2}.Pompadour_GS,.st0{fill-rule:evenodd;clip-rule:evenodd}.st0{fill:#191717}</style><linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-216.625" y1="-385.75" x2="-215.918" y2="-385.043"><stop offset="0" id="stop6" stop-color="#dedfe3"/><stop offset=".174" id="stop8" stop-color="#d8d9dd"/><stop offset=".352" id="stop10" stop-color="#c9cacd"/><stop offset=".532" id="stop12" stop-color="#b4b5b8"/><stop offset=".714" id="stop14" stop-color="#989a9c"/><stop offset=".895" id="stop16" stop-color="#797c7e"/><stop offset="1" id="stop18" stop-color="#656b6c"/></linearGradient><path class="st0" d="M23.928 1.15C11 1.15.514 11.638.514 24.566c0 10.343 6.75 19.105 15.945 22.265 1.148.144 1.58-.574 1.58-1.15v-4.02c-6.465 1.436-7.902-3.16-7.902-3.16-1.005-2.73-2.586-3.45-2.586-3.45-2.154-1.435.144-1.435.144-1.435 2.298.144 3.59 2.442 3.59 2.442 2.156 3.59 5.46 2.586 6.753 2.01.142-1.58.86-2.585 1.435-3.16-5.17-.574-10.63-2.585-10.63-11.635 0-2.585.862-4.596 2.442-6.32-.287-.575-1.005-3.017.288-6.177 0 0 2.01-.574 6.464 2.442 1.866-.574 3.877-.718 5.888-.718 2.01 0 4.022.286 5.89.717 4.453-3.016 6.464-2.442 6.464-2.442 1.293 3.16.43 5.602.287 6.177a9.29 9.29 0 0 1 2.44 6.32c0 9.05-5.458 10.918-10.63 11.492.863.718 1.58 2.155 1.58 4.31v6.464c0 .574.432 1.292 1.58 1.15 9.338-3.16 15.946-11.924 15.946-22.266-.143-12.785-10.63-23.27-23.558-23.27z" id="path20" clip-rule="evenodd" fill="#191717" fill-rule="evenodd"/></svg>
+	<a href="https://github.com/kdave">github/kdave</a>
+	|
+<!--
+<svg width="16px" height="16px" viewBox="0 0 256 236" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+    <g>
+        <path d="M128.07485,236.074667 L128.07485,236.074667 L175.17885,91.1043048 L80.9708495,91.1043048 L128.07485,236.074667 L128.07485,236.074667 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L80.9708495,91.104061 L14.9557638,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M14.9558857,91.1044267 L14.9558857,91.1044267 L0.641828571,135.159589 C-0.663771429,139.17757 0.766171429,143.57955 4.18438095,146.06275 L128.074971,236.074789 L14.9558857,91.1044267 L14.9558857,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M14.9558857,91.1045486 L80.9709714,91.1045486 L52.6000762,3.79026286 C51.1408762,-0.703146667 44.7847619,-0.701927619 43.3255619,3.79026286 L14.9558857,91.1045486 L14.9558857,91.1045486 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L175.17885,91.104061 L241.193935,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M241.193935,91.1044267 L241.193935,91.1044267 L255.507992,135.159589 C256.813592,139.17757 255.38365,143.57955 251.96544,146.06275 L128.07485,236.074789 L241.193935,91.1044267 L241.193935,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M241.193935,91.1045486 L175.17885,91.1045486 L203.549745,3.79026286 C205.008945,-0.703146667 211.365059,-0.701927619 212.824259,3.79026286 L241.193935,91.1045486 L241.193935,91.1045486 Z" fill="#E24329"></path>
+    </g>
+</svg>
+	<a href="https://gitlab.com/kdave">gitlab/kdave</a>
+	|
+	-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 216.4144 232.00976"><path d="M211.80734 139.0875c-3.18125 16.36625-28.4925 34.2775-57.5625 37.74875-15.15875 1.80875-30.08375 3.47125-45.99875 2.74125-26.0275-1.1925-46.565-6.2125-46.565-6.2125 0 2.53375.15625 4.94625.46875 7.2025 3.38375 25.68625 25.47 27.225 46.39125 27.9425 21.11625.7225 39.91875-5.20625 39.91875-5.20625l.8675 19.09s-14.77 7.93125-41.08125 9.39c-14.50875.7975-32.52375-.365-53.50625-5.91875C9.23234 213.82 1.40609 165.31125.20859 116.09125c-.365-14.61375-.14-28.39375-.14-39.91875 0-50.33 32.97625-65.0825 32.97625-65.0825C49.67234 3.45375 78.20359.2425 107.86484 0h.72875c29.66125.2425 58.21125 3.45375 74.8375 11.09 0 0 32.975 14.7525 32.975 65.0825 0 0 .41375 37.13375-4.59875 62.915" fill="#3088d4"/><path d="M177.50984 80.077v60.94125h-24.14375v-59.15c0-12.46875-5.24625-18.7975-15.74-18.7975-11.6025 0-17.4175 7.5075-17.4175 22.3525v32.37625H96.20734V85.42325c0-14.845-5.81625-22.3525-17.41875-22.3525-10.49375 0-15.74 6.32875-15.74 18.7975v59.15H38.90484V80.077c0-12.455 3.17125-22.3525 9.54125-29.675 6.56875-7.3225 15.17125-11.07625 25.85-11.07625 12.355 0 21.71125 4.74875 27.8975 14.2475l6.01375 10.08125 6.015-10.08125c6.185-9.49875 15.54125-14.2475 27.8975-14.2475 10.6775 0 19.28 3.75375 25.85 11.07625 6.36875 7.3225 9.54 17.22 9.54 29.675" fill="#fff"/></svg>
+	<a href="https://social.kernel.org/kdave">@kdave@social.kernel.org</a>
+	|
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="16" height="16">
+<g>
+	<path style="fill:#FFB500;" d="M437,0H75C33.645,0,0,33.645,0,75v362c0,41.355,33.645,75,75,75h362c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z M106.176,446.374c-24.293,0-44.057-19.764-44.057-44.056c0-24.293,19.764-44.057,44.057-44.057   s44.057,19.764,44.057,44.057C150.232,426.61,130.469,446.374,106.176,446.374z M255.212,438.281c-22.056,0-40-17.944-40-40   c0-57.898-47.103-105-105-105c-22.056,0-40-17.944-40-40c0-22.056,17.944-40,40-40c102.009,0,185,82.99,185,185   C295.212,420.337,277.269,438.281,255.212,438.281z M405.212,438.281c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-48.163-48.163-112.199-74.688-180.313-74.688c-22.056,0-40-17.944-40-40   c0-22.056,17.944-40,40-40c89.481,0,173.607,34.846,236.881,98.119c63.273,63.273,98.12,147.399,98.12,236.881   C445.212,420.337,427.269,438.281,405.212,438.281z"/>
+	<path style="fill:#FF9300;" d="M437,0H257.712v97.335c32.691,16.058,62.871,37.555,89.381,64.065   c63.273,63.273,98.12,147.399,98.12,236.881c0,22.056-17.944,40-40,40c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-10.254-10.254-21.233-19.517-32.812-27.762v96.545   c23.522,31.032,37.5,69.677,37.5,111.53c0,21.215-16.605,38.618-37.5,39.914V512H437c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z"/>
+</g>
+</svg>
+	<a href="/rss-all.xml">RSS</a>
+	|
+	<img class="img-nav" src="https://kdave.github.io/images/cc-by-sa.svg" />
+	Content licensed under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY SA 4.0</a>
+</footer>
+
+  </body>
+</html>

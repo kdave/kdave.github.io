@@ -1,0 +1,16 @@
+node 0 socket 0 core 0 thread 0 cpu 0
+node 0 socket 0 core 0 thread 1 cpu 8
+node 0 socket 0 core 1 thread 0 cpu 2
+node 0 socket 0 core 1 thread 1 cpu 10
+node 0 socket 0 core 2 thread 0 cpu 4
+node 0 socket 0 core 2 thread 1 cpu 12
+node 0 socket 0 core 3 thread 0 cpu 6
+node 0 socket 0 core 3 thread 1 cpu 14
+node 1 socket 0 core 0 thread 0 cpu 1
+node 1 socket 0 core 0 thread 1 cpu 9
+node 1 socket 0 core 1 thread 0 cpu 3
+node 1 socket 0 core 1 thread 1 cpu 11
+node 1 socket 0 core 2 thread 0 cpu 5
+node 1 socket 0 core 2 thread 1 cpu 13
+node 1 socket 0 core 3 thread 0 cpu 7
+node 1 socket 0 core 3 thread 1 cpu 15

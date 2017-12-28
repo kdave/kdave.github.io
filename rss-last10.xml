@@ -1,0 +1,2093 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+>
+	<channel>
+		<title></title>
+		<description>aligned words
+</description>
+		<sy:updatePeriod>weekly</sy:updatePeriod>
+		<sy:updateFrequency>1</sy:updateFrequency>
+		<link>https://kdave.github.io</link>
+		<atom:link href="https://kdave.github.io/rss-last10.xml" rel="self" type="application/rss+xml" />
+		
+		<lastBuildDate>Wed, 27 Nov 2024 00:00:00 +0100</lastBuildDate>
+		
+			<item>
+				<title>Escaped snapper snapshots</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;Happened to me, that space on my root partition was going low, no matter what I
+removed. I have &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;snapper&lt;/code&gt; hourly snapshots enabled, tuned the daily and weekly
+settings, so the usual problem of running out of space is prevented. Also
+before doing a big update of Tumbleweed (openSUSE rolling distro) I check the
+available space to roughly match what &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zypper&lt;/code&gt; says it’d need.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ snapper ls
+Type   | #   | Pre # | Date                             | User | Cleanup  | Description  | Userdata
+-------+-----+-------+----------------------------------+------+----------+--------------+--------------
+single | 0   |       |                                  | root |          | current      |
+single | 395 |       | Mon 26 Sep 2016 10:30:01 PM CEST | root | timeline | timeline     |
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So what happened? I was removing some old kernels, manually by rpm. And it
+started to report write errors, no space. Indeed, df reported just 64K
+available. This is within the margin of accuracy that we’re able to get from
+the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
+is as good as it gets.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        30G   30G   64K  86% /
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;RPM continued to spew lots of errors, I removed rest of the snapper snapshots,
+no improvement. So then I resorted to the bare ‘btrfs’ command and found a stale
+snapper snapshot. The snapshot directory itself was there, but the metadata
+were lacking (a xml file). After deleting it manually, the free space jumped up
+by 6GB!&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# btrfs subvol list /
+...
+... .snapshots/3721/snapshot
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The theory is that I have once removed all snapshots so the numbering started
+from 1 again, as the current series is around ~390, while the number of stale
+snapshot is much higher.&lt;/p&gt;
+
+&lt;p&gt;Takeaways:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;synthetic tools may not give our an accurate view: snapper requires some
+metadata describing its snapshot, which is obviously OK, given that the user
+has the freedom to create snapshots anywhere&lt;/li&gt;
+  &lt;li&gt;learn how to use the low-level tools to cross-verify the state of the system&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Summary of used tools:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;snapper ls&lt;/code&gt; – show all snapper snapshots (for the first config)&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;snapper delete&lt;/code&gt; – delete snapshots by id or range&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs subvolume list&lt;/code&gt; – list all subvolumes (snapshots included) on a given path&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs subvolume delete&lt;/code&gt; – delete a subvolume/snapshot by path&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Update 2017-09-05&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Again. There were 2 stale snapper snapshots, age of like 8 months until
+discovered. The space got up by 12GiB after deletion. The root partition is
+50GiB, I think it survived pretty long given the frequent updates of the rolling
+distro. There’s an &lt;a href=&quot;https://github.com/openSUSE/snapper/issues/98&quot;&gt;open issue&lt;/a&gt;.&lt;/p&gt;
+</description>
+				<pubDate>Sat, 05 Nov 2016 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/escaped-snapper-snapshots/</link>
+				<guid isPermaLink="true">https://kdave.github.io/escaped-snapper-snapshots/</guid>
+			</item>
+		
+			<item>
+				<title>errno.h for the masses</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;errno&lt;/code&gt; values, in various formats you may encounter. The standard errno is
+a positive number, linux kernel uses the negative values. Besides the sources
+(going through like 5 include hops from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/include/errno.h&lt;/code&gt; to
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/include/asm-generic/errno.h&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/include/asm-generic/errno-base.h&lt;/code&gt;)
+there’s no direct way to get the symbolic &amp;lt;-&amp;gt; numeric mapping. The hexa values
+commonly appear in the stack trace dumps.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;symbolic&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;dec&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;hex&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;neg hex&lt;/th&gt;
+      &lt;th&gt;comment&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPERM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;1&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x01&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffff&lt;/td&gt;
+      &lt;td&gt;Operation not permitted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOENT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;2&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x02&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fffe&lt;/td&gt;
+      &lt;td&gt;No such file or directory&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESRCH&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;3&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x03&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fffd&lt;/td&gt;
+      &lt;td&gt;No such process&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EINTR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;4&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x04&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fffc&lt;/td&gt;
+      &lt;td&gt;Interrupted system call&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EIO&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;5&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x05&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fffb&lt;/td&gt;
+      &lt;td&gt;I/O error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENXIO&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;6&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x06&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fffa&lt;/td&gt;
+      &lt;td&gt;No such device or address&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;E2BIG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;7&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x07&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff9&lt;/td&gt;
+      &lt;td&gt;Argument list too long&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOEXEC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;8&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x08&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff8&lt;/td&gt;
+      &lt;td&gt;Exec format error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADF&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;9&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x09&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff7&lt;/td&gt;
+      &lt;td&gt;Bad file number&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECHILD&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;10&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff6&lt;/td&gt;
+      &lt;td&gt;No child processes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EAGAIN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;11&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff5&lt;/td&gt;
+      &lt;td&gt;Try again&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOMEM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;12&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff4&lt;/td&gt;
+      &lt;td&gt;Out of memory&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EACCES&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;13&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff3&lt;/td&gt;
+      &lt;td&gt;Permission denied&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EFAULT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;14&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff2&lt;/td&gt;
+      &lt;td&gt;Bad address&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTBLK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;15&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x0f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff1&lt;/td&gt;
+      &lt;td&gt;Block device required&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBUSY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;16&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x10&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..fff0&lt;/td&gt;
+      &lt;td&gt;Device or resource busy&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EEXIST&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;17&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x11&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffef&lt;/td&gt;
+      &lt;td&gt;File exists&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EXDEV&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;18&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x12&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffee&lt;/td&gt;
+      &lt;td&gt;Cross-device link&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENODEV&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;19&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x13&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffed&lt;/td&gt;
+      &lt;td&gt;No such device&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTDIR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;20&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x14&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffec&lt;/td&gt;
+      &lt;td&gt;Not a directory&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EISDIR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;21&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x15&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffeb&lt;/td&gt;
+      &lt;td&gt;Is a directory&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EINVAL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;22&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x16&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffea&lt;/td&gt;
+      &lt;td&gt;Invalid argument&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENFILE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;23&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x17&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe9&lt;/td&gt;
+      &lt;td&gt;File table overflow&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EMFILE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;24&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x18&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe8&lt;/td&gt;
+      &lt;td&gt;Too many open files&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTTY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;25&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x19&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe7&lt;/td&gt;
+      &lt;td&gt;Not a typewriter&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ETXTBSY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;26&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe6&lt;/td&gt;
+      &lt;td&gt;Text file busy&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EFBIG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;27&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe5&lt;/td&gt;
+      &lt;td&gt;File too large&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOSPC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;28&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe4&lt;/td&gt;
+      &lt;td&gt;No space left on device&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESPIPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;29&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe3&lt;/td&gt;
+      &lt;td&gt;Illegal seek&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EROFS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;30&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe2&lt;/td&gt;
+      &lt;td&gt;Read-only file system&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EMLINK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;31&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x1f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe1&lt;/td&gt;
+      &lt;td&gt;Too many links&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPIPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;32&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffe0&lt;/td&gt;
+      &lt;td&gt;Broken pipe&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDOM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;33&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x21&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffdf&lt;/td&gt;
+      &lt;td&gt;Math argument out of domain of func&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERANGE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;34&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x22&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffde&lt;/td&gt;
+      &lt;td&gt;Math result not representable&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDEADLK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;35&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x23&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffdd&lt;/td&gt;
+      &lt;td&gt;Resource deadlock would occur&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENAMETOOLONG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;36&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x24&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffdc&lt;/td&gt;
+      &lt;td&gt;File name too long&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOLCK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;37&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x25&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffdb&lt;/td&gt;
+      &lt;td&gt;No record locks available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOSYS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;38&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x26&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffda&lt;/td&gt;
+      &lt;td&gt;Function not implemented&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTEMPTY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;39&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x27&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd9&lt;/td&gt;
+      &lt;td&gt;Directory not empty&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELOOP&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;40&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x28&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd8&lt;/td&gt;
+      &lt;td&gt;Too many symbolic links encountered&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EWOULDBLOCK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;EAGAIN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt; &lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOMSG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;42&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd6&lt;/td&gt;
+      &lt;td&gt;No message of desired type&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EIDRM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;43&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd5&lt;/td&gt;
+      &lt;td&gt;Identifier removed&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECHRNG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;44&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd4&lt;/td&gt;
+      &lt;td&gt;Channel number out of range&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EL2NSYNC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;45&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd3&lt;/td&gt;
+      &lt;td&gt;Level 2 not synchronized&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EL3HLT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;46&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd2&lt;/td&gt;
+      &lt;td&gt;Level 3 halted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EL3RST&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;47&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x2f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd1&lt;/td&gt;
+      &lt;td&gt;Level 3 reset&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELNRNG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;48&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x30&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffd0&lt;/td&gt;
+      &lt;td&gt;Link number out of range&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EUNATCH&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;49&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x31&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffcf&lt;/td&gt;
+      &lt;td&gt;Protocol driver not attached&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOCSI&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;50&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x32&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffce&lt;/td&gt;
+      &lt;td&gt;No CSI structure available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EL2HLT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;51&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x33&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffcd&lt;/td&gt;
+      &lt;td&gt;Level 2 halted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;52&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x34&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffcc&lt;/td&gt;
+      &lt;td&gt;Invalid exchange&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;53&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x35&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffcb&lt;/td&gt;
+      &lt;td&gt;Invalid request descriptor&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EXFULL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;54&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x36&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffca&lt;/td&gt;
+      &lt;td&gt;Exchange full&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOANO&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;55&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x37&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc9&lt;/td&gt;
+      &lt;td&gt;No anode&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADRQC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;56&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x38&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc8&lt;/td&gt;
+      &lt;td&gt;Invalid request code&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADSLT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;57&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x39&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc7&lt;/td&gt;
+      &lt;td&gt;Invalid slot&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDEADLOCK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;EDEADLK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt; &lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBFONT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;59&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x3b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc5&lt;/td&gt;
+      &lt;td&gt;Bad font file format&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOSTR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;60&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x3c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc4&lt;/td&gt;
+      &lt;td&gt;Device not a stream&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENODATA&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;61&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x3d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc3&lt;/td&gt;
+      &lt;td&gt;No data available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ETIME&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;62&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x3e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc2&lt;/td&gt;
+      &lt;td&gt;Timer expired&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOSR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;63&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x3f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc1&lt;/td&gt;
+      &lt;td&gt;Out of streams resources&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENONET&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;64&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x40&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffc0&lt;/td&gt;
+      &lt;td&gt;Machine is not on the network&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOPKG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;65&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x41&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffbf&lt;/td&gt;
+      &lt;td&gt;Package not installed&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EREMOTE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;66&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x42&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffbe&lt;/td&gt;
+      &lt;td&gt;Object is remote&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOLINK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;67&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x43&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffbd&lt;/td&gt;
+      &lt;td&gt;Link has been severed&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EADV&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;68&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x44&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffbc&lt;/td&gt;
+      &lt;td&gt;Advertise error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESRMNT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;69&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x45&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffbb&lt;/td&gt;
+      &lt;td&gt;Srmount error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECOMM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;70&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x46&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffba&lt;/td&gt;
+      &lt;td&gt;Communication error on send&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPROTO&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;71&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x47&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb9&lt;/td&gt;
+      &lt;td&gt;Protocol error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EMULTIHOP&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;72&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x48&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb8&lt;/td&gt;
+      &lt;td&gt;Multihop attempted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDOTDOT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;73&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x49&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb7&lt;/td&gt;
+      &lt;td&gt;RFS specific error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADMSG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;74&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb6&lt;/td&gt;
+      &lt;td&gt;Not a data message&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EOVERFLOW&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;75&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb5&lt;/td&gt;
+      &lt;td&gt;Value too large for defined data type&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTUNIQ&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;76&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb4&lt;/td&gt;
+      &lt;td&gt;Name not unique on network&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADFD&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;77&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb3&lt;/td&gt;
+      &lt;td&gt;File descriptor in bad state&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EREMCHG&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;78&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb2&lt;/td&gt;
+      &lt;td&gt;Remote address changed&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELIBACC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;79&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x4f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb1&lt;/td&gt;
+      &lt;td&gt;Can not access a needed shared library&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELIBBAD&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;80&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x50&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffb0&lt;/td&gt;
+      &lt;td&gt;Accessing a corrupted shared library&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELIBSCN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;81&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x51&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffaf&lt;/td&gt;
+      &lt;td&gt;.lib section in a.out corrupted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELIBMAX&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;82&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x52&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffae&lt;/td&gt;
+      &lt;td&gt;Attempting to link in too many shared libraries&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ELIBEXEC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;83&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x53&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffad&lt;/td&gt;
+      &lt;td&gt;Cannot exec a shared library directly&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EILSEQ&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;84&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x54&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffac&lt;/td&gt;
+      &lt;td&gt;Illegal byte sequence&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERESTART&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;85&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x55&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffab&lt;/td&gt;
+      &lt;td&gt;Interrupted system call should be restarted&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESTRPIPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;86&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x56&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffaa&lt;/td&gt;
+      &lt;td&gt;Streams pipe error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EUSERS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;87&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x57&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa9&lt;/td&gt;
+      &lt;td&gt;Too many users&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTSOCK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;88&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x58&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa8&lt;/td&gt;
+      &lt;td&gt;Socket operation on non-socket&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDESTADDRREQ&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;89&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x59&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa7&lt;/td&gt;
+      &lt;td&gt;Destination address required&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EMSGSIZE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;90&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa6&lt;/td&gt;
+      &lt;td&gt;Message too long&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPROTOTYPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;91&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa5&lt;/td&gt;
+      &lt;td&gt;Protocol wrong type for socket&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOPROTOOPT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;92&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa4&lt;/td&gt;
+      &lt;td&gt;Protocol not available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPROTONOSUPPORT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;93&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa3&lt;/td&gt;
+      &lt;td&gt;Protocol not supported&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESOCKTNOSUPPORT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;94&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa2&lt;/td&gt;
+      &lt;td&gt;Socket type not supported&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EOPNOTSUPP&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;95&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x5f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa1&lt;/td&gt;
+      &lt;td&gt;Operation not supported on transport endpoint&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EPFNOSUPPORT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;96&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x60&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ffa0&lt;/td&gt;
+      &lt;td&gt;Protocol family not supported&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EAFNOSUPPORT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;97&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x61&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9f&lt;/td&gt;
+      &lt;td&gt;Address family not supported by protocol&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EADDRINUSE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;98&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x62&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9e&lt;/td&gt;
+      &lt;td&gt;Address already in use&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EADDRNOTAVAIL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;99&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x63&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9d&lt;/td&gt;
+      &lt;td&gt;Cannot assign requested address&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENETDOWN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;100&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x64&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9c&lt;/td&gt;
+      &lt;td&gt;Network is down&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENETUNREACH&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;101&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x65&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9b&lt;/td&gt;
+      &lt;td&gt;Network is unreachable&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENETRESET&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;102&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x66&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff9a&lt;/td&gt;
+      &lt;td&gt;Network dropped connection because of reset&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECONNABORTED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;103&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x67&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff99&lt;/td&gt;
+      &lt;td&gt;Software caused connection abort&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECONNRESET&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;104&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x68&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff98&lt;/td&gt;
+      &lt;td&gt;Connection reset by peer&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOBUFS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;105&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x69&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff97&lt;/td&gt;
+      &lt;td&gt;No buffer space available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EISCONN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;106&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff96&lt;/td&gt;
+      &lt;td&gt;Transport endpoint is already connected&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTCONN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;107&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff95&lt;/td&gt;
+      &lt;td&gt;Transport endpoint is not connected&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESHUTDOWN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;108&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff94&lt;/td&gt;
+      &lt;td&gt;Cannot send after transport endpoint shutdown&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ETOOMANYREFS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;109&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff93&lt;/td&gt;
+      &lt;td&gt;Too many references: cannot splice&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ETIMEDOUT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;110&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff92&lt;/td&gt;
+      &lt;td&gt;Connection timed out&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECONNREFUSED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;111&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x6f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff91&lt;/td&gt;
+      &lt;td&gt;Connection refused&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EHOSTDOWN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;112&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x70&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff90&lt;/td&gt;
+      &lt;td&gt;Host is down&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EHOSTUNREACH&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;113&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x71&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8f&lt;/td&gt;
+      &lt;td&gt;No route to host&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EALREADY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;114&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x72&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8e&lt;/td&gt;
+      &lt;td&gt;Operation already in progress&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EINPROGRESS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;115&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x73&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8d&lt;/td&gt;
+      &lt;td&gt;Operation now in progress&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESTALE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;116&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x74&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8c&lt;/td&gt;
+      &lt;td&gt;Stale NFS file handle&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EUCLEAN&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;117&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x75&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8b&lt;/td&gt;
+      &lt;td&gt;Structure needs cleaning&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTNAM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;118&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x76&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff8a&lt;/td&gt;
+      &lt;td&gt;Not a XENIX named type file&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENAVAIL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;119&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x77&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff89&lt;/td&gt;
+      &lt;td&gt;No XENIX semaphores available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EISNAM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;120&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x78&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff88&lt;/td&gt;
+      &lt;td&gt;Is a named type file&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EREMOTEIO&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;121&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x79&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff87&lt;/td&gt;
+      &lt;td&gt;Remote I/O error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EDQUOT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;122&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff86&lt;/td&gt;
+      &lt;td&gt;Quota exceeded&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOMEDIUM&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;123&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff85&lt;/td&gt;
+      &lt;td&gt;No medium found&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EMEDIUMTYPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;124&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff84&lt;/td&gt;
+      &lt;td&gt;Wrong medium type&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ECANCELED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;125&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff83&lt;/td&gt;
+      &lt;td&gt;Operation Canceled&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOKEY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;126&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff82&lt;/td&gt;
+      &lt;td&gt;Required key not available&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EKEYEXPIRED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;127&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x7f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff81&lt;/td&gt;
+      &lt;td&gt;Key has expired&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EKEYREVOKED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;128&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x80&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff80&lt;/td&gt;
+      &lt;td&gt;Key has been revoked&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EKEYREJECTED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;129&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x81&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff7f&lt;/td&gt;
+      &lt;td&gt;Key was rejected by service&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EOWNERDEAD&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;130&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x82&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff7e&lt;/td&gt;
+      &lt;td&gt;Owner died&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTRECOVERABLE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;131&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x83&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff7d&lt;/td&gt;
+      &lt;td&gt;State not recoverable&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERFKILL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;132&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x84&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff7c&lt;/td&gt;
+      &lt;td&gt;Operation not possible due to RF-kill&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EHWPOISON&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;133&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x85&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff7b&lt;/td&gt;
+      &lt;td&gt;Memory page has hardware error&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERESTARTSYS&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;512&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x200&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff200&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERESTARTNOINTR&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;513&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x201&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1ff&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERESTARTNOHAND&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;514&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x202&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1fe&lt;/td&gt;
+      &lt;td&gt;restart if no handler..&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOIOCTLCMD&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;515&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x203&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1fd&lt;/td&gt;
+      &lt;td&gt;No ioctl command&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ERESTART_RESTARTBLOCK&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;516&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x204&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1fc&lt;/td&gt;
+      &lt;td&gt;restart by calling sys_restart_syscall&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADHANDLE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;521&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x209&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f7&lt;/td&gt;
+      &lt;td&gt;Illegal NFS file handle&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTSYNC&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;522&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20a&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f6&lt;/td&gt;
+      &lt;td&gt;Update synchronization mismatch&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADCOOKIE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;523&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20b&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f5&lt;/td&gt;
+      &lt;td&gt;Cookie is stale&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ENOTSUPP&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;524&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20c&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f4&lt;/td&gt;
+      &lt;td&gt;Operation is not supported&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ETOOSMALL&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;525&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20d&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f3&lt;/td&gt;
+      &lt;td&gt;Buffer or request is too small&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESERVERFAULT&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;526&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20e&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f2&lt;/td&gt;
+      &lt;td&gt;An untranslatable error occurred&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EBADTYPE&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;527&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x20f&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f1&lt;/td&gt;
+      &lt;td&gt;Type not supported by server&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EJUKEBOX&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;528&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x210&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1f0&lt;/td&gt;
+      &lt;td&gt;Request initiated, but will not complete before timeout&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EIOCBQUEUED&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;529&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x211&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1ef&lt;/td&gt;
+      &lt;td&gt;iocb queued, will get completion event&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;EIOCBRETRY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;530&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x212&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0x..ff1ee&lt;/td&gt;
+      &lt;td&gt;iocb queued, will trigger a retry&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+				<pubDate>Thu, 23 Nov 2017 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/errno.h/</link>
+				<guid isPermaLink="true">https://kdave.github.io/errno.h/</guid>
+			</item>
+		
+			<item>
+				<title>gitstats: btrfs-progs for v4.14</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;&lt;a href=&quot;gitstats-index.html&quot;&gt;gitstats&lt;/a&gt;&lt;/p&gt;
+</description>
+				<pubDate>Wed, 06 Dec 2017 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/gitstats-btrfs-progs-v4.14/</link>
+				<guid isPermaLink="true">https://kdave.github.io/gitstats-btrfs-progs-v4.14/</guid>
+			</item>
+		
+			<item>
+				<title>qemu 2.12 does not support if=scsi</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;After update of qemu to version 2.12, my testing vms stopped to just warn
+about the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; (with a bit more cryptic message), and did not want to
+start.&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qemu-system-x86_64: &lt;span class=&quot;nt&quot;&gt;-drive&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;root,if&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;scsi,media&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;disk,cache&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;none,index&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0,format&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;raw: machine &lt;span class=&quot;nb&quot;&gt;type &lt;/span&gt;does not support &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;scsi,bus&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0,unit&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; shortcut was handy, the maze of qemu command line options may
+take some time to comprehend but then you can do wonders.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href=&quot;https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features&quot;&gt;release notes of version 2.12&lt;/a&gt; do
+mention that the support is gone and that other options should be used instead,
+also mentions which ones. But it does not tell how exactly. As this should be a
+simple syntax transformation from one option to another, an example would save
+a lot of time.&lt;/p&gt;
+
+&lt;p&gt;I was not able to find any ready-to-use example in a few minutes so had to
+experiment a bit (this saved me documentation reading time).&lt;/p&gt;
+
+&lt;p&gt;The setup I use is a file-backed root image for a virtual machine, nothing
+really fancy. The file name is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;root&lt;/code&gt;, sparse file, raw ie. no qcow2, no
+caching.&lt;/p&gt;
+
+&lt;p&gt;Here you are:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-device virtio-scsi-pci,id=scsi
+-drive file=root,id=root-img,if=none,format=raw,cache=none
+-device scsi-hd,drive=root-img
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;First you need to define the bus, otherwise the 3rd line will complain that
+there’s no SCSI. Second line is to define the file backed drive and the third
+one puts that together.&lt;/p&gt;
+
+&lt;p&gt;Using SCSI might not be the best idea for a qemu VM as the emulated driver is
+buggy and crashes, so I’d recommend to use virtio, but for a almost read-only
+root image it’s fine. Also the device names are predictable.&lt;/p&gt;
+</description>
+				<pubDate>Fri, 08 Jun 2018 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/qemu-2.11-if=scsi/</link>
+				<guid isPermaLink="true">https://kdave.github.io/qemu-2.11-if=scsi/</guid>
+			</item>
+		
+			<item>
+				<title>Some btrfs benchmarks of changes pending for 4.20</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;Update: enhance the text, still a bit raw, check the numbers&lt;/p&gt;
+
+&lt;p&gt;Example of benchmarks of patches going to 4.20 kernel. The goal was to identify
+potential differences between the devleopment branch with and without merge
+to the mainline. The factors affecting the difference are usually in other
+subsystems like block layer (IO queuing) or memory management (namely page
+cache, memory allocator, writeback), core (scheduling, locking primitives).&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;base/misc1: v4.19-rc8&lt;/li&gt;
+  &lt;li&gt;misc2: v4.19-rc8 + btrfs pull request&lt;/li&gt;
+  &lt;li&gt;misc3: v4.19 with btrfs changes merged&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The numbers are reflected in the results below, referring to comparisons of
+the branches. 1-to-2 is the net effect of the patches, 1-to-3 is the same
+patches after merge.&lt;/p&gt;
+
+&lt;p&gt;The testsuite used is &lt;a href=&quot;https://github.com/mgorman/mmtests&quot;&gt;MMTests&lt;/a&gt;, that’s
+internally used for performance evaluation and provides wide range of workloads&lt;/p&gt;
+
+&lt;p&gt;The expected performance delta should be roughly the same for 2 and 3, the
+tables show if the delta is significant (green: positive, red: negative), so it
+can be easily observed. Note that the values need to be properly interpreted in
+the context of the benchmark and perhaps other values.&lt;/p&gt;
+
+&lt;h2 id=&quot;mmtests-results&quot;&gt;MMTests results&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;blogbench/results-12&quot;&gt;blogbench 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;blogbench/results&quot;&gt;blogbench 1, 2, 3&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;dbench4-async/results-12&quot;&gt;dbench4-async 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;dbench4-async/results&quot;&gt;dbench4-async 1, 2, 3&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;good: slight improvement in 128 thread latency&lt;/li&gt;
+      &lt;li&gt;good: decreased system cpu time&lt;/li&gt;
+      &lt;li&gt;bad: longer overall runtime&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;dbench4-fsync/results-12&quot;&gt;dbench4-fsync 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;dbench4-fsync/results&quot;&gt;dbench4-fsync 1, 2, 3&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;good: slight improvement in 128 thread latency&lt;/li&gt;
+      &lt;li&gt;good: decreased system cpu time&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;filebench-webproxy/results-12&quot;&gt;filebench-webproxy 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;filebench-webproxy/results&quot;&gt;filebench-webproxy 1, 2, 3&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fio-async-randrw/results-12&quot;&gt;fio-async-randrw 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fio-async-randrw/results&quot;&gt;fio-async-randrw 1, 2, 3&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fio-async-seqw/results-12&quot;&gt;fio-async-seqw 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fio-async-seqw/results&quot;&gt;fio-async-seqw 1, 2, 3&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fsmark-metadata/results-12&quot;&gt;fsmark-metadata 1, 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;fsmark-metadata/results&quot;&gt;fsmark-metadata 1, 2, 3&lt;/a&gt;
+    &lt;ul&gt;
+      &lt;li&gt;good: overall improvements in transaction counts for 3&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The raw stats are available.&lt;/p&gt;
+
+&lt;h2 id=&quot;test-setup&quot;&gt;Test setup&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;HP ProLiant DL380 G6&lt;/li&gt;
+  &lt;li&gt;16 CPUs (Intel(R) Xeon(R), E5520 2.27GHz)&lt;/li&gt;
+  &lt;li&gt;16 GiB RAM&lt;/li&gt;
+  &lt;li&gt;4x SAS 136 GiB disks, partitioned&lt;/li&gt;
+  &lt;li&gt;filesystem:
+    &lt;ul&gt;
+      &lt;li&gt;btrfs&lt;/li&gt;
+      &lt;li&gt;mkfs: data: raid0, metadata: raid1&lt;/li&gt;
+      &lt;li&gt;mount: noatime&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+</description>
+				<pubDate>Thu, 18 Oct 2018 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/bench-4.20/</link>
+				<guid isPermaLink="true">https://kdave.github.io/bench-4.20/</guid>
+			</item>
+		
+			<item>
+				<title>Linux crypto: testing blake2s</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;The BLAKE2 algorithm is out for some time, yet there’s no port to linux crypto
+API. The recent push of WireGuard would add it to linux kernel, but using a
+different API (zinc) than the existing one. I haven’t explored zinc, I assume
+there will be a way to use it from inside kernel, but this would need another
+layer to switch the APIs according to the algorithm.&lt;/p&gt;
+
+&lt;p&gt;As btrfs is going to use more hashing algos, we are in the process of
+selection.  One of the contenders is BLAKE2, though everybody would have a
+different suggestion.  In order to test it, a port is needed. Which basically is
+a glue code between the linux crypto API and the BLAKE2 implementation.&lt;/p&gt;
+
+&lt;p&gt;I’m not going to reimplement crypto or anything, so the the default
+implementation is going to be the reference one found in blake2 git.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Note: due to the maximum space of 32 bytes available in the btrfs metadata
+blocks, the version is BLAKE2s.&lt;/em&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;the-blake2s-sources&quot;&gt;The BLAKE2s sources&lt;/h2&gt;
+
+&lt;p&gt;From the repository &lt;a href=&quot;https://github.com/BLAKE2/BLAKE2&quot;&gt;https://github.com/BLAKE2/BLAKE2&lt;/a&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ref/blake2s-ref.c&lt;/li&gt;
+  &lt;li&gt;ref/blake2.h&lt;/li&gt;
+  &lt;li&gt;ref/blake2-impl.h&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Briefly skimming over the sources, there’s nothing that’ll cause trouble.
+Standard C code, some definitions. Adapting for linux kernel would need to
+replace the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;stdint.h&lt;/code&gt; types (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;uint8_t&lt;/code&gt; etc) with the uXX (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;u8&lt;/code&gt; etc) and change
+path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.&lt;/p&gt;
+
+&lt;h2 id=&quot;add-the-new-algorithm-definition-cra&quot;&gt;Add the new algorithm definition (CRA)&lt;/h2&gt;
+
+&lt;p&gt;Though it’s possible to prepare a module for an out-of-tree build (see below),
+let’s do it inside the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;linux.git/crypto/&lt;/code&gt; path for now. There’s also plenty of
+sources to copy &amp;amp; paste. I’ve used &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;crc32c_generic.c&lt;/code&gt;, and it turned out to be
+useful.&lt;/p&gt;
+
+&lt;p&gt;The crypto hash description is defined in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;struct shash_alg&lt;/code&gt;, contains the
+technical description like type of the algorithm, length of the context and
+callbacks for various phases of the hash calculation (init, update, final), and
+identification of the algorithm and the implementation. The default
+implementations are C and use the string “-generic” in the name.&lt;/p&gt;
+
+&lt;p&gt;The crc32c module came with a few stub callbacks (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;checksum_init&lt;/code&gt; etc), that
+will only call into the blake2 functions and the definition can stay. Simple
+search and replace from crc32c to blake2s will do most of the conversion.&lt;/p&gt;
+
+&lt;h2 id=&quot;add-the-glue-code-for-crypto-api&quot;&gt;Add the glue code for crypto API&lt;/h2&gt;
+
+&lt;p&gt;Now we have the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;blake2s.c&lt;/code&gt; with the reference implementation, crypto algorithm
+definition. The glue code connects the API with the implementation. We need 2
+helper structures that hold the context once the user starts digest calculation.
+The private blake2s context is embedded into one of them.  The intermediate
+results will be stored there.&lt;/p&gt;
+
+&lt;p&gt;And the rest is quite easy, each callback will call into the respective blake2s
+function, passing the context, data and lengths. One thing that I copied from
+the examples is the key initialization that’s in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;blake2s_cra_init&lt;/code&gt;, that
+appears to be global and copied to the context each time a new one is
+initialized.&lt;/p&gt;
+
+&lt;p&gt;Here the choice of using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;crc32c.c&lt;/code&gt; helped as there were the stub callback with
+the right parameters, calling the blake2s functions that can retain their
+original signature. This makes later updates easier.  All the functions are
+static so the compiler will most probably optimize the code that there will be
+no unnecessary overhead.&lt;/p&gt;
+
+&lt;p&gt;Well and that’s it. Let’s try to compile it and insert the module:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ make crypto/blake2s.o
+...
+  CC [M]  crypto/blake2s.o
+linux.git$ make crypto/blake2s.ko
+...
+  CC      crypto/blake2s.mod.o
+  LD [M]  crypto/blake2s.ko
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Check that it’s been properly loaded&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git/crypto$ sudo insmod ./blake2s.ko
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;and registered&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ cat /proc/crypto
+name         : blake2s
+driver       : blake2s-generic
+module       : blake2s
+priority     : 100
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : shash
+blocksize    : 1
+digestsize   : 32
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The selftest says it passed, but there no such thing so far. There are test
+values provided in blake2 git so it would be nice to have too (tm). But
+otherwise it looks good.&lt;/p&gt;
+
+&lt;p&gt;To do actual test, we’d need something inside kernel to utilize the new hash.
+One option is to implement a module that will do that or use the userspace
+library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; that can forward the requests from userspace to the
+available kernel implementations.&lt;/p&gt;
+
+&lt;h2 id=&quot;test-it-with-libkcapi&quot;&gt;Test it with libkcapi&lt;/h2&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; project at
+&lt;a href=&quot;http://www.chronox.de/libkcapi.html&quot;&gt;http://www.chronox.de/libkcapi.html&lt;/a&gt;
+provides an API that uses the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AF_ALG&lt;/code&gt; socket type to exchange data with
+kernel. The library provides a command line tool that we can use right away and
+don’t need to code anything.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ kcapi-dgst -c blake2s --hex &amp;lt; /dev/null
+48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The test vectors provided by blake2 confirm that this is hash of empty string
+with the default key (0x000102..1f).&lt;/p&gt;
+
+&lt;h2 id=&quot;out-of-tree-build&quot;&gt;Out-of-tree build&lt;/h2&gt;
+
+&lt;p&gt;Sources in the linux.git require one additional line to Makefile, build it
+unconditionally as a module. Proper submission to linux kernel would need the
+Kconfig option.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;obj-m += blake2s.o
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The standalone build needs a Makefile with a few targets that use the existing
+build of kernel. Note that you’d need a running kernel with the same built
+sources. This is usually provided by the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kernel-*-devel&lt;/code&gt; packages. Otherwise,
+if you build kernels from git, you know what to do, right?&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;KDIR ?= /lib/modules/`uname -r`/build
+obj-m := blake2s.o
+
+default:
+        $(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+        $(MAKE) -C $(KDIR) M=$$PWD clean
+
+modules_install:
+        $(MAKE) -C $(KDIR) M=$$PWD modules_install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;After running &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;make&lt;/code&gt;, the kernel module is ready for use.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-next&quot;&gt;What next?&lt;/h2&gt;
+
+&lt;p&gt;Send it upstream. Well, after some work of course.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;update the coding style of the blake2 sources&lt;/li&gt;
+  &lt;li&gt;add Kconfig&lt;/li&gt;
+  &lt;li&gt;write self-tests&lt;/li&gt;
+  &lt;li&gt;optionally add the optimized implementations&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All the files can be found here:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;Makefile&quot;&gt;Makefile&lt;/a&gt;: out-of-tree build&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;blake2.h&quot;&gt;blake2.h&lt;/a&gt;: copied and updated for linux&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;blake2.h&quot;&gt;blake2-impl.h&lt;/a&gt;: copied and updated for linux&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;blake2.h&quot;&gt;blake2s.c&lt;/a&gt;: copied and updated for linux&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blake2.net&quot;&gt;https://blake2.net&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/BLAKE2/BLAKE2&quot;&gt;https://github.com/BLAKE2/BLAKE2&lt;/a&gt;:&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.chronox.de/libkcapi.html&quot;&gt;http://www.chronox.de/libkcapi.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.kernel.org/doc/html/latest/crypto/userspace-if.html&quot;&gt;https://www.kernel.org/doc/html/latest/crypto/userspace-if.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.kernel.org/doc/html/latest/crypto/intro.html&quot;&gt;https://www.kernel.org/doc/html/latest/crypto/intro.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+				<pubDate>Sat, 27 Apr 2019 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/linux-crypto-blake2s/</link>
+				<guid isPermaLink="true">https://kdave.github.io/linux-crypto-blake2s/</guid>
+			</item>
+		
+			<item>
+				<title>Here, have a pyramid made of BLAKE2 hashes</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;Fun stuff only …&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Hash some bytes with changing digest length from 1 to 64.&lt;/em&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[ 1]                                                                 3b
+[ 2]                                                                cf5b
+[ 3]                                                               68a2fa
+[ 4]                                                              ac6de759
+[ 5]                                                             022847e13c
+[ 6]                                                            fd2965be0997
+[ 7]                                                           d4c93ad6ffbcbb
+[ 8]                                                          87c1dcb224fd2a57
+[ 9]                                                         6017c4f8c4bcb1d115
+[10]                                                        9b3f7b15df8867b8214c
+[11]                                                       8087b2861bbdf3d0356ea6
+[12]                                                      7a035413d62f0774148a12cc
+[13]                                                     697cabcfcade7114a271373039
+[14]                                                    784e3578c7b5a031237296225e26
+[15]                                                   0102e6aa5ff6bf57071b34f838d3d4
+[16]                                                  324f54d0e8f39326145e8e04b00434b4
+[17]                                                 45fbfb40756a53305881dc52d7aa6a9025
+[18]                                                c1a664957cbc0bbd0e2eb15be3a8e0f10b46
+[19]                                               58c84031abff74bba0cab2a3ce8160c955fb92
+[20]                                              bad65265d1351746c3fc23816dca6966b42d2e90
+[21]                                             c9ed77f178c889cc985aaad89d740831922d7d6253
+[22]                                            751673d5516709339176859392a61e45b444a3a4612c
+[23]                                           e62b1a6a239571d2a7ebf686f3f1f628f7253fa595debf
+[24]                                          3afb48409fa94374bd1819bef5d40f8e90386686ec7212db
+[25]                                         139fb5a766ab873fc1747e76253ebddec0da85388261ddcd0c
+[26]                                        90b849e8d333229c8942f68faac2870530886c30edf4fe295281
+[27]                                       cfefa0767fdd316475e4374dc3b9e1eabdebb0111c88ccdaf6b668
+[28]                                      6928e0b74efa9534c84483975ab83b65191d59d69c76880eac794afc
+[29]                                     5d825aaaaabff533c36308227ed42982837bf7fa85d5f4457f6d7ebdfe
+[30]                                    a14f3dafe99f88dbb119f23cd2d390b3396f2c1c90fc8099514abb95872a
+[31]                                   6a62d371a4b6583df5cc9f125e01536338a8e87fd17b1e24468778e00205bc
+[32]                                  99b4a09edc99a1a2283f94189d8604ca65aab7aeebc31327b8c4a918341f92b0
+[33]                                 1b0728d4ae415dc572ebb7caf18f7b43115ca6b53f6379a6571b4949d2049e6b7f
+[34]                                04c6817ba561b6e6aefb2237682aa4171314fc2a7bfa15f604227e239e8a08696153
+[35]                               102d84c3e030bd1d413f12128c34caef64c06c364eb13c4eb49549ab278efcd5d0dac1
+[36]                              fa4edc42c4fcd5754de080616d09412c3f7baba4a972954e449bfa65fc040ae5556bc63c
+[37]                             0728fcf98a665b6a8c9a63ae31c87538d68bca8dc2e2a6b66dba3c1f4a8c5965bb4045a1e2
+[38]                            3fd0e5397a0d98eaf56a941e5b7ba7b8aa4b8dbe2a22993809cbb9a4b68834de1341c1412e2f
+[39]                           16eee95d5dc56762bc42f59aac2fc0bee5ba3a5fa7d6b2c1acc13af519a1a13cc793d2482685b9
+[40]                          74843823a200d423fbead5d40d83dea26638ecf79a768f819b44174a2ce0b51702944ff967597b9f
+[41]                         53134460150687f2b993259a048a9b59de7d8c091ffc635b792b33ae9c7970ef6dc47fe6308e47da21
+[42]                        174cbb459228b1b5fe302d36dfd69d0c75b8d77398e6eb8440e9449db38ce7387d12095f23531eb5a2bd
+[43]                       f550a1d564f073486095bf473a20d135fcba595fd574c124e6a8f3f1451a4cd649b3d3c6c22fd3961dff9e
+[44]                      9e25048892b6d367d0e85a75d1f49c6950a9ae3ca02b03165b1308f0aadac093032fbb13556cb9bb85872def
+[45]                     d43eb7fa68c34906813c360cd5c50e8d5f62c0de941f1e9520d405104144c30c1eb43c95bad4b850b3dc308141
+[46]                    b9e4bc8364d69248c68dfe17a66131de04e6be949663c936fdbe5fec3efb73d4e40c22ad298d8be849de58b0a3a8
+[47]                   f81017569d44554c934f6d89723e8997e115def6d66c76ee3c05a7e7626f487cab5659b4e3a7f32c9859dd04c579eb
+[48]                  f2a987f00b96fafd25f2d8a19717913674961f234d0f81da5dbb549382ce2f25a5a95c4be917b97341d7c8b8a05aa2d1
+[49]                 03602f74fadc251d46a064dcc55a812c37c98960a984782c533bce1db92c514521996c58ff293a3957fd686cd814cbc18e
+[50]                bf939f9418697008f5a1c67e16e7f01bf596a7be648069c5bb322ba7207b6af5947912a40773f3c8f48bef03cda925c79eb8
+[51]               77cb53241baa7dfd4b73b786b29543ad4f9da15c33d21b7acf0d04bd78c437018f7358357879f06e8fa59832028a851c126fbf
+[52]              404a9cdd87d1ff194c45c9dd1995889b5492b22d446f87f8efe0148793bee21a756cfe6ac18f438f2535b35e909678e1f4ddfd92
+[53]             38b399db58e9a1d4b3d78e3756b55a7d8bc3fce565a6cd68f66632cb3e201720384487bc314fc960cc7ece0915ab06ab655cb21f95
+[54]            341c51088313284bb6efb2ce87116fa0ad86c540b4761ad1a91db8a54faf0ac16ae44de62e02d87d88124cdf7820f939657f30d43401
+[55]           4d217c7ba91da2c4503357904f2264117a445fde54a7f25cf85c0b9d4528e1a8ca682ea59586d63755c2dac848716d19afa00f9c2a70e5
+[56]          05664a51270f7a9dc309a1e78bddd3ed6a210aecf31f42be0a4231280a9e15ca1af3ec0456760fc2a6b76039a7f041a7623470bd912afc7d
+[57]         434c8e7d8357e840f8522c582385fcba6650b7e923a821a185ae4e036de7ed6b931b908ef4bc3838de6864decdff762ac123f6f66a14a2fded
+[58]        87fc3385049632e310553cda08b22810b0fa59c92f5559b49d2ffd5e5d0734886ccd269e6866d6412bc06489cba014265767edebcd2c18977c42
+[59]       282ca365baaa22317a3c7faadc075e6b132fefee0d98d8823a79ffe87f87f7a38d8fd9e4a7ca10a904fbbcd9952dc12af3e561b884a40b7b2b4288
+[60]      a0f9ca58069fe970f2fd36d6c86b38b14ad41418f870ee695aa52395400552c4f583760e01c68c440c5fa6f9c6db25138d85cd6568f0f9a5698db89a
+[61]     79b0b42401bb022fdfb71fdd2e6ddd2d0dc20cedcdd4b64e7921a03fd2f71508a195e2d8a4ebeb0ea8cdc6942ccd28cca7eda0fa2126fd884a0b279cd4
+[62]    42b704ca2da3386bf00fc511648668af1b9f3bbf69d7972d35dc24365d0b37778fffa624662bd50139430644314367ff855da6bb489227144456007d5f1d
+[63]   504a6a52e16b29a0ebe9106ac74931889243ef98aee97bd598502aac9363d99c7c414d39cb1229a3b49e79351f2c0daa3e9221bc7a135ffc41f79a6e416762
+[64]  0b944b6bdc6c99e10448a536dea6ea79fd1d78e70307bf6e3c4a889f3876e2ec6a002ec9b4198a27e2b2dcdfcef7a4de4da52791248457a50d97307cdb0b6c80
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Sources:
+&lt;a href=&quot;blake2-impl.h&quot;&gt;blake2-impl.h&lt;/a&gt;
+&lt;a href=&quot;test-blake2.h&quot;&gt;test-blake2.h&lt;/a&gt;
+&lt;a href=&quot;test-blake2b.c&quot;&gt;test-blake2b.c&lt;/a&gt;&lt;/p&gt;
+</description>
+				<pubDate>Wed, 12 Jun 2019 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/blake2-pyramid/blake2b-pyramid/</link>
+				<guid isPermaLink="true">https://kdave.github.io/blake2-pyramid/blake2b-pyramid/</guid>
+			</item>
+		
+			<item>
+				<title>Btrfs hilights in 5.2</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;A bit more detailed overview of a btrfs update that I find interesting, see the
+&lt;a href=&quot;https://git.kernel.org/linus/9f2e3a53f7ec9ef55e9d01bc29a6285d291c151e&quot;&gt;pull request&lt;/a&gt;
+for the rest.&lt;/p&gt;
+
+&lt;h2 id=&quot;read-time-write-time-corruption-detection&quot;&gt;Read-time, write-time corruption detection&lt;/h2&gt;
+
+&lt;p&gt;The tree-checker is a recent addition to the sanity checks, a functionality
+that verifies a subset of metadata structures. The capabilities and strength is
+limited by the context and bits of information available at some point, but
+still there’s enough to get an additional value.&lt;/p&gt;
+
+&lt;p&gt;The context here means a b-tree leaf that packs several items into a block (ie.
+the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nodesize&lt;/code&gt;, 16KiB by default). The individual items’ members’ values can be
+verified against allowed values, the order of the keys of all items listed in
+the leaf header can be checked etc. This is just for a rough idea what happens.&lt;/p&gt;
+
+&lt;p&gt;With that in the works, there are two occasions that can utilize the extended
+checking:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;read-time – the first time a block is read fresh from disk&lt;/li&gt;
+  &lt;li&gt;write-time – when the final contents of a block is in memory and going to be written to disk&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;It’s clear that the read-time is merely a detector of problems that already
+happened, so there’s not much to do besides warning and returning an error
+(EUCLEAN). Turning the filesystem to read-only to prevent further problems is
+another option and inevitable on some occasions.&lt;/p&gt;
+
+&lt;p&gt;The write side check aims to catch silent errors that could make it to the
+permanent storage. The reasons why this happens are two fold, but the main idea
+is to catch memory bit flips. You’d be surprised how often this happens, that
+would be for a separate article entirely.&lt;/p&gt;
+
+&lt;p&gt;The new checks in 5.2 improve:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;device item &lt;em&gt;(item that describes the physical device of the filesystem)&lt;/em&gt; –
+check that items have the right key type, device id is within allowed range
+and that usage and total sizes are within limits of the physical device&lt;/li&gt;
+  &lt;li&gt;inode item &lt;em&gt;(item for inodes, ie. files, directories or special files)&lt;/em&gt;– the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;objectid&lt;/code&gt; (that would be the inode number) is in the range, generation is
+consistent with the global one and the basic sanity of mode, flags/attributes
+and link count&lt;/li&gt;
+  &lt;li&gt;block group profiles – check that only a single type is set in the bit mask
+that represents block group profile type of a chunk (ie.
+single/dup/raid1/…)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;As mentioned before, the bits to check are inside a single buffer that
+represents the tree block and the check is really local to that. As an inode
+item can represent more than just files and directories, doing structural
+checks like where and how the inode item is linked to is not easy in this
+context. This is basically what would &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs check&lt;/code&gt; do.&lt;/p&gt;
+
+&lt;p&gt;The checks need to be fast because they happen on each metadata block, so no
+additional IO is allowed. This still brings some overhead but is (considered)
+negligible compared to all other updates to the block. A measurement can be
+done by adding tracepoint, but that’s left as an exercise.&lt;/p&gt;
+</description>
+				<pubDate>Thu, 25 Jul 2019 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/btrfs-hilights-5.2/</link>
+				<guid isPermaLink="true">https://kdave.github.io/btrfs-hilights-5.2/</guid>
+			</item>
+		
+			<item>
+				<title>Selecting the next checksum for btrfs</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;The currently used and the only one checksum algorithm that’s implemented in
+btrfs is crc32c, with 32bit digest. It has served well for the years but has
+some weaknesses so we’re looking for a replacements and also for enhancing the
+use cases based on possibly better hash algorithms.&lt;/p&gt;
+
+&lt;p&gt;The advantage of crc32c is it’s simplicity of implementation, various optimized
+versions exist and hardware CPU instruction-level support. The error detection
+strength is not great though, the collisions are easy to generate. Note that
+crc32c has not been used in cryptographically sensitive context (eg.
+deduplication).&lt;/p&gt;
+
+&lt;p&gt;Side note: the collision generation weakness is used in the filesystem image
+dump tool to preserve hashes of directory entries while obscuring the real
+names.&lt;/p&gt;
+
+&lt;h2 id=&quot;future-use-cases&quot;&gt;Future use cases&lt;/h2&gt;
+
+&lt;p&gt;The natural use case is still to provide checksumming for data and metadata
+blocks. With strong hashes, the same checksums can be used to aid deduplication
+or verification (HMAC instead of plain hash). Due to different requirements,
+one hash algorithm cannot possibly satisfy all requirements, namely speed vs.
+strength. Or can it?&lt;/p&gt;
+
+&lt;h2 id=&quot;the-criteria&quot;&gt;The criteria&lt;/h2&gt;
+
+&lt;p&gt;The frequency of checksumming is high, every data block needs that, every
+metadata block needs that.&lt;/p&gt;
+
+&lt;p&gt;During the discussions in the community, there were several candidate hash
+algorithms proposed and as it goes users want different things but we
+developers want to keep the number of features sane or at least maintainable. I
+think and hope the solution will address that.&lt;/p&gt;
+
+&lt;p&gt;The first hash type is to replace crc32c with focus on &lt;strong&gt;speed&lt;/strong&gt; and not
+necessarily strength (ie. collision resistance).&lt;/p&gt;
+
+&lt;p&gt;The second type focus is &lt;strong&gt;strength&lt;/strong&gt;, in the cryptographic sense.&lt;/p&gt;
+
+&lt;p&gt;In addition to the technical aspects of the hashes, there are some requirements
+that would allow free distribution and use of the implementations:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;implementation available under a GPL2 compatible license&lt;/li&gt;
+  &lt;li&gt;available in the linux kernel, either as a library function or as a module&lt;/li&gt;
+  &lt;li&gt;license that allows use in external tools like bootloaders (namely grub2)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Constraints posed by btrfs implementation:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;maximum digest width is 32 bytes&lt;/li&gt;
+  &lt;li&gt;blocks of size from 4KiB up to 64KiB&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For the enhanced use case of data verification (using HMAC), there’s a
+requirement that might not interest everybody but still covers a lot of
+deployments. And this is standard compliance and certification:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;standardized by FIPS&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And maybe last but not least, use something that is in wide use already, proven by time.&lt;/p&gt;
+
+&lt;h3 id=&quot;speed&quot;&gt;Speed&lt;/h3&gt;
+
+&lt;p&gt;Implementation of all algorithms should be performant on common hardware, ie.
+64bit architectures and hopefully not terrible on 32bit architectures or older
+and weaker hardware.  By hardware I mean the CPU, not specialized hardware
+cards.&lt;/p&gt;
+
+&lt;p&gt;The crypto API provided by linux kernel can automatically select the best
+implementation of a given algorithm, eg. optimized implementation in assembly
+and on multiple architectures.&lt;/p&gt;
+
+&lt;h3 id=&quot;strength&quot;&gt;Strength&lt;/h3&gt;
+
+&lt;p&gt;For the fast hash the collisions could be generated but hopefully not that
+easily as for crc32c. For strong hash it’s obvious that finding a collision
+would be jackpot.&lt;/p&gt;
+
+&lt;p&gt;In case of the fast hash the quality can be evaluated using the SMHasher suite.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-contenders&quot;&gt;The contenders&lt;/h2&gt;
+
+&lt;p&gt;The following list of hashes has been mentioned and considered or evaluated:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;xxhash&lt;/li&gt;
+  &lt;li&gt;XXH3&lt;/li&gt;
+  &lt;li&gt;SipHash&lt;/li&gt;
+  &lt;li&gt;CRC64&lt;/li&gt;
+  &lt;li&gt;SHA256&lt;/li&gt;
+  &lt;li&gt;SHA3&lt;/li&gt;
+  &lt;li&gt;BLAKE2&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;xxhash&quot;&gt;xxhash&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;criteria&lt;/em&gt;: license OK, implementation OK, digest size OK, not standardized but
+in wide use&lt;/p&gt;
+
+&lt;p&gt;The hash is quite fast as it tries to exploit the CPU features that allow
+instruction parallelism. The SMHasher score is 10, that’s great. The linux kernel
+implementation landed in 5.3.&lt;/p&gt;
+
+&lt;p&gt;Candidate for &lt;em&gt;fast hash&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;xxh3&quot;&gt;XXH3&lt;/h3&gt;
+
+&lt;p&gt;Unfortunately the hash is not yet finalized and cannot be in the final round,
+but for evaluation of speed it was considered. The hash comes from the same
+author as xxhash.&lt;/p&gt;
+
+&lt;h3 id=&quot;siphash&quot;&gt;SipHash&lt;/h3&gt;
+
+&lt;p&gt;This hash is made for hash tables and hashing short strings but we want 4KiB or
+larger blocks. Not a candidate.&lt;/p&gt;
+
+&lt;h3 id=&quot;crc64&quot;&gt;CRC64&lt;/h3&gt;
+
+&lt;p&gt;Similar to crc32 and among the contenders only because it was easy to evaluate
+but otherwise is not in the final round. It has shown to be slow in the
+microbenchmark.&lt;/p&gt;
+
+&lt;h3 id=&quot;sha256&quot;&gt;SHA256&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;criteria&lt;/em&gt;: license OK, implementation OK, digest size OK, standardized in FIPS&lt;/p&gt;
+
+&lt;p&gt;The SHA family of hashes is well known, has decent support in CPU and is
+standardized. Specifically, SHA256 is the strongest that still fits into the
+available 32 bytes.&lt;/p&gt;
+
+&lt;p&gt;Candidate for &lt;em&gt;strong hash&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;sha3&quot;&gt;SHA3&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;criteria&lt;/em&gt;: license OK, implementation OK, digest size OK, standardized in FIPS&lt;/p&gt;
+
+&lt;p&gt;Winner of the 2012 hash contest, we can’t leave it out. From the practical
+perspective of checksum, the speed is bad even for the strong hash type. One of
+the criteria stated above is performance without special hardware, unlike what
+was preferred during the SHA3 contest.&lt;/p&gt;
+
+&lt;p&gt;Candidate for &lt;em&gt;strong hash&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;blake2&quot;&gt;BLAKE2&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;criteria&lt;/em&gt;: license OK, implementation OK, digest size OK, not standardized&lt;/p&gt;
+
+&lt;p&gt;From the family of BLAKE that participated in the 2012 SHA contest, the ‘2’
+provides a trade-off speed vs. strength. More and more projects adopt it.&lt;/p&gt;
+
+&lt;p&gt;Candidate for &lt;em&gt;strong hash&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;final-round&quot;&gt;Final round&lt;/h2&gt;
+
+&lt;p&gt;I don’t blame you if you skipped all the previous paragraphs. The (re)search
+for the next hash was quite informative and fun so it would be shame not to
+share it, also to document the selection process for some transparency. This is
+a committee driven process though.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;fast hash: &lt;strong&gt;xxhash&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;strong hash: &lt;strong&gt;BLAKE2&lt;/strong&gt; and &lt;strong&gt;SHA256&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Two hashes selected for the strong type is a compromise to get a
+fast-but-strong hash yet also something that’s standardized.&lt;/p&gt;
+
+&lt;p&gt;The specific version of BLAKE2 is going to be the ‘BLAKE2b-256’ variant, ie.
+optimized for 64bit (2b) but with 256bit digest.&lt;/p&gt;
+
+&lt;h3 id=&quot;microbenchmark&quot;&gt;Microbenchmark&lt;/h3&gt;
+
+&lt;p&gt;A microbenchmark gives more details about performance of the hashes:&lt;/p&gt;
+
+&lt;p&gt;Block: 4KiB (4096 bytes), 
+Iterations: 100000&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;Hash&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;Total cycles&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;Cycles/iteration&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;NULL-NOP&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;56888626&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;568&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;NULL-MEMCPY&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;60644484&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;606&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;CRC64&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;3240483902&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;32404&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;CRC32C&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;174338871&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;1743&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;CRC32C-SW&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;174388920&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;1743&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;XXHASH&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;251802871&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;2518&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;XXH3&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;193287384&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;1932&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;BLAKE2b-256-arch&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;1798517566&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;17985&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;BLAKE2b-256&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;2358400785&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;23584&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;BLAKE2s-arch&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;2593112451&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;25931&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;BLAKE2s&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;3451879891&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;34518&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;SHA256&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;10674261873&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;106742&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;SHA3-256&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;29152193318&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;291521&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Machine: Intel(R) Xeon(R) CPU E5-1620 v3 @ 3.50GHz (AVX2)&lt;/p&gt;
+
+&lt;p&gt;Hash implementations are the reference ones in C:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;NULL-NOP – stub to measure overhead of the framework&lt;/li&gt;
+  &lt;li&gt;NULL-MEMCPY – simple memcpy of the input buffer&lt;/li&gt;
+  &lt;li&gt;CRC64 – linux kernel lib/crc64.c&lt;/li&gt;
+  &lt;li&gt;CRC32C – hw assisted crc32c, (linux)&lt;/li&gt;
+  &lt;li&gt;CRC32C-SW – software implementation, table-based (linux)&lt;/li&gt;
+  &lt;li&gt;XXHASH – reference implementation&lt;/li&gt;
+  &lt;li&gt;XXH3 – reference implementation&lt;/li&gt;
+  &lt;li&gt;BLAKE2b-256-arch – 64bit optimized reference version (for SSE2/SSSE3/SSE41/AVX/AVX2)&lt;/li&gt;
+  &lt;li&gt;BLAKE2b-256 – 64bit reference implementation&lt;/li&gt;
+  &lt;li&gt;BLAKE2s-arch – 32bit optimized reference version&lt;/li&gt;
+  &lt;li&gt;BLAKE2s – 32bit reference implementation&lt;/li&gt;
+  &lt;li&gt;SHA256 – RFC 6234 reference implementation&lt;/li&gt;
+  &lt;li&gt;SHA3-256 – C, based on canonical implementation&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;There aren’t optimized versions for all hashes so for fair comparison the
+unoptimized reference implementation should be used. As BLAKE2 is my personal
+favourite I added the other variants and optimized versions to observe the
+relative improvements.&lt;/p&gt;
+
+&lt;h3 id=&quot;evaluation&quot;&gt;Evaluation&lt;/h3&gt;
+
+&lt;p&gt;CRC64 was added by mere curiosity how does it compare to the rest. Well,
+curiosity satisfied.&lt;/p&gt;
+
+&lt;p&gt;SHA3 is indeed slow on a CPU.&lt;/p&gt;
+
+&lt;h3 id=&quot;what-isnt-here&quot;&gt;What isn’t here&lt;/h3&gt;
+
+&lt;p&gt;There are non-cryptographic hashes like CityHash, FarmHash, Murmur3 and more,
+that were found unsuitable or not meeting some of the basic criteria.  Others
+like FNV or Fletcher used in ZFS are of comparable strength of crc32c, so that
+won’t be a progress.&lt;/p&gt;
+
+&lt;h2 id=&quot;merging&quot;&gt;Merging&lt;/h2&gt;
+
+&lt;p&gt;All the preparatory work in btrfs landed in version 5.3. Hardcoded assumptions
+of crc32c were abstracted, linux crypto API wired in, with additional cleanups
+or refactoring. With that in place, adding a new has is a matter of a few lines
+of code adding the specifier string for crypto API.&lt;/p&gt;
+
+&lt;p&gt;The work on btrfs-progs is following the same path.&lt;/p&gt;
+
+&lt;p&gt;Right now, the version 5.4 is in development but new features can’t be added,
+so the target for the new hashes is &lt;strong&gt;5.5&lt;/strong&gt;. The BLAKE2 algorithm family still
+needs to be submitted and merged, hopefully they’ll make it to 5.5 as well.&lt;/p&gt;
+
+&lt;p&gt;One of my merge process requirements was to do a call for public testing, so
+we’re going to do that once all the kernel and progs code is ready for testing.
+Stay tuned.&lt;/p&gt;
+</description>
+				<pubDate>Tue, 08 Oct 2019 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/selecting-hash-for-btrfs/</link>
+				<guid isPermaLink="true">https://kdave.github.io/selecting-hash-for-btrfs/</guid>
+			</item>
+		
+			<item>
+				<title>Simple asm diff filter</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;One thing you windows guys have is a decent binary diff. I know there’s radare2
+on linux, but I’m a noob to set it up and I’d be fine with something less
+fancy. Something like 2 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;objdump -dr&lt;/code&gt; files, intelligent filter and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vimdiff&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The tricky part is the intelligent filter. I say &lt;em&gt;intelligent&lt;/em&gt;, but in fact it’s
+a 20 line perl script that basically filters out things that are not important
+or are likely to change in a slightly modified C source.&lt;/p&gt;
+
+&lt;p&gt;The result is lossy, eg. there are no addresses and thus jumps can’t be
+followed, but having that would actually deserve the ‘intelligent’ title.
+My use case is simpler, eg. doing small tweaks like reordering lines, adding
+annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.&lt;/p&gt;
+
+&lt;p&gt;Which takes eg.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;0000000000000000 &amp;lt;btrfs_set_lock_blocking_read&amp;gt;:
+       0:       e8 00 00 00 00          callq  5 &amp;lt;btrfs_set_lock_blocking_read+0x5&amp;gt;
+                        1: R_X86_64_PLT32       __fentry__-0x4
+       5:       55                      push   %rbp
+       6:       53                      push   %rbx
+       7:       48 89 fb                mov    %rdi,%rbx
+       a:       0f 1f 44 00 00          nopl   0x0(%rax,%rax,1)
+       f:       65 8b 05 00 00 00 00    mov    %gs:0x0(%rip),%eax        # 16 &amp;lt;btrfs_set_lock_blocking_read+0x16&amp;gt;
+                        12: R_X86_64_PC32       cpu_number-0x4
+      16:       89 c0                   mov    %eax,%eax
+      18:       48 0f a3 05 00 00 00    bt     %rax,0x0(%rip)        # 20 &amp;lt;btrfs_set_lock_blocking_read+0x20&amp;gt;
+      1f:       00
+                        1c: R_X86_64_PC32       __cpu_online_mask-0x4
+      20:       0f 82 b5 00 00 00       jb     db &amp;lt;btrfs_set_lock_blocking_read+0xdb&amp;gt;
+      26:       0f b6 ab 94 00 00 00    movzbl 0x94(%rbx),%ebp
+      2d:       40 80 fd 01             cmp    $0x1,%bpl
+      31:       0f 87 00 00 00 00       ja     37 &amp;lt;btrfs_set_lock_blocking_read+0x37&amp;gt;
+                        33: R_X86_64_PC32       .text.unlikely+0x11
+      37:       83 e5 01                and    $0x1,%ebp
+      3a:       74 1b                   je     57 &amp;lt;btrfs_set_lock_blocking_read+0x57&amp;gt;
+      3c:       8b 8b 88 00 00 00       mov    0x88(%rbx),%ecx
+      42:       65 48 8b 04 25 00 00    mov    %gs:0x0,%rax
+      49:       00 00
+                        47: R_X86_64_32S        current_task
+      4b:       39 88 c0 04 00 00       cmp    %ecx,0x4c0(%rax)
+      51:       0f 84 bd 00 00 00       je     114 &amp;lt;btrfs_set_lock_blocking_read+0x114&amp;gt;
+      57:       8b 83 18 02 00 00       mov    0x218(%rbx),%eax
+      5d:       85 c0                   test   %eax,%eax
+      5f:       0f 84 b2 00 00 00       je     117 &amp;lt;btrfs_set_lock_blocking_read+0x117&amp;gt;
+      65:       f0 ff 83 90 00 00 00    lock incl 0x90(%rbx)
+      6c:       8b 83 14 02 00 00       mov    0x214(%rbx),%eax
+      72:       85 c0                   test   %eax,%eax
+      74:       0f 84 ab 00 00 00       je     125 &amp;lt;btrfs_set_lock_blocking_read+0x125&amp;gt;
+      7a:       f0 ff 8b 14 02 00 00    lock decl 0x214(%rbx)
+      81:       48 8d bb 98 00 00 00    lea    0x98(%rbx),%rdi
+      88:       5b                      pop    %rbx
+      89:       5d                      pop    %rbp
+      ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;and produces&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;0000000000000000 &amp;lt;btrfs_set_lock_blocking_read&amp;gt;:
+callq  btrfs_set_lock_blocking_read
+TARGET __fentry__
+push   %rbp
+push   %rbx
+mov    %rdi,%rbx
+NOP
+mov    %gs:0x0(%rip),%eax
+mov    %eax,%eax
+bt     %rax,0x0(%rip)
+jb     btrfs_set_lock_blocking_read
+movzbl 0x94(%rbx),%ebp
+cmp    $0x1,%bpl
+ja     btrfs_set_lock_blocking_read
+and    $0x1,%ebp
+je     btrfs_set_lock_blocking_read
+mov    0x88(%rbx),%ecx
+mov    %gs:0x0,%rax
+cmp    %ecx,0x4c0(%rax)
+je     btrfs_set_lock_blocking_read
+mov    0x218(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock incl 0x90(%rbx)
+mov    0x214(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock decl 0x214(%rbx)
+lea    0x98(%rbx),%rdi
+pop    %rbx
+pop    %rbp
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This looks quite simple and when lined together, the diff is readable.&lt;/p&gt;
+
+&lt;p&gt;So here’s the magic script (pardon my perl skills):&lt;/p&gt;
+
+&lt;div class=&quot;language-perl highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;#!/usr/bin/perl&lt;/span&gt;
+
+&lt;span class=&quot;nv&quot;&gt;@c&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&amp;lt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;foreach&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;@c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;nb&quot;&gt;chomp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;next&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt;/R_X86_/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;next&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt;/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/[0-9a-f]+ &amp;lt;([^+]+)\+.*&amp;gt;$/$1/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/\s+#.*$//&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/nopl.*/NOP/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/xchg.*ax.*ax/NOP/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/data16 nop/NOP/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;sr&quot;&gt;s/nop/NOP/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&quot;&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;$_&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&quot;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Use like:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;objdump &lt;span class=&quot;nt&quot;&gt;-dr&lt;/span&gt; before/locking.o &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; before
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;objdump &lt;span class=&quot;nt&quot;&gt;-dr&lt;/span&gt; after/locking.o &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; after
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;vimdiff before after
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+				<pubDate>Sat, 12 Oct 2019 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/simple-asm-diff-filter/</link>
+				<guid isPermaLink="true">https://kdave.github.io/simple-asm-diff-filter/</guid>
+			</item>
+		
+	</channel>
+</rss>

@@ -1,0 +1,3474 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>index-long.html</title>
+  <meta name="description" content="aligned words
+">
+
+  <link rel="stylesheet" href="/css/site-dark.css" id="theme-style">
+  <link rel="canonical" href="https://kdave.github.io/l/">
+  <link rel="alternate" type="application/rss+xml" title="(void)VOID_MAX;" href="https://kdave.github.io/rss-all.xml" />
+  <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
+</head>
+
+  <body>
+    <header>
+	<nav>
+		
+		
+		<a class="navlink" href="/">[index.html]</a>
+		
+		<a class="navlink" href="/l/">[index-long.html]</a>
+		
+		<a class="navlink" href="/a/">[about]</a>
+		
+		<a class="navlink" href="/m/">[more]</a>
+		
+		<button id="theme-toggle">Switch theme</button>
+		<script>
+document.getElementById('theme-toggle').addEventListener('click', function() {
+	    var currentTheme = document.getElementById('theme-style').getAttribute('href');
+	    var newTheme = currentTheme === '/css/site-light.css' ? '/css/site-dark.css' : '/css/site-light.css';
+	    document.getElementById('theme-style').setAttribute('href', newTheme);
+});
+		</script>
+	</nav>
+	<hr>
+</header>
+
+    <div class="page-content">
+      <div class="wrapper">
+        
+<h1>index-long.html</h1>
+
+
+<p>
+<ul>
+
+
+<li>2024-11-27 - <a href="/atomic-cross-rename/">Atomic cross-rename of two paths</a> <tt>[tags: mv, util-linux]</tt></li>
+<p>
+<p>Since version v3.15 linux supports a file operation that will exchange any two
+directory entries atomically. This needs support of the filesystem so it’s not
+universal, but the commonly used filesystems can do it.</p>
+
+<p>The underlying syscall is <a href="https://www.man7.org/linux/man-pages/man2/rename.2.html">renameat2</a>.
+Obligatory <a href="https://lwn.net/Articles/569134/">LWN article</a>.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define _GNU_SOURCE
+#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span><span class="kt">int</span> <span class="nf">renameat2</span><span class="p">(</span><span class="kt">int</span> <span class="n">olddirfd</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">oldpath</span><span class="p">,</span> <span class="kt">int</span> <span class="n">newdirfd</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">newpath</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>The magic is in the <code class="language-plaintext highlighter-rouge">flags</code> being set to <code class="language-plaintext highlighter-rouge">RENAME_EXCHANGE</code>, the <code class="language-plaintext highlighter-rouge">oldpath</code> and
+<code class="language-plaintext highlighter-rouge">newpath</code> are simply the names (can be relative or full path), with <code class="language-plaintext highlighter-rouge">AT_FDCWD</code>
+for <code class="language-plaintext highlighter-rouge">oldfddir</code> and <code class="language-plaintext highlighter-rouge">newfddir</code> unless you need to something fancy. See below for
+standalone working implementations in several languages. The minimal and
+stripped down example:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define _GNU_SOURCE
+#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+        <span class="k">return</span> <span class="n">renameat2</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ATD_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">RENAME_EXCHANGE</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The full example below does proper checking of arguments and existence of the files
+but the syscall does that by itself too. Obviously both directory entries need
+to exist at the time the rename action is performed, otherwise it would be
+<a href="https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use">TOCTOU</a> bug.</p>
+
+<p>What is a directory entry and where it works:</p>
+
+<ul>
+  <li>regular file</li>
+  <li>special file (socket, named pipe, …)</li>
+  <li>directory</li>
+  <li>symlink (the path is not resolved, so the target remains the same)</li>
+  <li>hardlink (it’s just another name of a file)</li>
+  <li>subvolume (on Btrfs)</li>
+</ul>
+
+<p>Each type can be the source and target, in any combination:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">touch </span>file
+<span class="nv">$ </span><span class="nb">mkfifo </span>fifo
+<span class="nv">$ </span><span class="nb">mkdir dir</span>
+<span class="nv">$ </span><span class="nb">ln</span> <span class="nt">-s</span> file symlink
+<span class="nv">$ </span><span class="nb">ln </span>file hardlink
+<span class="nv">$ </span>btrfs subvol create subvol
+<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-lis</span>
+total 16
+123323316 0 drwxr-xr-x 1 user <span class="nb">users    </span>0 Nov 21 14:35 <span class="nb">dir
+</span>123323315 0 prw-r--r-- 1 user <span class="nb">users    </span>0 Nov 21 14:35 fifo
+123323314 0 <span class="nt">-rw-r--r--</span> 2 user <span class="nb">users    </span>0 Nov 21 14:35 file
+123323314 0 <span class="nt">-rw-r--r--</span> 2 user <span class="nb">users    </span>0 Nov 21 14:35 hardlink
+      256 0 drwxr-xr-x 1 user <span class="nb">users    </span>0 Nov 21 14:35 subvol
+123323317 4 lrwxrwxrwx 1 user <span class="nb">users    </span>4 Nov 21 14:35 symlink -&gt; file
+
+<span class="nv">$ </span>mvx <span class="nb">dir </span>file
+<span class="nv">$ </span>mvx fifo subvol
+<span class="nv">$ </span>mvx symlink hardlink
+<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-lis</span>
+123323314 0 <span class="nt">-rw-r--r--</span> 2 user <span class="nb">users    </span>0 Nov 21 14:35 <span class="nb">dir
+      </span>256 0 drwxr-xr-x 1 user <span class="nb">users    </span>0 Nov 21 14:35 fifo
+123323316 0 drwxr-xr-x 1 user <span class="nb">users    </span>0 Nov 21 14:35 file
+123323317 4 lrwxrwxrwx 1 user <span class="nb">users    </span>4 Nov 21 14:35 hardlink -&gt; file
+123323315 0 prw-r--r-- 1 user <span class="nb">users    </span>0 Nov 21 14:35 subvol
+123323314 0 <span class="nt">-rw-r--r--</span> 2 user <span class="nb">users    </span>0 Nov 21 14:35 symlink
+</code></pre></div></div>
+
+<p>Below are implementations in some other languages using direct interfaces to
+the syscalls, I haven’t found standard libraries providing the extended syntax.
+Same as there’s missing support in the <code class="language-plaintext highlighter-rouge">mv</code> utility. Welp, after 10 years.</p>
+
+<h1 id="c">C</h1>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define _GNU_SOURCE
+#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/stat.h&gt;</span><span class="cp">
+</span>
+<span class="cm">/*
+ * Cross-rename of two paths: file, directory, symlink (not the target),
+ * also subvolumes (on btrfs)
+ *
+ * Example:
+ *
+ *    file - a file
+ *    dir  - a directory
+ *
+ *    $ mvx file dir
+ *
+ *    file - a directory named 'file'
+ *    dir  - a file named 'dir'
+ *
+ * Q: Should this be implemented by mv?
+ * A: Yes.
+ */</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+<span class="p">{</span>
+        <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">stat</span> <span class="n">st</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Usage: mvx path1 path2</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+                <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">st</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"stat: failed for %s: %m</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+                <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stat</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">st</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"stat: failed for %s: %m</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+                <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">renameat2</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">RENAME_EXCHANGE</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"renameat2: failed with %m</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h1 id="python">Python</h1>
+
+<p>I found project <a href="https://github.com/jordemort/python-renameat2">python-renameat2</a> implementing
+that as a proper module
+(<a href="https://python-renameat2.readthedocs.io/en/latest/examples.html#atomically-swap-two-files">example</a>).
+Otherwise you can use this:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">ctypes</span>
+<span class="kn">import</span> <span class="n">sys</span>
+
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="nc">CDLL</span><span class="p">(</span><span class="sh">"</span><span class="s">libc.so.6</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">renameat2</span><span class="p">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="p">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">renameat2</span><span class="p">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_int</span>
+<span class="n">AT_FDCWD</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
+<span class="n">RENAME_EXCHANGE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">path1</span> <span class="o">=</span> <span class="nb">str</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">path2</span> <span class="o">=</span> <span class="nb">str</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">ret</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="nf">renameat2</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">path1</span><span class="p">,</span> <span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">path2</span><span class="p">,</span> <span class="n">RENAME_EXCHANGE</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h1 id="perl">Perl</h1>
+
+<div class="language-perl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">use</span> <span class="nv">strict</span><span class="p">;</span>
+<span class="k">use</span> <span class="nv">warnings</span><span class="p">;</span>
+
+<span class="nb">require</span><span class="p">("</span><span class="s2">syscall.ph</span><span class="p">");</span>
+<span class="k">my</span> <span class="p">(</span><span class="nv">$path1</span><span class="p">,</span> <span class="nv">$path2</span><span class="p">)</span> <span class="o">=</span> <span class="nv">@ARGV</span><span class="p">;</span>
+<span class="k">my</span> <span class="nv">$AT_FDCWD</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span><span class="p">;</span>
+<span class="k">my</span> <span class="nv">$RENAME_EXCHANGE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">);</span>
+<span class="k">my</span> <span class="nv">$ret</span> <span class="o">=</span> <span class="nb">syscall</span><span class="p">(</span><span class="nv">&amp;SYS_renameat2</span><span class="p">,</span> <span class="nv">$AT_FDCWD</span><span class="p">,</span> <span class="nv">$path1</span><span class="p">,</span> <span class="nv">$AT_FDCWD</span><span class="p">,</span> <span class="nv">$path2</span><span class="p">,</span> <span class="nv">$RENAME_EXCHANGE</span><span class="p">);</span>
+</code></pre></div></div>
+
+</p>
+<hr>
+</li>
+
+<li>2024-11-20 - <a href="/lkt-build-with-flags/">Linux kernel tip: build with custom CFLAGS</a> <tt>[tags: c, linux]</tt></li>
+<p>
+<p>Build linux kernel, either whole or a selected directory with compiler flags,
+without editing any Makefiles or such.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nb">cd </span>linux.git
+    make ccflags-y<span class="o">=</span><span class="s1">'-Wundef'</span> kernel/
+</code></pre></div></div>
+
+<p>Any change to flags will be detected and leads to full rebuild of all affected files.
+Building whole directory must have the trailing <code class="language-plaintext highlighter-rouge">/</code>. Whole modules can be built
+with <code class="language-plaintext highlighter-rouge">M=fs/btrfs</code>, where <code class="language-plaintext highlighter-rouge">M=</code> does not require the trailing <code class="language-plaintext highlighter-rouge">/</code>.</p>
+
+<p><strong>What to use it for</strong></p>
+
+<p><em>Build test the code with different warnings</em> that are not on by default.
+Inspiration is in <a href="https://www.man7.org/linux/man-pages/man1/gcc.1.html">gcc(1) manual page</a>
+or in the
+<a href="https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html">GCC Option Summary</a>. 
+Linux provides sets of predefined warning level with increasing verbosity and
+decreasing usefulness, see file <a href="https://elixir.bootlin.com/linux/latest/source/scripts/Makefile.extrawarn">scripts/Makefile.extrawarn</a>.
+The levels can be enabled on command line like</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    make <span class="nv">W</span><span class="o">=</span>1 kernel/
+    make <span class="nv">W</span><span class="o">=</span>12 kernel/
+    make <span class="nv">W</span><span class="o">=</span>2 kernel/
+    make <span class="nv">W</span><span class="o">=</span>3 kernel/
+</code></pre></div></div>
+
+<p>This could be quite noisy so it’s better to capture that to a file and postprocess.</p>
+
+<p>Capture other information during build, like <code class="language-plaintext highlighter-rouge">-fstack-usage</code> (consumption of
+stack by functions, in <code class="language-plaintext highlighter-rouge">.su</code>) or <code class="language-plaintext highlighter-rouge">-save-temps=obj</code> (save generated assembly <code class="language-plaintext highlighter-rouge">.s</code> and
+preprocessed sources <code class="language-plaintext highlighter-rouge">.i</code>).</p>
+
+</p>
+<hr>
+</li>
+
+<li>2023-08-24 - <a href="/interactive-sleep/">Interactive sleep</a> <tt>[tags: shell, sleep]</tt></li>
+<p>
+<p>The <code class="language-plaintext highlighter-rouge">sleep</code> utility is something I’d hardly consider worth enhancing by
+features, the task is simple to sleep for a given time. Nothing else is needed
+when it’s used from scripts. However, it can be also used from manually typed
+command line, e.g. to let some command start later to offset initial IO load or
+not to overload network.</p>
+
+<p>Let’s say for example that we’d like to download a big data set, but rather let
+it start in 20 minutes.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sleep </span>20m <span class="o">&amp;&amp;</span> wget https://URL
+</code></pre></div></div>
+
+<p>Once this command starts we don’t know how much time is remaining and
+interrupting it by <code class="language-plaintext highlighter-rouge">Ctrl-C</code> would not start the download. Additionally, what if
+the time is too short and we’d like to increase it. So let’s implement it. For
+more compatibility it’s done in shell and using only widely available utilities
+(<code class="language-plaintext highlighter-rouge">date</code>). And btw, it does not even use <code class="language-plaintext highlighter-rouge">sleep</code> for the sleeping but the builtin
+<code class="language-plaintext highlighter-rouge">read</code> with the timeout option as it allows to read input while waiting.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh</span>
+
+<span class="nv">t</span><span class="o">=</span><span class="k">${</span><span class="nv">1</span><span class="k">:-</span><span class="nv">1</span><span class="k">}</span>
+<span class="nv">ts</span><span class="o">=</span><span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span>
+
+<span class="k">case</span> <span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span> <span class="k">in</span>
+	<span class="k">*</span>s<span class="p">)</span> <span class="nv">tm</span><span class="o">=</span><span class="k">${</span><span class="nv">t</span><span class="p">%*s</span><span class="k">}</span> <span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$tm</span><span class="k">))</span> <span class="p">;;</span>
+	<span class="k">*</span>m<span class="p">)</span> <span class="nv">tm</span><span class="o">=</span><span class="k">${</span><span class="nv">t</span><span class="p">%*m</span><span class="k">}</span> <span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$tm</span> <span class="o">*</span> <span class="m">60</span><span class="k">))</span> <span class="p">;;</span>
+	<span class="k">*</span>h<span class="p">)</span> <span class="nv">tm</span><span class="o">=</span><span class="k">${</span><span class="nv">t</span><span class="p">%*h</span><span class="k">}</span> <span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$tm</span> <span class="o">*</span> <span class="m">60</span> <span class="o">*</span> <span class="m">60</span><span class="k">))</span> <span class="p">;;</span>
+	<span class="k">*</span>d<span class="p">)</span> <span class="nv">tm</span><span class="o">=</span><span class="k">${</span><span class="nv">t</span><span class="p">%*d</span><span class="k">}</span> <span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$tm</span> <span class="o">*</span> <span class="m">60</span> <span class="o">*</span> <span class="m">60</span> <span class="o">*</span> <span class="m">24</span><span class="k">))</span> <span class="p">;;</span>
+	<span class="k">*</span><span class="o">[</span>0-9]<span class="p">)</span> : <span class="p">;;</span>
+	<span class="k">*</span><span class="p">)</span> <span class="nb">echo</span> <span class="s2">"ERROR: unknown timestamp"</span><span class="p">;</span> <span class="nb">exit </span>1<span class="p">;;</span>
+<span class="k">esac</span>
+
+<span class="k">while</span> :<span class="p">;</span> <span class="k">do</span>
+	<span class="o">[</span> <span class="s2">"</span><span class="nv">$t</span><span class="s2">"</span> <span class="nt">-le</span> 0 <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nb">break
+	read</span> <span class="nt">-n</span> 1 <span class="nt">-t</span> 1 ch
+	<span class="nv">ret</span><span class="o">=</span><span class="nv">$?</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="nv">$ret</span> <span class="o">=</span> 142 <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+		<span class="c"># timeout</span>
+		:
+	<span class="k">elif</span> <span class="o">[</span> <span class="nv">$ret</span> <span class="o">=</span> 0 <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+		<span class="c"># keypress</span>
+		<span class="nb">echo</span> <span class="s2">"sleep for </span><span class="nv">$ts</span><span class="s2">, remaining"</span> <span class="sb">`</span><span class="nv">TZ</span><span class="o">=</span>utc <span class="nb">date</span> <span class="nt">--date</span><span class="o">=</span>@<span class="nv">$t</span> +%H:%M:%S<span class="sb">`</span> <span class="s2">"(</span><span class="nv">$t</span><span class="s2">)"</span>
+		<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$ch</span><span class="s2">"</span> <span class="o">=</span> <span class="s1">'q'</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+			</span><span class="nb">echo</span> <span class="s2">"quit"</span>
+			<span class="nb">exit </span>0
+		<span class="k">elif</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$ch</span><span class="s2">"</span> <span class="o">=</span> <span class="s1">'+'</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+			</span><span class="nb">echo</span> <span class="s2">"increase by 10s"</span>
+			<span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$t</span> <span class="o">+</span> <span class="m">10</span> <span class="o">-</span> <span class="m">1</span><span class="k">))</span>
+		<span class="k">elif</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$ch</span><span class="s2">"</span> <span class="o">=</span> <span class="s1">'-'</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+			</span><span class="nb">echo</span> <span class="s2">"decrease by 10s"</span>
+			<span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$t</span> <span class="o">-</span> <span class="m">10</span> <span class="o">-</span> <span class="m">1</span><span class="k">))</span>
+		<span class="k">fi
+		</span><span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$t</span> <span class="o">+</span> <span class="m">1</span><span class="k">))</span>
+	<span class="k">fi
+	</span><span class="nv">t</span><span class="o">=</span><span class="k">$((</span><span class="nv">$t</span> <span class="o">-</span> <span class="m">1</span><span class="k">))</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<p>The time passed on command line needs to be parsed and it does not support
+fractional times, otherwise it’s straightforward. The interesting part is
+that it reacts to key presses:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">q</code> stop waiting, with exit code 0 so the next command could continue,
+otherwise <code class="language-plaintext highlighter-rouge">Ctrl-C</code></li>
+  <li><code class="language-plaintext highlighter-rouge">+</code> increase waiting time by 10 seconds and print it</li>
+  <li><code class="language-plaintext highlighter-rouge">-</code> decrease waiting time by 10 seconds and print it</li>
+  <li>anything else prints remaining time (and slightly increases the
+waiting time due to processing)</li>
+</ul>
+
+</p>
+<hr>
+</li>
+
+<li>2023-08-16 - <a href="/vim-tip-split-file-lines-cont/">VIM tip: split file to 2 panes, lines continued</a> <tt>[tags: usability, vim]</tt></li>
+<p>
+<blockquote>
+  <p>Vim has the excellent feature to split the window to multiple panes, but can it
+open one file in two vertical tabs and let the contents of left pane continue
+in the one next to it?</p>
+</blockquote>
+
+<p>From</p>
+
+<table>
+<tr><td width="400px">1 ...</td></tr>
+<tr><td>2 ...</td></tr>
+<tr><td>3 ...</td></tr>
+<tr><td>4 ...</td></tr>
+<tr><td>5 ...</td></tr>
+<tr><td>6 ...</td></tr>
+</table>
+
+<p>to</p>
+
+<table>
+<tr><td width="195px">1 ...</td><td width="195px">7 ...</td></tr>
+<tr><td>2 ...</td><td>8 ...</td></tr>
+<tr><td>3 ...</td><td>9 ...</td></tr>
+<tr><td>4 ...</td><td>10 ...</td></tr>
+<tr><td>5 ...</td><td>11 ...</td></tr>
+<tr><td>6 ...</td><td>12 ...</td></tr>
+</table>
+
+<p>Not by default, certainly with some scripting or by a set of a few commands
+entered manually. We also want to preserve the line continuation while
+scrolling. Maybe all of that is implemented somewhere for vim, I don’t know.
+First time I saw this was many years ago in computer lab, somebody using <em>emacs</em>.
+What I’m going show dates back to 2011, it works and I think there must be an
+easier way or some vim fork can do it natively.</p>
+
+<p>The idea is to split the panel, move the lines by the screen height and enable
+scrollbind.</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function</span> SplitAndJoin<span class="p">()</span>
+	<span class="p">:</span><span class="k">vsplit</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">l</span>
+	<span class="p">:</span>normal L
+	<span class="p">:</span>normal z<span class="p">+</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+	<span class="p">:</span><span class="k">windo</span> <span class="k">set</span> <span class="nb">scrollbind</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+<span class="k">endfunction</span>
+</code></pre></div></div>
+
+<p>Moving the lines is really emulated by navigating to the bottom, resetting the
+position so the next line is the first one displayed. This is obviously not
+resistant to resizing the terminal, the line offset between the windows is
+fixed. This can be manually adjusted by disabling scrollbind, syncing the lines
+and enabling scrollbind again. I think I never needed that so urgently to
+implement it, reopening the buffer is faster.</p>
+
+<p>The function can be invoked from command line mode by</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">:</span><span class="k">call</span> SplitAndJoin<span class="p">()</span>
+</code></pre></div></div>
+
+<p><a href="splitandjoin2.png"><img src="splitandjoin2-small.png" alt="linux Makefile split into 2 panes" /></a></p>
+
+<h1 id="-or-3-panes-lines-continued">… or 3 panes, lines continued</h1>
+
+<p>If we can do 2 panes by a few simple commands, we can do more, any number of
+splits that still fit the screen. This repeats the split and bind step from
+the last opened pane before moving back to the first one. The scrollbind is
+temporarily disabled when moving the lines for the split.</p>
+
+<div class="language-vim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function</span> SplitAndJoin3<span class="p">()</span>
+	<span class="p">:</span><span class="k">vsplit</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">l</span>
+	<span class="p">:</span>normal L
+	<span class="p">:</span><span class="k">windo</span> <span class="k">set</span> <span class="nb">noscrollbind</span>
+	<span class="p">:</span>normal z<span class="p">+</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+	<span class="p">:</span><span class="k">windo</span> <span class="k">set</span> <span class="nb">scrollbind</span>
+	<span class="p">:</span><span class="k">vsplit</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">l</span>
+	<span class="p">:</span>normal L
+	<span class="p">:</span><span class="k">windo</span> <span class="k">set</span> <span class="nb">noscrollbind</span>
+	<span class="p">:</span>normal z<span class="p">+</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+	<span class="p">:</span><span class="k">windo</span> <span class="k">set</span> <span class="nb">scrollbind</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+	<span class="p">:</span><span class="k">wincmd</span> <span class="k">h</span>
+<span class="k">endfunction</span>
+</code></pre></div></div>
+
+<p>Which can look like this:</p>
+
+<p><a href="splitandjoin3.png"><img src="splitandjoin3-small.png" alt="linux Makefile split into 3 panes" /></a></p>
+
+<h1 id="problems">Problems</h1>
+
+<ul>
+  <li>resize - the line offsets are fixed from the time the window is split,
+resizing terminal window will get that out of sync</li>
+  <li>randomly not refreshed - sometimes the right pane does not show the right
+lines, but Ctrl-L fixes that, so it’s just a visual glitch</li>
+  <li>unsynced text during and after typing - when writing new lines to the left
+pane, the right pane shifts only the line numbers, not the text itself, ESC
+and Ctrl-L does not fix it, only scrolling gets it back in sync with visual
+appearance</li>
+  <li>wrap - with <code class="language-plaintext highlighter-rouge">set wrap on</code> and some lines actually wrapped in the left pane,
+the line offset is derived from that and once the wrapped line(s) scroll away
+from the screen the lines and text get out of sync</li>
+  <li>switching files in the right pane will inherit the scrollbind, so movement
+will also apply to the left window (not desired e.g. when using tags/cscope/…)</li>
+</ul>
+
+<p>That’s not a short list, might be a bug somewhere like a missing refresh
+after an action or it’s working as expected individually but not when
+combined like that. A native support in <code class="language-plaintext highlighter-rouge">vim</code> is needed. But, it is still
+usable to some extent.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2023-08-09 - <a href="/json-dumper/">JSON format dumper (a C API)</a> <tt>[tags: c, json]</tt></li>
+<p>
+<p>We’ve had users asking for a machine readable output of btrfs-progs commands,
+suggesting to add an alternative way to dump the data in a structured format
+e.g.  json. And nowadays this is very common in many if not all commands
+provided by <code class="language-plaintext highlighter-rouge">util-linux</code>. Try <code class="language-plaintext highlighter-rouge">lscpu --json</code>, or <code class="language-plaintext highlighter-rouge">lsblk --json</code>. Feeding such
+output to python or a shell-friendly json parser is going to make life easier.
+So that’s the background motivation.</p>
+
+<p>Adding that to btrfs-progs is a task for long winter evenings, but the first
+step has been made. I wrote yet another json dumper. Of course this was
+preceded by a research about the state of existing libraries or files to copy.
+But why not have some fun writing one nevertheless.</p>
+
+<p>The requirements:</p>
+
+<ul>
+  <li>produce valid json (validators exist)</li>
+  <li>allow nesting of compound structures</li>
+  <li>hashes (<code class="language-plaintext highlighter-rouge">{key=value}</code>)</li>
+  <li>arrays (<code class="language-plaintext highlighter-rouge">[value, value, value]</code>)</li>
+  <li>simple values (integer, string, uuid, time, …)</li>
+</ul>
+
+<p>The nesting was one of the things I have not found in the existing libraries, or not
+implemented properly. The output must be a valid json and the single most
+difficult thing was the placement of continuation comma “<code class="language-plaintext highlighter-rouge">,</code>”. There must be none
+after the last object in the sequence. When the dump is done incrementally, the
+next object is often not known while printing the current one. So the comma
+cannot be printed unconditionally and previous state needs to be stored
+until the last object is dumped.</p>
+
+<p>But, it’s not sufficient to keep track of the last object only, simply nest
+some hashes and arrays. Like this:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w"> </span><span class="mi">1</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+ </span><span class="mi">2</span><span class="err">:</span><span class="w">    </span><span class="nl">"first"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+ </span><span class="mi">3</span><span class="err">:</span><span class="w">       </span><span class="nl">"nested"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+ </span><span class="mi">4</span><span class="err">:</span><span class="w">          </span><span class="nl">"key"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+ </span><span class="mi">5</span><span class="err">:</span><span class="w">             </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+ </span><span class="mi">6</span><span class="err">:</span><span class="w">             </span><span class="s2">"value2"</span><span class="w">
+ </span><span class="mi">7</span><span class="err">:</span><span class="w">          </span><span class="p">]</span><span class="w">
+ </span><span class="mi">8</span><span class="err">:</span><span class="w">       </span><span class="p">}</span><span class="w">
+ </span><span class="mi">9</span><span class="err">:</span><span class="w">    </span><span class="p">},</span><span class="w">
+</span><span class="mi">10</span><span class="err">:</span><span class="w">    </span><span class="nl">"last"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span><span class="mi">11</span><span class="err">:</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Last objects in sequences are on lines 6, 7, 8 and 10, so this needs a stack
+for tracking that. The main building blocks for correct syntax:</p>
+
+<ul>
+  <li>track depth of structured types</li>
+  <li>print delayed “<code class="language-plaintext highlighter-rouge">,</code>” when there’s next object in sequence</li>
+  <li>quoting or escaping</li>
+</ul>
+
+<p>The rest is for readable output, indentation is simply derived from the nesting
+level.</p>
+
+<p>The code representation of the json object should be straightforward, basically
+translating the objects into API calls, for compound object there’s the start
+and end element. Element nesting must be proper. On the lower level, there
+should be some nice specification of the key/value formatting.</p>
+
+<p>I’ve ended up with a static declaration of the value formatting specifiers in a
+list, the actual structure of the json objects will be defined by API calls
+referring back to the spec structure.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">struct</span> <span class="n">rowspec</span> <span class="p">{</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">fmt</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out_text</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">out_json</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">key</code> refers to the key (name), the rest of the structure is relevant for
+the value formatting. The <code class="language-plaintext highlighter-rouge">out_text</code> can be ignored for now, it’s a
+generalization of the output formatting so the same code is used for plain text
+and json output, the switch is done from the outside (e.g. by a command line
+option).</p>
+
+<p>Basic value types are a string and number. For the purposes of btrfs-progs
+there are more and so far built in the formatter, but it’s extensible (on the
+source level, not dynamically). Additional custom types are UUID, qgroupid (a
+u64 split into 16 and 48 bits), size (human friendly formatting of byte suffix
+values), and time. Another example of customization is that there are actually
+two byte size formatters, one that prints “<code class="language-plaintext highlighter-rouge">-</code>” instead of zero value.</p>
+
+<p>The structural API is simple:</p>
+
+<ul>
+  <li>start/end the whole json document <code class="language-plaintext highlighter-rouge">fmt_start</code>, <code class="language-plaintext highlighter-rouge">fmt_end</code></li>
+  <li>start/end optionally named group,
+<code class="language-plaintext highlighter-rouge">fmt_print_start_group</code>/<code class="language-plaintext highlighter-rouge">fmt_print_end_group</code>, when the name is defined it
+means it’s a map/hash <code class="language-plaintext highlighter-rouge">"key": "value"</code>, or a plain array made of “<code class="language-plaintext highlighter-rouge">[ value,
+... ]</code>”</li>
+  <li>for list values there’s <code class="language-plaintext highlighter-rouge">fmt_start_value</code>/<code class="language-plaintext highlighter-rouge">fmt_end_value</code> so there can be not
+just a simple value but also a compound one</li>
+  <li>and remaining is a simple value <code class="language-plaintext highlighter-rouge">fmt_start_value</code>/<code class="language-plaintext highlighter-rouge">fmt_end_value</code></li>
+</ul>
+
+<p>Most of them take a reference to the rowspec, this is convenient that at the
+time we’d like to print the value we summon it by its name, the rest is in the
+table. All the API calls take a context structure that stores the nesting level
+(for indentation and sanity checks) and some internal data.</p>
+
+<p>Now the above example would not be the best one to demonstrate the API but
+let’s try:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">rowspec</span> <span class="n">rows</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"first"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"map"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"first"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"nested"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"map"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"nested"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"key"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"list"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"key"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"value"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"str"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="nb">NULL</span> <span class="p">},</span>
+<span class="p">};</span>
+<span class="k">struct</span> <span class="n">format_ctx</span> <span class="n">ctx</span><span class="p">;</span>
+
+<span class="n">fmt_start</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">fmt_print_start_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"first"</span><span class="p">,</span> <span class="n">JSON_TYPE_MAP</span><span class="p">);</span>
+    <span class="n">fmt_print_start_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"nested"</span><span class="p">,</span> <span class="n">JSON_TYPE_MAP</span><span class="p">);</span>
+      <span class="n">fmt_print_start_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"key"</span><span class="p">,</span> <span class="n">JSON_TYPE_ARRAY</span><span class="p">);</span>
+        <span class="n">fmt_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"value"</span><span class="p">,</span> <span class="s">"value"</span><span class="p">);</span>
+        <span class="n">fmt_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"value"</span><span class="p">,</span> <span class="s">"value2"</span><span class="p">);</span>
+      <span class="n">fmt_print_end_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+    <span class="n">fmt_print_end_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">fmt_print_end_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">fmt_print_start_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"last"</span><span class="p">,</span> <span class="n">JSON_TYPE_MAP</span><span class="p">);</span>
+  <span class="n">fmt_print_end_group</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<span class="n">fmt_end</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>That should demonstrate it. There might be some slight tweaks needed as I took
+it from a specialized use but would like to present it as a generic API. So far
+it’s not generic, it might become one. With sources available it’s available for
+further reuse, I don’t plan to make it a standalone library but if there’s
+interest then, well, why not.</p>
+
+<h1 id="examples">Examples</h1>
+
+<p>The simple values can be formatted in multiple ways, e.g. size values with
+suffixes or raw numbers, though it’s defined as multiple keys:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"size"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"%llu"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"size"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"size-si"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"size"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"size"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="s">"size-si-not-zero"</span><span class="p">,</span> <span class="p">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="s">"size-or-none"</span><span class="p">,</span> <span class="p">.</span><span class="n">out_json</span> <span class="o">=</span> <span class="s">"size"</span> <span class="p">},</span>
+</code></pre></div></div>
+
+<p>Raw formats starting with “<code class="language-plaintext highlighter-rouge">%</code>” are passed to <code class="language-plaintext highlighter-rouge">printf</code>, this lets it do all the
+heavy work. The special formatters may need additional parameters, in this case
+it’s the pretty printer mode for size.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">RAW</span><span class="p">)</span>
+        <span class="n">fmt_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"size"</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">SI</span><span class="p">)</span>
+        <span class="n">fmt_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"size-si"</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="p">);</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">SI_NO_ZERO</span><span class="p">)</span>
+        <span class="n">fmt_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="s">"size-si-not-zero"</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Here the <code class="language-plaintext highlighter-rouge">size-or-none</code> format prints “<code class="language-plaintext highlighter-rouge">-</code>” instead of <code class="language-plaintext highlighter-rouge">0</code>. As can be seen here,
+not all the row specifiers need to be used at once.</p>
+
+<h1 id="references">References</h1>
+
+<p>Source links point to the most recent release so there might be an update since
+the time I write this but I’m not expecting significant changes.</p>
+
+<ul>
+  <li><a href="https://github.com/kdave/btrfs-progs/blob/master/common/format-output.h">https://github.com/kdave/btrfs-progs/blob/master/common/format-output.h</a></li>
+  <li><a href="https://github.com/kdave/btrfs-progs/blob/master/common/format-output.c">https://github.com/kdave/btrfs-progs/blob/master/common/format-output.c</a></li>
+  <li><a href="https://github.com/kdave/btrfs-progs/blob/master/tests/json-formatter-test.c">https://github.com/kdave/btrfs-progs/blob/master/tests/json-formatter-test.c</a></li>
+  <li><a href="https://github.com/wireshark/wireshark/blob/master/wsutil/json_dumper.c">https://github.com/wireshark/wireshark/blob/master/wsutil/json_dumper.c</a></li>
+</ul>
+
+</p>
+<hr>
+</li>
+
+<li>2022-01-12 - <a href="/cuda-unknown-error/">CUDA not initialized after resume (unknown error)</a> <tt>[tags: cuda, linux, nvidia, resume]</tt></li>
+<p>
+<p><code class="language-plaintext highlighter-rouge">tl;dr</code> <em>CUDA returning an <strong>unknown error</strong> upon initialization after resume on
+linux can be solved by reloading kernel module nvidia_uvm.</em></p>
+
+<p>There are some problems reported where with CUDA returns an unknown error upon
+initialization, while there’s no clear cause nor a clear way how to fix it.
+I’ve found
+<a href="https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/">https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/</a>
+listing various solutions from rebooting to tweaking environment variables.</p>
+
+<p>I’ve hit another problem that does not seem to be explicitly mentioned as the
+cause or it could have been misdiagnosed. After switching the built in Intel
+graphic card to be primary and NVIDIA card only for computations, it was not
+possible to run any application using CUDA. All it reported back were <em>unknown
+error</em>s.</p>
+
+<p>The Leela chess <code class="language-plaintext highlighter-rouge">lc0</code> reported CUDA version 0.0.0 with message like:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   $ ./lc0
+      _
+   |   _ | |
+   |_ |_ |_| v0.28.2 built Dec 13 2021
+   ucinewgame
+   Found pb network file: ./192x15-2021_1212_2050_25_709.pb.gz
+   Creating backend [cuda-auto]...
+   Switching to [cuda]...
+   CUDA Runtime version: 0.0.0
+   WARNING: CUDA Runtime version mismatch, was compiled with version 11.4.0
+   Latest version of CUDA supported by the driver: 11.4.0
+   error CUDA error: unknown error (../../src/neural/cuda/network_cuda.cc:134)
+</code></pre></div></div>
+
+<p>The line in source file is simply reporting errors:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   134     ReportCUDAErrors(cudaGetDeviceCount(&amp;total_gpus));
+</code></pre></div></div>
+
+<p>This is the first place where the errors are checked, a quick trivial CUDA
+program fails on the first memory allocation, with the same unkown error.</p>
+
+<p>I guess this stresses out the importance of error checking, namely when some
+piece of hardware is involved. Though this fails on the first attempt to use the
+API, there are possibly more cases during a long computation and many tasks using
+the GPU in parallel.</p>
+
+<p>A reboot fixed the problem, until the next suspend, which is impractical and
+setting up the work environment gets annoying. I have tried to look for some
+utility/command that is supposed to be run after resume. There’s a script called
+<code class="language-plaintext highlighter-rouge">nvidia-sleep.sh</code> that is the callback script for suspend and resume. Running
+that with parameter <code class="language-plaintext highlighter-rouge">suspend</code> manually while the system was up was not a good
+idea as it switched me out of the graphical desktop to some virtual terminal
+without any way to undo that. Also running that with <code class="language-plaintext highlighter-rouge">resume</code> did not help
+eiter (and does not even make sense after the first proper resume).</p>
+
+<p>There are no obvious signs that something could be wrong after resume, nothing
+in the logs and running games utilizing acceleration works (judging by FPS).
+One advice recommends to run <code class="language-plaintext highlighter-rouge">nvidia-modprobe</code>, in case some of the 4 modules is
+not loaded (nvidia_uvm, nvidia_drm, nvidia_modeset, nvidia). Besides the UVM
+module, all are unused.</p>
+
+<p>Right after resume the modules look like this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia_uvm           2531328  0
+ nvidia              35373056  90 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
+
+<p>That there’s 0 (usage by other modules) brought some suspicion, because
+according to <code class="language-plaintext highlighter-rouge">nvidia-smi</code>, there’s a least Xorg keeping a few megabytes of
+allocated memory (which may or may not be related though).</p>
+
+<p>I’ve reloaded the nvidia_uvm module, because it was the only thing possible to
+do with the modules:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # modprobe -r nvidia_uvm
+ # modprobe nvidia_uvm
+</code></pre></div></div>
+
+<p>And it started to work. Then quick check, lc0, works again. Now the module list is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_uvm           2531328  2
+ nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia              35373056  204 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
+
+<p>While this is still a workaround, it’s much better than rebooting and a
+post-resume hook should be able to make it work automatically.</p>
+
+<p>The suspend script is in <code class="language-plaintext highlighter-rouge">/usr/lib/systemd/system-sleep/</code>:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     <span class="c">#!/bin/sh</span>
+     <span class="k">case</span> <span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span> <span class="k">in
+	 </span>post<span class="p">)</span>
+		     <span class="nb">sleep </span>4
+		     modprobe <span class="nt">-r</span> nvidia_uvm
+		     <span class="nb">sleep </span>1
+		     modprobe nvidia_uvm
+	     <span class="p">;;</span>
+     <span class="k">esac</span>
+</code></pre></div></div>
+
+</p>
+<hr>
+</li>
+
+<li>2021-05-24 - <a href="/authenticated-hashes-for-btrfs-part1/">Authenticated hashes for btrfs (part 1)</a> <tt>[tags: blake2, btrfs, kernel, sha256, xxhash]</tt></li>
+<p>
+<p>There was a request to provide authenticated hashes in btrfs, natively as one of the btrfs checksum algorithms. Sounds fun but there’s always more to it, even if this sounds easy to implement.</p>
+
+<p>Johaness T. at that time in SUSE sent the patchset adding the support for SHA256 <a href="https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/">[1]</a> with a Labs conference paper, summarizing existing solutions and giving details about the proposed implementation and use cases.</p>
+
+<p>The first version of the patchset posted got some feedback, issues were found and some ideas suggested. Things have stalled a bit, but the feature is still very interesting and really not hard to implement. The support for additional checksums has provided enough support code to just plug in the new algorithm and enhance the existing interfaces to provide the key bytes. So until now I’ve assumed you know what an authenticated hash means, but for clarity and in simple terms: a checksum that depends on a key. The main point is that it’s impossible to generate the same checksum for given data without knowing the key, where <em>impossible</em> is used in the cryptographic-strength sense, there’s an almost zero probability doing that by chance and brute force attack is not practical.</p>
+
+<h2 id="auth-hash-fsverity">Auth hash, fsverity</h2>
+
+<p>Notable existing solution for that is <em>fsverity</em> that works in read-only fashion, where the key is securely hidden and used only to verify that data that are read from media haven’t been tampered with. A typical use case is an OS image in your phone. But that’s not all. Images of OS appear in all sorts of boxed devices, IoT. Nowadays, with explosion of edge computing, assuring integrity of the end devices is a fundamental requirement.</p>
+
+<p>Where btrfs can add some value is the read AND write support, with an authenticated hash. This brings questions around key handling, and not everybody is OK with a device that could potentially store malicious/invalid data with a proper authenticated checksum. So yeah, use something else, this is not your use case, or maybe there’s another way how to make sure the key won’t be compromised easily. This is beyond the scope of what filesystem can do, though.</p>
+
+<p>As an example use case of writable filesystem with authenticated hash: detect outside tampering with on-disk data, eg. when the filesystem was unmounted. Filesystem metadata formats are public, interesting data can be located by patterns on the device, so changing a few bytes and updating the checksum(s) is not hard.</p>
+
+<p>There’s one issue that was brought up and I think it’s not hard to observe anyway: there’s a total dependency on the key to verify a basic integrity of the data. Ie. without the key it’s not possible to say if the data are valid as if a basic checksum was used. This might be still useful for a read-only access to the filesystem, but absence of key makes this impossible.</p>
+
+<h2 id="existing-implementations">Existing implementations</h2>
+
+<p>As was noted in the LWN discussion <a href="https://lwn.net/Articles/819143/">[2]</a>, what ZFS does, there are two checksums. One is the authenticated and one is not. I point you to the comment stating that, as I was not able to navigate far enough in the ZFS code to verify the claim, but the idea is clear. It’s said that the authenticated hash is eg. SHA512 and the plain hash is SHA256, split half/half in the bytes available for checksum. The way the hash is stored is a simple trim of the first 16 bytes of each checksum and store them consecutively. As both hashes are cryptographically strong, the first 16 bytes <em>should</em> provide enough strength despite the truncation. Where 16 bytes is 128 bits.</p>
+
+<p>When I was thinking about that, I had a different idea how to do that. Not that copying the scheme would not work for btrfs, anything that the linux kernel crypto API provides is usable, the same is achievable. I’m not judging the decisions what hashes to use or how to do the split, it works and I don’t see a problem in the strength. Where I see potential for an improvement is performance, without sacrificing strength <em>too much</em>. Trade-offs.</p>
+
+<p>The CPU or software implementation of SHA256 is comparably slower to checksums with hardware aids (like CRC32C instructions) or hashes designed to perform well on CPUs. That was the topic of the previous round of new hashes, so we now compete against BLAKE2b and XXHASH. There are CPUs with native instructions to calculate SHA256 and the performance improvement is noticeable, orders of magnitude better. But the support is not as widespread as eg. for CRC32C. Anyway, there’s always choice and hardware improves over time. The number of hashes may seem to explode but as long as it’s manageable inside the filesystem, we take it. And a coffee please.</p>
+
+<h2 id="secondary-hash">Secondary hash</h2>
+
+<p>The checksum scheme proposed is to use a cryptographic hash and a non-cryptographic one. Given the current support for SHA256 and BLAKE2b, the cryptographic hash is given. There are two of them and that’s fine. I’m not drawing an exact parallel with ZFS, the common point for the cryptographic hash is that there are limited options and the calculation is expensive by design. This is where the non-cryptographic hash can be debated. Also I want to call it <em>secondary</em> hash, with obvious meaning that it’s not too important by default and comes second when the authenticated hash is available.</p>
+
+<p>We have CRC32C and XXHASH to choose from. Note that there are already two hashes from the start so supporting both secondary hashes would double the number of final combinations. We’ve added XXHASH to enhance the checksum collision space from 32 bits to 64 bits. What I propose is to use just XXHASH as the secondary hash, resulting in two new hashes for the authenticated and secondary hash. I haven’t found a good reason to also include CRC32C.</p>
+
+<p>Another design point was where to do the split and truncation. As the XXHASH has fixed length, this could be defined as 192 bits for the cryptographic hash and 64 bits for full XXHASH.</p>
+
+<p>Here we are, we could have authenticated SHA256 accompanied by XXHASH, or the same with BLAKE2b. The checksum split also splits the decision tree what to do when the checksum partially matches. For a single checksum it’s a simple <em>yes/no</em> decision. The partial match is the interesting case:</p>
+
+<ul>
+  <li>primary (key available) hash matches, secondary does not – as the authenticated hash is hard to forge, it’s trusted (even if it’s not full length of the digest)</li>
+  <li>primary (key available) does not match, secondary does not – checksum mismatch for the same reason as above</li>
+  <li>primary (key not available) does not match, secondary does – this is the prime time for the secondary hash, the floor is yours</li>
+</ul>
+
+<p>This leads to 4 outcomes of the checksum verification, compared to 2. A boolean type can simply represent the yes/no outcome but for two hashes it’s not that easy. It depends on the context, though I think it still should be straightforward to decide what to do that in the code. Nevertheless, this has to be updated in all calls to checksum verification and has to reflect the key availability eg. in case where the data are auto-repaired during scrub or when there’s a copy.</p>
+
+<h2 id="performance-considerations">Performance considerations</h2>
+
+<p>The performance comparison should be now clear: we have the potentially slow SHA256 but fast XXHASH, for each metadata and data block, vs slow SHA512 and slow SHA256. As I reckon it’s possible to also select SHA256/SHA256 split in ZFS, but that can’t beat SHA256/XXHASH.</p>
+
+<p>The key availability seems to be the key point in all that, puns notwithstanding. The initial implementation assumed for simplicity to provide the raw key bytes to kernel and to the userspace utilities. This is maybe OK for a prototype but under any circumstances can’t survive until a final release. There’s key management wired deep into linux kernel, there’s a library for the whole API and command line tools. We ought to use that. Pass the key by name, not the raw bytes.</p>
+
+<p>Key management has it’s own culprits and surprises (key owned vs possessed), but let’s assume that there’s a standardized way how to obtain the key bytes from the key name. In kernel its “READ_USER_KEY_BYTES”, in userspace it’s either <em>keyctl_read</em> from <em>libkeyutils</em> or a raw syscall to <em>keyctl</em>. Problem solved, on the low-level. But, well, don’t try that over <em>ssh</em>.</p>
+
+<p>Accessing a btrfs image for various reasons (check, image, restore) now needs the key to verify data or even the key itself to perform modifications (check + repair). The command line interface has to be extended for all commands that interact with the filesystem offline, ie. the image and not the mounted filesystem.</p>
+
+<p>This results to a global option, like <code class="language-plaintext highlighter-rouge">btrfs --auth-key 1234 ispect-internal dump-tree</code>, compared to <code class="language-plaintext highlighter-rouge">btrfs inspect-internal dump-tree --auth-key 1234</code>. This is not finalized, but a global option is now the preferred choice.</p>
+
+<h2 id="final-words">Final words</h2>
+
+<p>I have a prototype, that does not work in all cases but at least passes <code class="language-plaintext highlighter-rouge">mkfs</code> and <code class="language-plaintext highlighter-rouge">mount</code>. The number of checksum verification cases got above what I was able to fix by the time of writing this. I think this has enough matter on itself so I’m pushing it out out as part 1. There are open questions regarding the command line interface and also a some kind of proof or discussion regarding attacks. Stay tuned.</p>
+
+<p>References:</p>
+
+<ul>
+  <li>[1] <a href="https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/">https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/</a></li>
+  <li>[2] <a href="https://lwn.net/Articles/819143/">https://lwn.net/Articles/819143/</a> LWN discussion under <a href="https://lwn.net/Articles/818842/">Authenticated Btrfs (2020)</a></li>
+</ul>
+
+</p>
+<hr>
+</li>
+
+<li>2020-02-15 - <a href="/btrfs-hilights-5.4/">Btrfs hilights in 5.4: tree checker updates</a> <tt>[tags: btrfs, kernel]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/7d14df2d280fb7411eba2eb96682da0683ad97f6">pull request</a>
+for the rest.</p>
+
+<p>There’s not much to show in this release. Some users find that good too, a boring release. But still there are some changes of interest. The 5.4 is a long-term support stable tree, stability and core improvements are perhaps more appropriate than features that need a release or two to stabilize.</p>
+
+<p>? stable not known in advance so not pushing half-baked features to stable, possibly requiring more intrusive fixups</p>
+
+<p>The development cycle happened over summer and this slowed down the pace of patch reviews and update turnarounds.</p>
+
+<h2 id="tree-checker-updates">Tree-checker updates</h2>
+
+<p>The tree-checker is a sanity checker of metadata that are read from/written to devices. Over time it’s being enhanced by more checks, let’s have a look at two of them.</p>
+
+<h3 id="root_item-checks">ROOT_ITEM checks</h3>
+
+<p>The item represents root of a b-tree, of the internal or the subvolume trees.</p>
+
+<p>Let’s take an example from <code class="language-plaintext highlighter-rouge">btrfs inspect dump-tree</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+                generation 5 root_dirid 0 bytenr 30523392 level 0 refs 1
+                lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x0(none)
+                uuid 00000000-0000-0000-0000-000000000000
+                drop key (0 UNKNOWN.0 0) level 0
+</code></pre></div></div>
+
+<p>Some of the metadata inside the item allow only simple checks, following <a href="https://git.kernel.org/linus/259ee7754b6793af8bdd77f9ca818bc41cfe9541">commit 259ee7754b6793</a>:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">key.objectid</code> must match the tree that’s being read, though the code verifies only if the type is not 0</li>
+  <li><code class="language-plaintext highlighter-rouge">key.offset</code> must be 0</li>
+  <li>block offset <code class="language-plaintext highlighter-rouge">bytenr</code> must be aligned to sector size (4KiB in this case)</li>
+  <li><code class="language-plaintext highlighter-rouge">itemsize</code> depends on the item type, but for the root item it’s fixed value</li>
+  <li><code class="language-plaintext highlighter-rouge">level</code> and <code class="language-plaintext highlighter-rouge">drop_level</code> is 0 to 7, but it’s not possible to cross check if the tree has really of that level</li>
+  <li><code class="language-plaintext highlighter-rouge">generation</code> must be lower than the super block generation, same for <code class="language-plaintext highlighter-rouge">lastsnap</code></li>
+  <li><code class="language-plaintext highlighter-rouge">flags</code> can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">refs</code> is a reference counter and sanity check would require reading all the expected reference holders, <code class="language-plaintext highlighter-rouge">bytes_used</code> would need to look up the block that it accounts, etc. The subvolume trees have more data like <code class="language-plaintext highlighter-rouge">ctime</code>, <code class="language-plaintext highlighter-rouge">otime</code> and real <code class="language-plaintext highlighter-rouge">uuid</code>s. If you wonder what’s <code class="language-plaintext highlighter-rouge">byte_limit</code>, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.</p>
+
+<p>Many of the tree-checker enhancements are follow ups to fuzz testing and reports, as it was in this case. The <a href="https://bugzilla.kernel.org/show_bug.cgi?id=203261">bug report</a> shows that some of the incorrect data were detected and even triggered auto-repair (as this was on filesystem with DUP metadata) but there was too much damage and it crashed at some point. The crash was not random but a BUG_ON of an unexpected condition, that’s sanity check of last resort. Catching inconsistent data early with a graceful error handling is of course desired and ongoing work.</p>
+
+<h3 id="extent-metadata-item-checks">Extent metadata item checks</h3>
+
+<p>There are two item types that represent extents and information about sharing. <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code> is older and bigger  while <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code> is the building block of <code class="language-plaintext highlighter-rouge">skinny-metadata</code> feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The <a href="https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75">commit f82d1c7ca8ae1bf</a> implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.</p>
+
+<p>Example of <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
+                refs 1 gen 27 flags TREE_BLOCK
+                tree block skinny level 0
+                tree block backref root FS_TREE
+</code></pre></div></div>
+
+<p>And <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
+                refs 1 gen 499706 flags DATA
+                extent data backref root FS_TREE objectid 8626071 offset 0 count 1
+</code></pre></div></div>
+
+<p>This for a simple case with one reference, tree (for metadata) and ordinary data, so comparing the sizes shows 20 bytes saved. On my 20GiB root partition with about 70 snapshots there are XXX EXTENT and YYY METADATA items.</p>
+
+<p>Otherwise there can be more references inside one item (eg. many snapshots of a file that is randomly updated over time) so the overhead of the item itself is smaller</p>
+
+</p>
+<hr>
+</li>
+
+<li>2020-02-10 - <a href="/btrfs-hilights-5.5-new-hashes/">Btrfs hilights in 5.5: new hashes</a> <tt>[tags: blake2, btrfs, kernel, sha256, xxhash]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/97d0bf96a0d0986f466c3ff59f2ace801e33dc69">pull request</a>
+for the rest.</p>
+
+<h2 id="more-checksum-algorithms">More checksum algorithms</h2>
+
+<p>The first request for more checksums is several years old (2014), <a href="https://lore.kernel.org/linux-btrfs/1416806586-18050-1-git-send-email-bo.li.liu@oracle.com">it was
+SHA256</a>.
+There was no followup of the patch but the discussion in the mail thread
+brought the topic into light. Questions about why SHA256 and why not something
+else (welcome to the zoo: SpookyHash, BLAKE2, CityHash, MurmurHash3, CRC64),
+preferences, use cases etc. Browsing the mail thread again, I don’t see anybody
+suggest SHA1 or MD5.  There were some open questions and suggestions and though
+it’s an old discussion, most of the points were valid at the time of pre-5.5
+evaluation and served as a checklist.  This is what I really like about the
+community projects and btrfs users in particular.  Getting useful feedback on
+topics out of scope of the filesystem itself.</p>
+
+<p>Fast forward to now, there are 3 new hashes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Name</th>
+      <th style="text-align: right">Digest size</th>
+      <th style="text-align: left">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">CRC32C</td>
+      <td style="text-align: right">32bit</td>
+      <td style="text-align: left">fast, weak, default, CPU support, backward compatible</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">XXHASH</td>
+      <td style="text-align: right">64bit</td>
+      <td style="text-align: left">fast, weak, good on modern CPUs</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SHA256</td>
+      <td style="text-align: right">256bit</td>
+      <td style="text-align: left">slow, strong, FIPS certified, CPU support</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2B</td>
+      <td style="text-align: right">256bit</td>
+      <td style="text-align: left">slow, strong, good on 64bit architectures</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>You can find more about the <a href="https://kdave.github.io/selecting-hash-for-btrfs/">selection process</a>
+in another post.</p>
+
+<h2 id="quick-start">Quick start</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># mkfs.btrfs --csum xxhash /dev/sda</span>
+</code></pre></div></div>
+
+<p>And the output:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>btrfs-progs v5.4.1
+See http://btrfs.wiki.kernel.org for more information.
+
+Label:              (null)
+UUID:               9774b466-fa5d-4c2e-8b4f-479d0bb5873d
+Node size:          16384
+Sector size:        4096
+Filesystem size:    10.00GiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         DUP             256.00MiB
+  System:           DUP               8.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Checksum:           xxhash64
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    10.00GiB  /dev/sda
+</code></pre></div></div>
+
+<p>For convenience, the hash names can be specified by aliases so both <em>xxhash</em>
+and <em>xxhash64</em> are accepted on command line, similarly for <em>blake2</em> it’s
+<em>blake2b</em>. This is based on a usability pattern, where humans don’t have to
+remember the exact specification and copy &amp; paste from the output works as
+well.</p>
+
+<h3 id="use-cases-and-outlook">Use cases and outlook</h3>
+
+<p>For ordinary checksumming, all the hashes are considered good enough. CRC32C is
+the weakest but it’s been with us since the beginning and has caught many
+random bit flips.</p>
+
+<p>XXHASH is supposed to add to the strength with a good performance. Increased
+digest size reduces collisions, but can’t compete with the crypto-strong
+hashes. That can still be of great help for deduplication.</p>
+
+<p>From my perspective, the number of hashes should stay limited as the support is
+needed not just in kernel but for other tooling. For <em>btrfs-progs</em> it’s
+mandatory to support them, but also bootloaders (*cough*in case they verify
+checksums*cough*). The kernel support requires the hash implementations and
+the modules become a dependency of <em>btrfs.ko</em>.  This can increase overall size
+and build time.</p>
+
+<p>One of the suggestions was to allow users to choose the hash out of all what
+linux crypto API offers, not just the fixed set of hashes selected by
+developers. I understand that from the point of view of users who can make the
+decisions about trade-offs for their use case this is better, but I argue that
+such users are not in majority. Satisfying the common case was the preferred
+option, hopefully providing good options also for the knowledgeable users.
+Providing and maintaining implementations of seven and one hashes would be
+a burden for several projects.</p>
+
+<p>Yes, I’m aware of <a href="https://github.com/BLAKE3-team/BLAKE3">BLAKE3</a>, but let’s
+<a href="https://kdave.github.io/blake3-vs-blake2-in-btrfs">wait before adding new hashes</a>. By
+the time we do another round there might be more contenders or improved
+versions.  There’s <a href="https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html">XXH3</a>
+from the author of XXHASH, producing 128bit digest and is slightly faster.
+However it is still not recommended for production use due to fine tuning and
+finalization.</p>
+
+<p>The cryptographic hashes can be a building block for a keyed hash, ie.
+checksums that can’t be subverted. There’s a
+<a href="https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@suse.de/">patch implementing that</a>,
+currently in an RFC state. While the code is straightforward, adding a new
+interface could use a feedback round. Please contact us in case you have
+comments.</p>
+
+<p>Last but not least, strong hashes are a building block for deduplication. At
+the moment btrfs supports only the out-of-band way, on demand by calling
+an ioctl.  There are tools utilizing that, eg. <a href="https://github.com/Zygo/bees">BEES</a>
+or <a href="https://github.com/markfasheh/duperemove">duperemove</a>,
+calculating the block checksums by themselves. Exporting the raw checksums
+would help to decrease CPU time and also external tracking of the checksums.</p>
+
+<h3 id="implementation-notes">Implementation notes</h3>
+
+<p>With the single checksum CRC32C, lots of code had hard coded size (4 bytes/32
+bits) or functions and identifiers contained ‘crc32c’. This could not remain
+once there are more hashes to be added, so a round of cleanups happened in
+advance in 5.4.  I’d call it great preparatory work that paid off, because
+adding new hashes was a matter of inserting new definition entries to a table.
+The rest was behind abstraction of btrfs functions that call to the linux
+crypto API.</p>
+
+<p>In parallel to the btrfs patches, the <em>BLAKE2B</em> linux implementation was merged,
+while <em>XXHASH</em> was merged in 5.3 and SHA256 was there forever.
+All in all, everything was ready in the same target release.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2020-02-02 - <a href="/btrfs-hilights-5.5-raid1c34/">Btrfs hilights in 5.5: 3-copy and 4-copy block groups</a> <tt>[tags: btrfs, kernel]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/97d0bf96a0d0986f466c3ff59f2ace801e33dc69">pull
+request</a>
+for the rest.</p>
+
+<h2 id="new-block-group-profiles-raid1c3-and-raid1c4">New block group profiles RAID1C3 and RAID1C4</h2>
+
+<p>There are two new block group profiles enhancing capabilities of the RAID1
+types with more copies than 2. Brief overview of the profiles is in the table
+below, for table with all profiles see manual page of <code class="language-plaintext highlighter-rouge">mkfs.brtfs</code>, also
+available <a href="https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#PROFILES">on
+wiki</a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Profile</th>
+      <th style="text-align: right">Copies</th>
+      <th style="text-align: right">Utilization</th>
+      <th style="text-align: right">Min devices</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">RAID1</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">50%</td>
+      <td style="text-align: right">2</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RAID1C3</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">33%</td>
+      <td style="text-align: right">3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RAID1C4</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">25%</td>
+      <td style="text-align: right">4</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The way all the RAID1 types work is that there are 2 / 3 / 4 exact copies over
+all available devices. The terminology is different from linux MD RAID, that
+can do any number of copies. We decided not to do that in btrfs to keep the
+implementation simple. Another point for simplicity is from the users’
+perspective. That RAID1C3 provides 3 copies is clear from the type. Even after
+adding a new device and not doing balance, the guarantees about redundancy
+still hold. Newly written data will use the new device together with 2 devices
+from the original set.</p>
+
+<p>Compare that with a hypothetical RAID1CN, on a filesystem with M devices (N &lt;=
+M). When the filesystem starts with 2 devices, equivalent to RAID1, adding a
+new one will have mixed redundancy guarantees after writing more data. Old data
+with RAID1, new with RAID1C3 – but all accounted under RAID1CN profile. A full
+re-balance would be required to make it a reliable 3-copy RAID1. Add another
+device, going to RAID1C4, same problem with more data to shuffle around.</p>
+
+<p>The allocation policy would depend on number of devices, making it hard for the
+user to know the redundancy level. This is already the case for
+RAID0/RAID5/RAID6. For the striped profile RAID0 it’s not much of a problem,
+there’s no redundancy. For the parity profiles it’s been a known problem and
+new balance filter <code class="language-plaintext highlighter-rouge">stripe</code> has been added to support fine grained selection of
+block groups.</p>
+
+<p>Speaking about RAID6, there’s the elephant in the room, trying to cover write
+hole. Lack of a resiliency against 2 device damage has been bothering all of us
+because of the known write hole problem in the RAID6 implementation. How this
+is going to be addressed is for another post, but for now, the newly added
+RAID1C3 profile is a reasonable substitute for RAID6.</p>
+
+<h3 id="how-to-use-it">How to use it</h3>
+
+<p>On a freshly created filesystem it’s simple:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
+</code></pre></div></div>
+
+<p>The command combines both new profiles for sake of demonstration, you should
+always consider the expected use and required guarantees and choose the
+appropriate profiles.</p>
+
+<p>Changing the profile later on an existing filesystem works as usual, you can
+use:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
+</code></pre></div></div>
+
+<p>Provided there are enough devices and enough space to do the conversion, this
+will go through all metadadata block groups and after it finishes, all of them
+will be of the of the desired type.</p>
+
+<h3 id="backward-compatibility">Backward compatibility</h3>
+
+<p>The new block groups are not understood by old kernels and can’t be mounted,
+not even in the read-only mode. To prevent that a new incompatibility bit is
+introduced, called <code class="language-plaintext highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
+<code class="language-plaintext highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="language-plaintext highlighter-rouge">incompat_flags</code>. On a running
+system the incompat features are exported in sysfs,
+<code class="language-plaintext highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
+
+<h3 id="outlook">Outlook</h3>
+
+<p>There is no demand for RAID1C5 at the moment (I asked more than once). The
+space utilization is low already, the RAID1C4 survives 3 dead devices so IMHO
+this is enough for most users. Extending resilience to more devices should
+perhaps take a different route.</p>
+
+<p>With more copies there’s potential for parallelization of reads from multiple
+devices. Up to now this is not optimal, there’s a decision logic that’s
+semi-random based on process ID of the btrfs worker threads or process
+submitting the IO. Better load balancing policy is a work in progress and could
+appear in 5.7 at the earliest (because 5.6 development is now in fixes-only
+mode).</p>
+
+<h3 id="look-back">Look back</h3>
+
+<p>The history of the patchset is a bit bumpy. There was enough motivation and
+requests for the functionality, so I started the analysis what needs to be
+done. Several cleanups were necessary to unify code and to make it easily
+extendable for more copies while using the same mirroring code. In the end
+change a few constants and be done.</p>
+
+<p>Following with testing, I tried simple mkfs and conversions, that worked well.
+Then scrub, overwrite some blocks and let the auto-repair do the work. No
+hiccups. The remaining and important part was the device replace, as the
+expected use case was to substitute RAID6, replacing a missing or damaged disk.
+I wrote the test script, replace 1 missing, replace 2 missing. And it did not
+work. While the filesystem was mounted, everything seemed OK. Unmount, check
+again and the devices were still missing. Not cool, right.</p>
+
+<p>Due to lack of time before the upcoming merge window (a code freeze before next
+development cycle), I had to declare it not ready and put it aside. This was in
+late 2018. For a highly requested feature this was not an easy decision. Should
+it be something less important, the development cycle between rc1 and final
+release provides enough time to fix things up. But due to the maintainer role
+with its demands I was not confident that I could find enough time to debug and
+fix the remaining problem. Also nobody offered help to continue the work, but
+that’s how it goes.</p>
+
+<p>At the late 2019 I had some spare time and looked at the pending work again.
+Enhanced the test script with more debugging messages and more checks. The code
+worked well, the test script was subtly broken. Oh well, what a blunder. That
+cost a year, but on the other hand releasing a highly requested feature that
+lacks an important part was not an appealing option.</p>
+
+<p>The patchset was added to 5.5 development queue at about the last time before
+freeze, final 5.5 release happened a week ago.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2020-01-21 - <a href="/blake3-vs-blake2-in-btrfs/">BLAKE3 vs BLAKE2 for BTRFS</a> <tt>[tags: blake2, blake3, btrfs]</tt></li>
+<p>
+<p>Irony isn’t it. The paint of BLAKE2 as BTRFS checksum algorithm hasn’t dried
+yet, 1-2 weeks to go but there’s a successor to it. Faster, yet still supposed to
+be strong. For a second or two I considered ripping out all the work and … no
+not really but I do admit the excitement.</p>
+
+<p>Speed and strength are competing goals for a hash algorithm. The speed can be
+evaluated by anyone, not so much for the strength. I am no cryptographer and
+for that area rely on expertise and opinion of others. That BLAKE was a SHA3
+finalist is a good indication, where BLAKE2 is it’s successor, weakened but not
+weak. BLAKE3 is yet another step trading off strength and speed.</p>
+
+<p>Regarding BTRFS, BLAKE2 is going to be the faster of strong hashes for now (the
+other one is SHA256). The argument I have for it now is proof of time. It’s
+been deployed in many projects (even crypto currencies!), there are optimized
+implementations, various language ports.</p>
+
+<p>The look ahead regarding more checksums is to revisit them in about 5 years.
+Hopefully by that time there will be deployments, real workload performance
+evaluations and overall user experience that will back future decisions.</p>
+
+<p>Maybe there are going to be new strong yet fast hashes developed. During my
+research I learned about Kangaroo 12 that’s a reduced version of SHA3 (Keccak).
+The hash is constructed in a different way, perhaps there might be a Kangaroo 2π
+one day on par with BLAKE3. Or something else. Why not EDON-R, it’s #1 in many
+of the cr.yp.to/hash benchmarks? Another thing I learned during the research is
+that hash algorithms are twelve in a dozen, IOW too many to choose from. That
+Kangaroo 12 is internally of a different construction might be a point for
+selecting it to have wider range of “building block types”.</p>
+
+<h2 id="quick-evaluation">Quick evaluation</h2>
+
+<p>For BTRFS I have a micro benchmark, repeatedly hashing a 4 KiB block and using
+cycles per block as a metric.</p>
+
+<ul>
+  <li>Block size: 4KiB</li>
+  <li>Iterations: 10000000</li>
+  <li>Digest size: 256 bits (32 bytes)</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Hash</th>
+      <th style="text-align: right">Total cycles</th>
+      <th style="text-align: right">Cycles/iteration</th>
+      <th style="text-align: left">Perf vs BLAKE3</th>
+      <th style="text-align: left">Perf vs BLAKE2b</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">BLAKE3  (AVX2)</td>
+      <td style="text-align: right">111260245256</td>
+      <td style="text-align: right">11126</td>
+      <td style="text-align: left">1.0</td>
+      <td style="text-align: left">0.876 (-13%)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (AVX2)</td>
+      <td style="text-align: right">127009487092</td>
+      <td style="text-align: right">12700</td>
+      <td style="text-align: left">1.141 (+14%)</td>
+      <td style="text-align: left">1.0</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (AVX)</td>
+      <td style="text-align: right">166426785907</td>
+      <td style="text-align: right">16642</td>
+      <td style="text-align: left">1.496 (+50%)</td>
+      <td style="text-align: left">1.310 (+31%)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (ref)</td>
+      <td style="text-align: right">225053579540</td>
+      <td style="text-align: right">22505</td>
+      <td style="text-align: left">2.022 (+102%)</td>
+      <td style="text-align: left">1.772 (+77%)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Right now there’s only the reference Rust implementation and a derived C
+implementation of BLAKE3, claimed not to be optimized but from my other
+experience the compiler can do a good job optimizing programmers ideas away.
+There’s only one BLAKE3 entry with the AVX2 implementation, the best hardware
+support my testing box provides. As I had the other results of BLAKE2 at hand,
+they’re in the table for comparison, but the most interesting pair are the AVX2
+versions anyway.</p>
+
+<p>The improvement is 13-14%. Not much ain’t it, way less that the announced 4+x
+faster than BLAKE2b. Well, it’s always important to interpret results of a
+benchmark with respect to the environment of measurement and the tested
+parameters.</p>
+
+<p>For BTRFS filesystem the block size is always going to be in kilobytes. I can’t
+find what was the size of the official benchmark results, the bench.rs script
+iterates over various sizes, so I assume it’s an average. Short input buffers
+can skew the results as the setup/output overhead can be significant, while for
+long buffers the compression phase is significant. I don’t have explanation for
+the difference and won’t draw conclusions about BLAKE3 in general.</p>
+
+<p>One thing that I dare to claim is that I can sleep well because upon the above
+evaluation, BLAKE3 won’t bring a notable improvement if used as a checksum
+hash.</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li><a href="https://kdave.github.io/selecting-hash-for-BTRFS">new hash for BTRFS selection</a>, same testing box for the measurements</li>
+  <li>https://github.com/BLAKE3-team/BLAKE3 – top commit 02250a7b7c80ded, 2020-01-13, upstream version 0.1.1</li>
+  <li><a href="https://bench.cr.yp.to/primitives-hash.html">DJB’s hash menu</a> and <a href="https://bench.cr.yp.to/results-hash.html">per-machine results</a> with numbers</li>
+</ul>
+
+<h2 id="personal-addendum">Personal addendum</h2>
+
+<p>During the evaluations now and in the past, I’ve found it convenient if there’s
+an offer of implementations in various languages. That eg. Keccak project pages
+does not point me directly to a C implementation slightly annoyed me, but the
+reference implementation in C++ was worse than BLAKE2 I did not take the next
+step to compare the C version, wherever I would find it.</p>
+
+<p>BLAKE3 is fresh and Rust seems to be the only thing that has been improved
+since the initial release. A plain C implementation without any
+warning-not-optimized labels would be good. I think that C versions will appear
+eventually, besides that Rust is now the new language hotness, there are
+projects not yet <em>“let’s rewrite it in Rust”</em>. Please Bear with us.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2019-12-11 - <a href="/btrfs-hilights-5.3/">Btrfs hilights in 5.3</a> <tt>[tags: btrfs, kernel]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/a18f8775419d3df282dd83efdb51c5a64d092f31">pull request</a>
+for the rest.</p>
+
+<h2 id="crc32c-uses-accelerated-versions-on-other-architectures">CRC32C uses accelerated versions on other architectures</h2>
+
+<p>… than just Intel-based ones. There was a hard coded check for the intel SSE
+feature providing the accelerated instruction, but this totally skipped other
+architectures. A brief check in <code class="language-plaintext highlighter-rouge">linux.git/arch/*/crypto</code> for files
+implementing the accelerated versions revealed that there’s a bunch of them:
+ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
+the improvements, though.</p>
+
+<h2 id="automatically-remove-incompat-bit-for-raid56">Automatically remove incompat bit for RAID5/6</h2>
+
+<p>While this is not the fix everybody is waiting on, it’s demonstrating
+user-developer-user cycle how things can be improved. A filesystem created
+with RAID5 or -6 profiles sets an incompatibility bit. That’s supposed to be
+there as long as there’s any chunk using the profiles. User expectation is that
+the bit should be removed once the chunks are eg. balanced away. This is what
+got implemented and serves as a prior example for any future feature that
+might get removed on a given filesystem. (Note from the future: I did that for the
+RAID1C34 as well).</p>
+
+<p>Side note: for the chunk profile it’s easy because the runtime check of
+presence is quick and requires only going through a list of chunk profiles
+types. Example of the worst case would be dropping the incompat bit for LZO
+after there are no compressed files using that algorithm. You can easily see
+that this would require either enumerating all extent metadata (one time check)
+or keeping track of count since mkfs time. This is IMHO not a typical request
+and can be eventually done using the <code class="language-plaintext highlighter-rouge">btrfstune</code> tool on an unmounted
+filesystem.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2019-10-12 - <a href="/simple-asm-diff-filter/">Simple asm diff filter</a> <tt>[tags: asm, diff, perl]</tt></li>
+<p>
+<p>One thing you windows guys have is a decent binary diff. I know there’s radare2
+on linux, but I’m a noob to set it up and I’d be fine with something less
+fancy. Something like 2 <code class="language-plaintext highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="language-plaintext highlighter-rouge">vimdiff</code>.</p>
+
+<p>The tricky part is the intelligent filter. I say <em>intelligent</em>, but in fact it’s
+a 20 line perl script that basically filters out things that are not important
+or are likely to change in a slightly modified C source.</p>
+
+<p>The result is lossy, eg. there are no addresses and thus jumps can’t be
+followed, but having that would actually deserve the ‘intelligent’ title.
+My use case is simpler, eg. doing small tweaks like reordering lines, adding
+annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
+
+<p>Which takes eg.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+       0:       e8 00 00 00 00          callq  5 &lt;btrfs_set_lock_blocking_read+0x5&gt;
+                        1: R_X86_64_PLT32       __fentry__-0x4
+       5:       55                      push   %rbp
+       6:       53                      push   %rbx
+       7:       48 89 fb                mov    %rdi,%rbx
+       a:       0f 1f 44 00 00          nopl   0x0(%rax,%rax,1)
+       f:       65 8b 05 00 00 00 00    mov    %gs:0x0(%rip),%eax        # 16 &lt;btrfs_set_lock_blocking_read+0x16&gt;
+                        12: R_X86_64_PC32       cpu_number-0x4
+      16:       89 c0                   mov    %eax,%eax
+      18:       48 0f a3 05 00 00 00    bt     %rax,0x0(%rip)        # 20 &lt;btrfs_set_lock_blocking_read+0x20&gt;
+      1f:       00
+                        1c: R_X86_64_PC32       __cpu_online_mask-0x4
+      20:       0f 82 b5 00 00 00       jb     db &lt;btrfs_set_lock_blocking_read+0xdb&gt;
+      26:       0f b6 ab 94 00 00 00    movzbl 0x94(%rbx),%ebp
+      2d:       40 80 fd 01             cmp    $0x1,%bpl
+      31:       0f 87 00 00 00 00       ja     37 &lt;btrfs_set_lock_blocking_read+0x37&gt;
+                        33: R_X86_64_PC32       .text.unlikely+0x11
+      37:       83 e5 01                and    $0x1,%ebp
+      3a:       74 1b                   je     57 &lt;btrfs_set_lock_blocking_read+0x57&gt;
+      3c:       8b 8b 88 00 00 00       mov    0x88(%rbx),%ecx
+      42:       65 48 8b 04 25 00 00    mov    %gs:0x0,%rax
+      49:       00 00
+                        47: R_X86_64_32S        current_task
+      4b:       39 88 c0 04 00 00       cmp    %ecx,0x4c0(%rax)
+      51:       0f 84 bd 00 00 00       je     114 &lt;btrfs_set_lock_blocking_read+0x114&gt;
+      57:       8b 83 18 02 00 00       mov    0x218(%rbx),%eax
+      5d:       85 c0                   test   %eax,%eax
+      5f:       0f 84 b2 00 00 00       je     117 &lt;btrfs_set_lock_blocking_read+0x117&gt;
+      65:       f0 ff 83 90 00 00 00    lock incl 0x90(%rbx)
+      6c:       8b 83 14 02 00 00       mov    0x214(%rbx),%eax
+      72:       85 c0                   test   %eax,%eax
+      74:       0f 84 ab 00 00 00       je     125 &lt;btrfs_set_lock_blocking_read+0x125&gt;
+      7a:       f0 ff 8b 14 02 00 00    lock decl 0x214(%rbx)
+      81:       48 8d bb 98 00 00 00    lea    0x98(%rbx),%rdi
+      88:       5b                      pop    %rbx
+      89:       5d                      pop    %rbp
+      ...
+</code></pre></div></div>
+
+<p>and produces</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+callq  btrfs_set_lock_blocking_read
+TARGET __fentry__
+push   %rbp
+push   %rbx
+mov    %rdi,%rbx
+NOP
+mov    %gs:0x0(%rip),%eax
+mov    %eax,%eax
+bt     %rax,0x0(%rip)
+jb     btrfs_set_lock_blocking_read
+movzbl 0x94(%rbx),%ebp
+cmp    $0x1,%bpl
+ja     btrfs_set_lock_blocking_read
+and    $0x1,%ebp
+je     btrfs_set_lock_blocking_read
+mov    0x88(%rbx),%ecx
+mov    %gs:0x0,%rax
+cmp    %ecx,0x4c0(%rax)
+je     btrfs_set_lock_blocking_read
+mov    0x218(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock incl 0x90(%rbx)
+mov    0x214(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock decl 0x214(%rbx)
+lea    0x98(%rbx),%rdi
+pop    %rbx
+pop    %rbp
+...
+</code></pre></div></div>
+
+<p>This looks quite simple and when lined together, the diff is readable.</p>
+
+<p>So here’s the magic script (pardon my perl skills):</p>
+
+<div class="language-perl highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/perl</span>
+
+<span class="nv">@c</span><span class="o">=&lt;&gt;</span><span class="p">;</span>
+<span class="k">foreach</span><span class="p">(</span><span class="nv">@c</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nb">chomp</span><span class="p">;</span>
+        <span class="sr">s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/</span><span class="p">;</span>
+        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/R_X86_/</span><span class="p">);</span>
+        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/</span><span class="p">);</span>
+        <span class="sr">s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//</span><span class="p">;</span>
+        <span class="sr">s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/</span><span class="p">;</span>
+        <span class="sr">s/\s+#.*$//</span><span class="p">;</span>
+        <span class="sr">s/nopl.*/NOP/</span><span class="p">;</span>
+        <span class="sr">s/xchg.*ax.*ax/NOP/</span><span class="p">;</span>
+        <span class="sr">s/data16 nop/NOP/</span><span class="p">;</span>
+        <span class="sr">s/nop/NOP/</span><span class="p">;</span>
+        <span class="k">print</span><span class="p">("</span><span class="si">$_</span><span class="se">\n</span><span class="p">");</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Use like:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>objdump <span class="nt">-dr</span> before/locking.o <span class="o">&gt;</span> before
+<span class="nv">$ </span>objdump <span class="nt">-dr</span> after/locking.o <span class="o">&gt;</span> after
+<span class="nv">$ </span>vimdiff before after
+</code></pre></div></div>
+
+</p>
+<hr>
+</li>
+
+<li>2019-10-08 - <a href="/selecting-hash-for-btrfs/">Selecting the next checksum for btrfs</a> <tt>[tags: blake2, btrfs, kernel]</tt></li>
+<p>
+<p>The currently used and the only one checksum algorithm that’s implemented in
+btrfs is crc32c, with 32bit digest. It has served well for the years but has
+some weaknesses so we’re looking for a replacements and also for enhancing the
+use cases based on possibly better hash algorithms.</p>
+
+<p>The advantage of crc32c is it’s simplicity of implementation, various optimized
+versions exist and hardware CPU instruction-level support. The error detection
+strength is not great though, the collisions are easy to generate. Note that
+crc32c has not been used in cryptographically sensitive context (eg.
+deduplication).</p>
+
+<p>Side note: the collision generation weakness is used in the filesystem image
+dump tool to preserve hashes of directory entries while obscuring the real
+names.</p>
+
+<h2 id="future-use-cases">Future use cases</h2>
+
+<p>The natural use case is still to provide checksumming for data and metadata
+blocks. With strong hashes, the same checksums can be used to aid deduplication
+or verification (HMAC instead of plain hash). Due to different requirements,
+one hash algorithm cannot possibly satisfy all requirements, namely speed vs.
+strength. Or can it?</p>
+
+<h2 id="the-criteria">The criteria</h2>
+
+<p>The frequency of checksumming is high, every data block needs that, every
+metadata block needs that.</p>
+
+<p>During the discussions in the community, there were several candidate hash
+algorithms proposed and as it goes users want different things but we
+developers want to keep the number of features sane or at least maintainable. I
+think and hope the solution will address that.</p>
+
+<p>The first hash type is to replace crc32c with focus on <strong>speed</strong> and not
+necessarily strength (ie. collision resistance).</p>
+
+<p>The second type focus is <strong>strength</strong>, in the cryptographic sense.</p>
+
+<p>In addition to the technical aspects of the hashes, there are some requirements
+that would allow free distribution and use of the implementations:</p>
+
+<ul>
+  <li>implementation available under a GPL2 compatible license</li>
+  <li>available in the linux kernel, either as a library function or as a module</li>
+  <li>license that allows use in external tools like bootloaders (namely grub2)</li>
+</ul>
+
+<p>Constraints posed by btrfs implementation:</p>
+
+<ul>
+  <li>maximum digest width is 32 bytes</li>
+  <li>blocks of size from 4KiB up to 64KiB</li>
+</ul>
+
+<p>For the enhanced use case of data verification (using HMAC), there’s a
+requirement that might not interest everybody but still covers a lot of
+deployments. And this is standard compliance and certification:</p>
+
+<ul>
+  <li>standardized by FIPS</li>
+</ul>
+
+<p>And maybe last but not least, use something that is in wide use already, proven by time.</p>
+
+<h3 id="speed">Speed</h3>
+
+<p>Implementation of all algorithms should be performant on common hardware, ie.
+64bit architectures and hopefully not terrible on 32bit architectures or older
+and weaker hardware.  By hardware I mean the CPU, not specialized hardware
+cards.</p>
+
+<p>The crypto API provided by linux kernel can automatically select the best
+implementation of a given algorithm, eg. optimized implementation in assembly
+and on multiple architectures.</p>
+
+<h3 id="strength">Strength</h3>
+
+<p>For the fast hash the collisions could be generated but hopefully not that
+easily as for crc32c. For strong hash it’s obvious that finding a collision
+would be jackpot.</p>
+
+<p>In case of the fast hash the quality can be evaluated using the SMHasher suite.</p>
+
+<h2 id="the-contenders">The contenders</h2>
+
+<p>The following list of hashes has been mentioned and considered or evaluated:</p>
+
+<ul>
+  <li>xxhash</li>
+  <li>XXH3</li>
+  <li>SipHash</li>
+  <li>CRC64</li>
+  <li>SHA256</li>
+  <li>SHA3</li>
+  <li>BLAKE2</li>
+</ul>
+
+<h3 id="xxhash">xxhash</h3>
+
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, not standardized but
+in wide use</p>
+
+<p>The hash is quite fast as it tries to exploit the CPU features that allow
+instruction parallelism. The SMHasher score is 10, that’s great. The linux kernel
+implementation landed in 5.3.</p>
+
+<p>Candidate for <em>fast hash</em>.</p>
+
+<h3 id="xxh3">XXH3</h3>
+
+<p>Unfortunately the hash is not yet finalized and cannot be in the final round,
+but for evaluation of speed it was considered. The hash comes from the same
+author as xxhash.</p>
+
+<h3 id="siphash">SipHash</h3>
+
+<p>This hash is made for hash tables and hashing short strings but we want 4KiB or
+larger blocks. Not a candidate.</p>
+
+<h3 id="crc64">CRC64</h3>
+
+<p>Similar to crc32 and among the contenders only because it was easy to evaluate
+but otherwise is not in the final round. It has shown to be slow in the
+microbenchmark.</p>
+
+<h3 id="sha256">SHA256</h3>
+
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, standardized in FIPS</p>
+
+<p>The SHA family of hashes is well known, has decent support in CPU and is
+standardized. Specifically, SHA256 is the strongest that still fits into the
+available 32 bytes.</p>
+
+<p>Candidate for <em>strong hash</em>.</p>
+
+<h3 id="sha3">SHA3</h3>
+
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, standardized in FIPS</p>
+
+<p>Winner of the 2012 hash contest, we can’t leave it out. From the practical
+perspective of checksum, the speed is bad even for the strong hash type. One of
+the criteria stated above is performance without special hardware, unlike what
+was preferred during the SHA3 contest.</p>
+
+<p>Candidate for <em>strong hash</em>.</p>
+
+<h3 id="blake2">BLAKE2</h3>
+
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, not standardized</p>
+
+<p>From the family of BLAKE that participated in the 2012 SHA contest, the ‘2’
+provides a trade-off speed vs. strength. More and more projects adopt it.</p>
+
+<p>Candidate for <em>strong hash</em>.</p>
+
+<h2 id="final-round">Final round</h2>
+
+<p>I don’t blame you if you skipped all the previous paragraphs. The (re)search
+for the next hash was quite informative and fun so it would be shame not to
+share it, also to document the selection process for some transparency. This is
+a committee driven process though.</p>
+
+<ul>
+  <li>fast hash: <strong>xxhash</strong></li>
+  <li>strong hash: <strong>BLAKE2</strong> and <strong>SHA256</strong></li>
+</ul>
+
+<p>Two hashes selected for the strong type is a compromise to get a
+fast-but-strong hash yet also something that’s standardized.</p>
+
+<p>The specific version of BLAKE2 is going to be the ‘BLAKE2b-256’ variant, ie.
+optimized for 64bit (2b) but with 256bit digest.</p>
+
+<h3 id="microbenchmark">Microbenchmark</h3>
+
+<p>A microbenchmark gives more details about performance of the hashes:</p>
+
+<p>Block: 4KiB (4096 bytes), 
+Iterations: 100000</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">Hash</th>
+      <th style="text-align: right">Total cycles</th>
+      <th style="text-align: right">Cycles/iteration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">NULL-NOP</td>
+      <td style="text-align: right">56888626</td>
+      <td style="text-align: right">568</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">NULL-MEMCPY</td>
+      <td style="text-align: right">60644484</td>
+      <td style="text-align: right">606</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">CRC64</td>
+      <td style="text-align: right">3240483902</td>
+      <td style="text-align: right">32404</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">CRC32C</td>
+      <td style="text-align: right">174338871</td>
+      <td style="text-align: right">1743</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">CRC32C-SW</td>
+      <td style="text-align: right">174388920</td>
+      <td style="text-align: right">1743</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">XXHASH</td>
+      <td style="text-align: right">251802871</td>
+      <td style="text-align: right">2518</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">XXH3</td>
+      <td style="text-align: right">193287384</td>
+      <td style="text-align: right">1932</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">BLAKE2b-256-arch</td>
+      <td style="text-align: right">1798517566</td>
+      <td style="text-align: right">17985</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">BLAKE2b-256</td>
+      <td style="text-align: right">2358400785</td>
+      <td style="text-align: right">23584</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">BLAKE2s-arch</td>
+      <td style="text-align: right">2593112451</td>
+      <td style="text-align: right">25931</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">BLAKE2s</td>
+      <td style="text-align: right">3451879891</td>
+      <td style="text-align: right">34518</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">SHA256</td>
+      <td style="text-align: right">10674261873</td>
+      <td style="text-align: right">106742</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">SHA3-256</td>
+      <td style="text-align: right">29152193318</td>
+      <td style="text-align: right">291521</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Machine: Intel(R) Xeon(R) CPU E5-1620 v3 @ 3.50GHz (AVX2)</p>
+
+<p>Hash implementations are the reference ones in C:</p>
+
+<ul>
+  <li>NULL-NOP – stub to measure overhead of the framework</li>
+  <li>NULL-MEMCPY – simple memcpy of the input buffer</li>
+  <li>CRC64 – linux kernel lib/crc64.c</li>
+  <li>CRC32C – hw assisted crc32c, (linux)</li>
+  <li>CRC32C-SW – software implementation, table-based (linux)</li>
+  <li>XXHASH – reference implementation</li>
+  <li>XXH3 – reference implementation</li>
+  <li>BLAKE2b-256-arch – 64bit optimized reference version (for SSE2/SSSE3/SSE41/AVX/AVX2)</li>
+  <li>BLAKE2b-256 – 64bit reference implementation</li>
+  <li>BLAKE2s-arch – 32bit optimized reference version</li>
+  <li>BLAKE2s – 32bit reference implementation</li>
+  <li>SHA256 – RFC 6234 reference implementation</li>
+  <li>SHA3-256 – C, based on canonical implementation</li>
+</ul>
+
+<p>There aren’t optimized versions for all hashes so for fair comparison the
+unoptimized reference implementation should be used. As BLAKE2 is my personal
+favourite I added the other variants and optimized versions to observe the
+relative improvements.</p>
+
+<h3 id="evaluation">Evaluation</h3>
+
+<p>CRC64 was added by mere curiosity how does it compare to the rest. Well,
+curiosity satisfied.</p>
+
+<p>SHA3 is indeed slow on a CPU.</p>
+
+<h3 id="what-isnt-here">What isn’t here</h3>
+
+<p>There are non-cryptographic hashes like CityHash, FarmHash, Murmur3 and more,
+that were found unsuitable or not meeting some of the basic criteria.  Others
+like FNV or Fletcher used in ZFS are of comparable strength of crc32c, so that
+won’t be a progress.</p>
+
+<h2 id="merging">Merging</h2>
+
+<p>All the preparatory work in btrfs landed in version 5.3. Hardcoded assumptions
+of crc32c were abstracted, linux crypto API wired in, with additional cleanups
+or refactoring. With that in place, adding a new has is a matter of a few lines
+of code adding the specifier string for crypto API.</p>
+
+<p>The work on btrfs-progs is following the same path.</p>
+
+<p>Right now, the version 5.4 is in development but new features can’t be added,
+so the target for the new hashes is <strong>5.5</strong>. The BLAKE2 algorithm family still
+needs to be submitted and merged, hopefully they’ll make it to 5.5 as well.</p>
+
+<p>One of my merge process requirements was to do a call for public testing, so
+we’re going to do that once all the kernel and progs code is ready for testing.
+Stay tuned.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2019-07-25 - <a href="/btrfs-hilights-5.2/">Btrfs hilights in 5.2</a> <tt>[tags: btrfs, kernel]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/9f2e3a53f7ec9ef55e9d01bc29a6285d291c151e">pull request</a>
+for the rest.</p>
+
+<h2 id="read-time-write-time-corruption-detection">Read-time, write-time corruption detection</h2>
+
+<p>The tree-checker is a recent addition to the sanity checks, a functionality
+that verifies a subset of metadata structures. The capabilities and strength is
+limited by the context and bits of information available at some point, but
+still there’s enough to get an additional value.</p>
+
+<p>The context here means a b-tree leaf that packs several items into a block (ie.
+the <code class="language-plaintext highlighter-rouge">nodesize</code>, 16KiB by default). The individual items’ members’ values can be
+verified against allowed values, the order of the keys of all items listed in
+the leaf header can be checked etc. This is just for a rough idea what happens.</p>
+
+<p>With that in the works, there are two occasions that can utilize the extended
+checking:</p>
+
+<ul>
+  <li>read-time – the first time a block is read fresh from disk</li>
+  <li>write-time – when the final contents of a block is in memory and going to be written to disk</li>
+</ul>
+
+<p>It’s clear that the read-time is merely a detector of problems that already
+happened, so there’s not much to do besides warning and returning an error
+(EUCLEAN). Turning the filesystem to read-only to prevent further problems is
+another option and inevitable on some occasions.</p>
+
+<p>The write side check aims to catch silent errors that could make it to the
+permanent storage. The reasons why this happens are two fold, but the main idea
+is to catch memory bit flips. You’d be surprised how often this happens, that
+would be for a separate article entirely.</p>
+
+<p>The new checks in 5.2 improve:</p>
+
+<ul>
+  <li>device item <em>(item that describes the physical device of the filesystem)</em> –
+check that items have the right key type, device id is within allowed range
+and that usage and total sizes are within limits of the physical device</li>
+  <li>inode item <em>(item for inodes, ie. files, directories or special files)</em>– the
+<code class="language-plaintext highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
+consistent with the global one and the basic sanity of mode, flags/attributes
+and link count</li>
+  <li>block group profiles – check that only a single type is set in the bit mask
+that represents block group profile type of a chunk (ie.
+single/dup/raid1/…)</li>
+</ul>
+
+<p>As mentioned before, the bits to check are inside a single buffer that
+represents the tree block and the check is really local to that. As an inode
+item can represent more than just files and directories, doing structural
+checks like where and how the inode item is linked to is not easy in this
+context. This is basically what would <code class="language-plaintext highlighter-rouge">btrfs check</code> do.</p>
+
+<p>The checks need to be fast because they happen on each metadata block, so no
+additional IO is allowed. This still brings some overhead but is (considered)
+negligible compared to all other updates to the block. A measurement can be
+done by adding tracepoint, but that’s left as an exercise.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2019-06-12 - <a href="/blake2-pyramid/blake2b-pyramid/">Here, have a pyramid made of BLAKE2 hashes</a> <tt>[tags: blake2, fun]</tt></li>
+<p>
+<p>Fun stuff only …</p>
+
+<p><em>Hash some bytes with changing digest length from 1 to 64.</em></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ 1]                                                                 3b
+[ 2]                                                                cf5b
+[ 3]                                                               68a2fa
+[ 4]                                                              ac6de759
+[ 5]                                                             022847e13c
+[ 6]                                                            fd2965be0997
+[ 7]                                                           d4c93ad6ffbcbb
+[ 8]                                                          87c1dcb224fd2a57
+[ 9]                                                         6017c4f8c4bcb1d115
+[10]                                                        9b3f7b15df8867b8214c
+[11]                                                       8087b2861bbdf3d0356ea6
+[12]                                                      7a035413d62f0774148a12cc
+[13]                                                     697cabcfcade7114a271373039
+[14]                                                    784e3578c7b5a031237296225e26
+[15]                                                   0102e6aa5ff6bf57071b34f838d3d4
+[16]                                                  324f54d0e8f39326145e8e04b00434b4
+[17]                                                 45fbfb40756a53305881dc52d7aa6a9025
+[18]                                                c1a664957cbc0bbd0e2eb15be3a8e0f10b46
+[19]                                               58c84031abff74bba0cab2a3ce8160c955fb92
+[20]                                              bad65265d1351746c3fc23816dca6966b42d2e90
+[21]                                             c9ed77f178c889cc985aaad89d740831922d7d6253
+[22]                                            751673d5516709339176859392a61e45b444a3a4612c
+[23]                                           e62b1a6a239571d2a7ebf686f3f1f628f7253fa595debf
+[24]                                          3afb48409fa94374bd1819bef5d40f8e90386686ec7212db
+[25]                                         139fb5a766ab873fc1747e76253ebddec0da85388261ddcd0c
+[26]                                        90b849e8d333229c8942f68faac2870530886c30edf4fe295281
+[27]                                       cfefa0767fdd316475e4374dc3b9e1eabdebb0111c88ccdaf6b668
+[28]                                      6928e0b74efa9534c84483975ab83b65191d59d69c76880eac794afc
+[29]                                     5d825aaaaabff533c36308227ed42982837bf7fa85d5f4457f6d7ebdfe
+[30]                                    a14f3dafe99f88dbb119f23cd2d390b3396f2c1c90fc8099514abb95872a
+[31]                                   6a62d371a4b6583df5cc9f125e01536338a8e87fd17b1e24468778e00205bc
+[32]                                  99b4a09edc99a1a2283f94189d8604ca65aab7aeebc31327b8c4a918341f92b0
+[33]                                 1b0728d4ae415dc572ebb7caf18f7b43115ca6b53f6379a6571b4949d2049e6b7f
+[34]                                04c6817ba561b6e6aefb2237682aa4171314fc2a7bfa15f604227e239e8a08696153
+[35]                               102d84c3e030bd1d413f12128c34caef64c06c364eb13c4eb49549ab278efcd5d0dac1
+[36]                              fa4edc42c4fcd5754de080616d09412c3f7baba4a972954e449bfa65fc040ae5556bc63c
+[37]                             0728fcf98a665b6a8c9a63ae31c87538d68bca8dc2e2a6b66dba3c1f4a8c5965bb4045a1e2
+[38]                            3fd0e5397a0d98eaf56a941e5b7ba7b8aa4b8dbe2a22993809cbb9a4b68834de1341c1412e2f
+[39]                           16eee95d5dc56762bc42f59aac2fc0bee5ba3a5fa7d6b2c1acc13af519a1a13cc793d2482685b9
+[40]                          74843823a200d423fbead5d40d83dea26638ecf79a768f819b44174a2ce0b51702944ff967597b9f
+[41]                         53134460150687f2b993259a048a9b59de7d8c091ffc635b792b33ae9c7970ef6dc47fe6308e47da21
+[42]                        174cbb459228b1b5fe302d36dfd69d0c75b8d77398e6eb8440e9449db38ce7387d12095f23531eb5a2bd
+[43]                       f550a1d564f073486095bf473a20d135fcba595fd574c124e6a8f3f1451a4cd649b3d3c6c22fd3961dff9e
+[44]                      9e25048892b6d367d0e85a75d1f49c6950a9ae3ca02b03165b1308f0aadac093032fbb13556cb9bb85872def
+[45]                     d43eb7fa68c34906813c360cd5c50e8d5f62c0de941f1e9520d405104144c30c1eb43c95bad4b850b3dc308141
+[46]                    b9e4bc8364d69248c68dfe17a66131de04e6be949663c936fdbe5fec3efb73d4e40c22ad298d8be849de58b0a3a8
+[47]                   f81017569d44554c934f6d89723e8997e115def6d66c76ee3c05a7e7626f487cab5659b4e3a7f32c9859dd04c579eb
+[48]                  f2a987f00b96fafd25f2d8a19717913674961f234d0f81da5dbb549382ce2f25a5a95c4be917b97341d7c8b8a05aa2d1
+[49]                 03602f74fadc251d46a064dcc55a812c37c98960a984782c533bce1db92c514521996c58ff293a3957fd686cd814cbc18e
+[50]                bf939f9418697008f5a1c67e16e7f01bf596a7be648069c5bb322ba7207b6af5947912a40773f3c8f48bef03cda925c79eb8
+[51]               77cb53241baa7dfd4b73b786b29543ad4f9da15c33d21b7acf0d04bd78c437018f7358357879f06e8fa59832028a851c126fbf
+[52]              404a9cdd87d1ff194c45c9dd1995889b5492b22d446f87f8efe0148793bee21a756cfe6ac18f438f2535b35e909678e1f4ddfd92
+[53]             38b399db58e9a1d4b3d78e3756b55a7d8bc3fce565a6cd68f66632cb3e201720384487bc314fc960cc7ece0915ab06ab655cb21f95
+[54]            341c51088313284bb6efb2ce87116fa0ad86c540b4761ad1a91db8a54faf0ac16ae44de62e02d87d88124cdf7820f939657f30d43401
+[55]           4d217c7ba91da2c4503357904f2264117a445fde54a7f25cf85c0b9d4528e1a8ca682ea59586d63755c2dac848716d19afa00f9c2a70e5
+[56]          05664a51270f7a9dc309a1e78bddd3ed6a210aecf31f42be0a4231280a9e15ca1af3ec0456760fc2a6b76039a7f041a7623470bd912afc7d
+[57]         434c8e7d8357e840f8522c582385fcba6650b7e923a821a185ae4e036de7ed6b931b908ef4bc3838de6864decdff762ac123f6f66a14a2fded
+[58]        87fc3385049632e310553cda08b22810b0fa59c92f5559b49d2ffd5e5d0734886ccd269e6866d6412bc06489cba014265767edebcd2c18977c42
+[59]       282ca365baaa22317a3c7faadc075e6b132fefee0d98d8823a79ffe87f87f7a38d8fd9e4a7ca10a904fbbcd9952dc12af3e561b884a40b7b2b4288
+[60]      a0f9ca58069fe970f2fd36d6c86b38b14ad41418f870ee695aa52395400552c4f583760e01c68c440c5fa6f9c6db25138d85cd6568f0f9a5698db89a
+[61]     79b0b42401bb022fdfb71fdd2e6ddd2d0dc20cedcdd4b64e7921a03fd2f71508a195e2d8a4ebeb0ea8cdc6942ccd28cca7eda0fa2126fd884a0b279cd4
+[62]    42b704ca2da3386bf00fc511648668af1b9f3bbf69d7972d35dc24365d0b37778fffa624662bd50139430644314367ff855da6bb489227144456007d5f1d
+[63]   504a6a52e16b29a0ebe9106ac74931889243ef98aee97bd598502aac9363d99c7c414d39cb1229a3b49e79351f2c0daa3e9221bc7a135ffc41f79a6e416762
+[64]  0b944b6bdc6c99e10448a536dea6ea79fd1d78e70307bf6e3c4a889f3876e2ec6a002ec9b4198a27e2b2dcdfcef7a4de4da52791248457a50d97307cdb0b6c80
+</code></pre></div></div>
+
+<p>Sources:
+<a href="blake2-impl.h">blake2-impl.h</a>
+<a href="test-blake2.h">test-blake2.h</a>
+<a href="test-blake2b.c">test-blake2b.c</a></p>
+
+</p>
+<hr>
+</li>
+
+<li>2019-04-27 - <a href="/linux-crypto-blake2s/">Linux crypto: testing blake2s</a> <tt>[tags: blake2, crypto, linux]</tt></li>
+<p>
+<p>The BLAKE2 algorithm is out for some time, yet there’s no port to linux crypto
+API. The recent push of WireGuard would add it to linux kernel, but using a
+different API (zinc) than the existing one. I haven’t explored zinc, I assume
+there will be a way to use it from inside kernel, but this would need another
+layer to switch the APIs according to the algorithm.</p>
+
+<p>As btrfs is going to use more hashing algos, we are in the process of
+selection.  One of the contenders is BLAKE2, though everybody would have a
+different suggestion.  In order to test it, a port is needed. Which basically is
+a glue code between the linux crypto API and the BLAKE2 implementation.</p>
+
+<p>I’m not going to reimplement crypto or anything, so the the default
+implementation is going to be the reference one found in blake2 git.</p>
+
+<p><em>Note: due to the maximum space of 32 bytes available in the btrfs metadata
+blocks, the version is BLAKE2s.</em></p>
+
+<h2 id="the-blake2s-sources">The BLAKE2s sources</h2>
+
+<p>From the repository <a href="https://github.com/BLAKE2/BLAKE2">https://github.com/BLAKE2/BLAKE2</a>:</p>
+
+<ul>
+  <li>ref/blake2s-ref.c</li>
+  <li>ref/blake2.h</li>
+  <li>ref/blake2-impl.h</li>
+</ul>
+
+<p>Briefly skimming over the sources, there’s nothing that’ll cause trouble.
+Standard C code, some definitions. Adapting for linux kernel would need to
+replace the <code class="language-plaintext highlighter-rouge">stdint.h</code> types (<code class="language-plaintext highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="language-plaintext highlighter-rouge">u8</code> etc) and change
+path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.</p>
+
+<h2 id="add-the-new-algorithm-definition-cra">Add the new algorithm definition (CRA)</h2>
+
+<p>Though it’s possible to prepare a module for an out-of-tree build (see below),
+let’s do it inside the <code class="language-plaintext highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
+sources to copy &amp; paste. I’ve used <code class="language-plaintext highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
+useful.</p>
+
+<p>The crypto hash description is defined in <code class="language-plaintext highlighter-rouge">struct shash_alg</code>, contains the
+technical description like type of the algorithm, length of the context and
+callbacks for various phases of the hash calculation (init, update, final), and
+identification of the algorithm and the implementation. The default
+implementations are C and use the string “-generic” in the name.</p>
+
+<p>The crc32c module came with a few stub callbacks (<code class="language-plaintext highlighter-rouge">checksum_init</code> etc), that
+will only call into the blake2 functions and the definition can stay. Simple
+search and replace from crc32c to blake2s will do most of the conversion.</p>
+
+<h2 id="add-the-glue-code-for-crypto-api">Add the glue code for crypto API</h2>
+
+<p>Now we have the <code class="language-plaintext highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
+definition. The glue code connects the API with the implementation. We need 2
+helper structures that hold the context once the user starts digest calculation.
+The private blake2s context is embedded into one of them.  The intermediate
+results will be stored there.</p>
+
+<p>And the rest is quite easy, each callback will call into the respective blake2s
+function, passing the context, data and lengths. One thing that I copied from
+the examples is the key initialization that’s in <code class="language-plaintext highlighter-rouge">blake2s_cra_init</code>, that
+appears to be global and copied to the context each time a new one is
+initialized.</p>
+
+<p>Here the choice of using <code class="language-plaintext highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
+the right parameters, calling the blake2s functions that can retain their
+original signature. This makes later updates easier.  All the functions are
+static so the compiler will most probably optimize the code that there will be
+no unnecessary overhead.</p>
+
+<p>Well and that’s it. Let’s try to compile it and insert the module:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
+...
+  CC [M]  crypto/blake2s.o
+linux.git$ make crypto/blake2s.ko
+...
+  CC      crypto/blake2s.mod.o
+  LD [M]  crypto/blake2s.ko
+...
+</code></pre></div></div>
+
+<p>Check that it’s been properly loaded</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
+</code></pre></div></div>
+
+<p>and registered</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
+name         : blake2s
+driver       : blake2s-generic
+module       : blake2s
+priority     : 100
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : shash
+blocksize    : 1
+digestsize   : 32
+...
+</code></pre></div></div>
+
+<p>The selftest says it passed, but there no such thing so far. There are test
+values provided in blake2 git so it would be nice to have too (tm). But
+otherwise it looks good.</p>
+
+<p>To do actual test, we’d need something inside kernel to utilize the new hash.
+One option is to implement a module that will do that or use the userspace
+library <code class="language-plaintext highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
+available kernel implementations.</p>
+
+<h2 id="test-it-with-libkcapi">Test it with libkcapi</h2>
+
+<p>The <code class="language-plaintext highlighter-rouge">libkcapi</code> project at
+<a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a>
+provides an API that uses the <code class="language-plaintext highlighter-rouge">AF_ALG</code> socket type to exchange data with
+kernel. The library provides a command line tool that we can use right away and
+don’t need to code anything.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
+48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
+</code></pre></div></div>
+
+<p>The test vectors provided by blake2 confirm that this is hash of empty string
+with the default key (0x000102..1f).</p>
+
+<h2 id="out-of-tree-build">Out-of-tree build</h2>
+
+<p>Sources in the linux.git require one additional line to Makefile, build it
+unconditionally as a module. Proper submission to linux kernel would need the
+Kconfig option.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
+</code></pre></div></div>
+
+<p>The standalone build needs a Makefile with a few targets that use the existing
+build of kernel. Note that you’d need a running kernel with the same built
+sources. This is usually provided by the <code class="language-plaintext highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
+if you build kernels from git, you know what to do, right?</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
+obj-m := blake2s.o
+
+default:
+        $(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+        $(MAKE) -C $(KDIR) M=$$PWD clean
+
+modules_install:
+        $(MAKE) -C $(KDIR) M=$$PWD modules_install
+</code></pre></div></div>
+
+<p>After running <code class="language-plaintext highlighter-rouge">make</code>, the kernel module is ready for use.</p>
+
+<h2 id="what-next">What next?</h2>
+
+<p>Send it upstream. Well, after some work of course.</p>
+
+<ul>
+  <li>update the coding style of the blake2 sources</li>
+  <li>add Kconfig</li>
+  <li>write self-tests</li>
+  <li>optionally add the optimized implementations</li>
+</ul>
+
+<p>All the files can be found here:</p>
+
+<ul>
+  <li><a href="Makefile">Makefile</a>: out-of-tree build</li>
+  <li><a href="blake2.h">blake2.h</a>: copied and updated for linux</li>
+  <li><a href="blake2.h">blake2-impl.h</a>: copied and updated for linux</li>
+  <li><a href="blake2.h">blake2s.c</a>: copied and updated for linux</li>
+</ul>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li><a href="https://blake2.net">https://blake2.net</a></li>
+  <li><a href="https://github.com/BLAKE2/BLAKE2">https://github.com/BLAKE2/BLAKE2</a>:</li>
+  <li><a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a></li>
+  <li><a href="https://www.kernel.org/doc/html/latest/crypto/userspace-if.html">https://www.kernel.org/doc/html/latest/crypto/userspace-if.html</a></li>
+  <li><a href="https://www.kernel.org/doc/html/latest/crypto/intro.html">https://www.kernel.org/doc/html/latest/crypto/intro.html</a></li>
+</ul>
+
+</p>
+<hr>
+</li>
+
+<li>2018-10-18 - <a href="/bench-4.20/">Some btrfs benchmarks of changes pending for 4.20</a> <tt>[tags: benchmark, btrfs, kernel]</tt></li>
+<p>
+<p>Update: enhance the text, still a bit raw, check the numbers</p>
+
+<p>Example of benchmarks of patches going to 4.20 kernel. The goal was to identify
+potential differences between the devleopment branch with and without merge
+to the mainline. The factors affecting the difference are usually in other
+subsystems like block layer (IO queuing) or memory management (namely page
+cache, memory allocator, writeback), core (scheduling, locking primitives).</p>
+
+<ul>
+  <li>base/misc1: v4.19-rc8</li>
+  <li>misc2: v4.19-rc8 + btrfs pull request</li>
+  <li>misc3: v4.19 with btrfs changes merged</li>
+</ul>
+
+<p>The numbers are reflected in the results below, referring to comparisons of
+the branches. 1-to-2 is the net effect of the patches, 1-to-3 is the same
+patches after merge.</p>
+
+<p>The testsuite used is <a href="https://github.com/mgorman/mmtests">MMTests</a>, that’s
+internally used for performance evaluation and provides wide range of workloads</p>
+
+<p>The expected performance delta should be roughly the same for 2 and 3, the
+tables show if the delta is significant (green: positive, red: negative), so it
+can be easily observed. Note that the values need to be properly interpreted in
+the context of the benchmark and perhaps other values.</p>
+
+<h2 id="mmtests-results">MMTests results</h2>
+
+<ul>
+  <li><a href="blogbench/results-12">blogbench 1, 2</a></li>
+  <li><a href="blogbench/results">blogbench 1, 2, 3</a></li>
+  <li><a href="dbench4-async/results-12">dbench4-async 1, 2</a></li>
+  <li><a href="dbench4-async/results">dbench4-async 1, 2, 3</a>
+    <ul>
+      <li>good: slight improvement in 128 thread latency</li>
+      <li>good: decreased system cpu time</li>
+      <li>bad: longer overall runtime</li>
+    </ul>
+  </li>
+  <li><a href="dbench4-fsync/results-12">dbench4-fsync 1, 2</a></li>
+  <li><a href="dbench4-fsync/results">dbench4-fsync 1, 2, 3</a>
+    <ul>
+      <li>good: slight improvement in 128 thread latency</li>
+      <li>good: decreased system cpu time</li>
+    </ul>
+  </li>
+  <li><a href="filebench-webproxy/results-12">filebench-webproxy 1, 2</a></li>
+  <li><a href="filebench-webproxy/results">filebench-webproxy 1, 2, 3</a></li>
+  <li><a href="fio-async-randrw/results-12">fio-async-randrw 1, 2</a></li>
+  <li><a href="fio-async-randrw/results">fio-async-randrw 1, 2, 3</a></li>
+  <li><a href="fio-async-seqw/results-12">fio-async-seqw 1, 2</a></li>
+  <li><a href="fio-async-seqw/results">fio-async-seqw 1, 2, 3</a></li>
+  <li><a href="fsmark-metadata/results-12">fsmark-metadata 1, 2</a></li>
+  <li><a href="fsmark-metadata/results">fsmark-metadata 1, 2, 3</a>
+    <ul>
+      <li>good: overall improvements in transaction counts for 3</li>
+    </ul>
+  </li>
+</ul>
+
+<p>The raw stats are available.</p>
+
+<h2 id="test-setup">Test setup</h2>
+
+<ul>
+  <li>HP ProLiant DL380 G6</li>
+  <li>16 CPUs (Intel(R) Xeon(R), E5520 2.27GHz)</li>
+  <li>16 GiB RAM</li>
+  <li>4x SAS 136 GiB disks, partitioned</li>
+  <li>filesystem:
+    <ul>
+      <li>btrfs</li>
+      <li>mkfs: data: raid0, metadata: raid1</li>
+      <li>mount: noatime</li>
+    </ul>
+  </li>
+</ul>
+
+</p>
+<hr>
+</li>
+
+<li>2018-06-08 - <a href="/qemu-2.11-if=scsi/">qemu 2.12 does not support if=scsi</a> <tt>[tags: qemu]</tt></li>
+<p>
+<p>After update of qemu to version 2.12, my testing vms stopped to just warn
+about the <code class="language-plaintext highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
+start.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: <span class="nt">-drive</span> <span class="nv">file</span><span class="o">=</span>root,if<span class="o">=</span>scsi,media<span class="o">=</span>disk,cache<span class="o">=</span>none,index<span class="o">=</span>0,format<span class="o">=</span>raw: machine <span class="nb">type </span>does not support <span class="k">if</span><span class="o">=</span>scsi,bus<span class="o">=</span>0,unit<span class="o">=</span>0
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
+take some time to comprehend but then you can do wonders.</p>
+
+<p>The <a href="https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features">release notes of version 2.12</a> do
+mention that the support is gone and that other options should be used instead,
+also mentions which ones. But it does not tell how exactly. As this should be a
+simple syntax transformation from one option to another, an example would save
+a lot of time.</p>
+
+<p>I was not able to find any ready-to-use example in a few minutes so had to
+experiment a bit (this saved me documentation reading time).</p>
+
+<p>The setup I use is a file-backed root image for a virtual machine, nothing
+really fancy. The file name is <code class="language-plaintext highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
+caching.</p>
+
+<p>Here you are:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
+-drive file=root,id=root-img,if=none,format=raw,cache=none
+-device scsi-hd,drive=root-img
+</code></pre></div></div>
+
+<p>First you need to define the bus, otherwise the 3rd line will complain that
+there’s no SCSI. Second line is to define the file backed drive and the third
+one puts that together.</p>
+
+<p>Using SCSI might not be the best idea for a qemu VM as the emulated driver is
+buggy and crashes, so I’d recommend to use virtio, but for a almost read-only
+root image it’s fine. Also the device names are predictable.</p>
+
+</p>
+<hr>
+</li>
+
+<li>2017-12-06 - <a href="/gitstats-btrfs-progs-v4.14/">gitstats: btrfs-progs for v4.14</a> <tt>[tags: btrfs-progs, draft, git, stats]</tt></li>
+<p>
+<p><a href="gitstats-index.html">gitstats</a></p>
+
+</p>
+<hr>
+</li>
+
+<li>2017-11-23 - <a href="/errno.h/">errno.h for the masses</a> <tt>[tags: debugging, errno]</tt></li>
+<p>
+<p>The <code class="language-plaintext highlighter-rouge">errno</code> values, in various formats you may encounter. The standard errno is
+a positive number, linux kernel uses the negative values. Besides the sources
+(going through like 5 include hops from <code class="language-plaintext highlighter-rouge">/usr/include/errno.h</code> to
+<code class="language-plaintext highlighter-rouge">/usr/include/asm-generic/errno.h</code> and <code class="language-plaintext highlighter-rouge">/usr/include/asm-generic/errno-base.h</code>)
+there’s no direct way to get the symbolic &lt;-&gt; numeric mapping. The hexa values
+commonly appear in the stack trace dumps.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>symbolic</th>
+      <th style="text-align: right">dec</th>
+      <th style="text-align: right">hex</th>
+      <th style="text-align: right">neg hex</th>
+      <th>comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>EPERM</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: right">0x01</td>
+      <td style="text-align: right">0x..ffff</td>
+      <td>Operation not permitted</td>
+    </tr>
+    <tr>
+      <td>ENOENT</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">0x02</td>
+      <td style="text-align: right">0x..fffe</td>
+      <td>No such file or directory</td>
+    </tr>
+    <tr>
+      <td>ESRCH</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">0x03</td>
+      <td style="text-align: right">0x..fffd</td>
+      <td>No such process</td>
+    </tr>
+    <tr>
+      <td>EINTR</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">0x04</td>
+      <td style="text-align: right">0x..fffc</td>
+      <td>Interrupted system call</td>
+    </tr>
+    <tr>
+      <td>EIO</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: right">0x05</td>
+      <td style="text-align: right">0x..fffb</td>
+      <td>I/O error</td>
+    </tr>
+    <tr>
+      <td>ENXIO</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: right">0x06</td>
+      <td style="text-align: right">0x..fffa</td>
+      <td>No such device or address</td>
+    </tr>
+    <tr>
+      <td>E2BIG</td>
+      <td style="text-align: right">7</td>
+      <td style="text-align: right">0x07</td>
+      <td style="text-align: right">0x..fff9</td>
+      <td>Argument list too long</td>
+    </tr>
+    <tr>
+      <td>ENOEXEC</td>
+      <td style="text-align: right">8</td>
+      <td style="text-align: right">0x08</td>
+      <td style="text-align: right">0x..fff8</td>
+      <td>Exec format error</td>
+    </tr>
+    <tr>
+      <td>EBADF</td>
+      <td style="text-align: right">9</td>
+      <td style="text-align: right">0x09</td>
+      <td style="text-align: right">0x..fff7</td>
+      <td>Bad file number</td>
+    </tr>
+    <tr>
+      <td>ECHILD</td>
+      <td style="text-align: right">10</td>
+      <td style="text-align: right">0x0a</td>
+      <td style="text-align: right">0x..fff6</td>
+      <td>No child processes</td>
+    </tr>
+    <tr>
+      <td>EAGAIN</td>
+      <td style="text-align: right">11</td>
+      <td style="text-align: right">0x0b</td>
+      <td style="text-align: right">0x..fff5</td>
+      <td>Try again</td>
+    </tr>
+    <tr>
+      <td>ENOMEM</td>
+      <td style="text-align: right">12</td>
+      <td style="text-align: right">0x0c</td>
+      <td style="text-align: right">0x..fff4</td>
+      <td>Out of memory</td>
+    </tr>
+    <tr>
+      <td>EACCES</td>
+      <td style="text-align: right">13</td>
+      <td style="text-align: right">0x0d</td>
+      <td style="text-align: right">0x..fff3</td>
+      <td>Permission denied</td>
+    </tr>
+    <tr>
+      <td>EFAULT</td>
+      <td style="text-align: right">14</td>
+      <td style="text-align: right">0x0e</td>
+      <td style="text-align: right">0x..fff2</td>
+      <td>Bad address</td>
+    </tr>
+    <tr>
+      <td>ENOTBLK</td>
+      <td style="text-align: right">15</td>
+      <td style="text-align: right">0x0f</td>
+      <td style="text-align: right">0x..fff1</td>
+      <td>Block device required</td>
+    </tr>
+    <tr>
+      <td>EBUSY</td>
+      <td style="text-align: right">16</td>
+      <td style="text-align: right">0x10</td>
+      <td style="text-align: right">0x..fff0</td>
+      <td>Device or resource busy</td>
+    </tr>
+    <tr>
+      <td>EEXIST</td>
+      <td style="text-align: right">17</td>
+      <td style="text-align: right">0x11</td>
+      <td style="text-align: right">0x..ffef</td>
+      <td>File exists</td>
+    </tr>
+    <tr>
+      <td>EXDEV</td>
+      <td style="text-align: right">18</td>
+      <td style="text-align: right">0x12</td>
+      <td style="text-align: right">0x..ffee</td>
+      <td>Cross-device link</td>
+    </tr>
+    <tr>
+      <td>ENODEV</td>
+      <td style="text-align: right">19</td>
+      <td style="text-align: right">0x13</td>
+      <td style="text-align: right">0x..ffed</td>
+      <td>No such device</td>
+    </tr>
+    <tr>
+      <td>ENOTDIR</td>
+      <td style="text-align: right">20</td>
+      <td style="text-align: right">0x14</td>
+      <td style="text-align: right">0x..ffec</td>
+      <td>Not a directory</td>
+    </tr>
+    <tr>
+      <td>EISDIR</td>
+      <td style="text-align: right">21</td>
+      <td style="text-align: right">0x15</td>
+      <td style="text-align: right">0x..ffeb</td>
+      <td>Is a directory</td>
+    </tr>
+    <tr>
+      <td>EINVAL</td>
+      <td style="text-align: right">22</td>
+      <td style="text-align: right">0x16</td>
+      <td style="text-align: right">0x..ffea</td>
+      <td>Invalid argument</td>
+    </tr>
+    <tr>
+      <td>ENFILE</td>
+      <td style="text-align: right">23</td>
+      <td style="text-align: right">0x17</td>
+      <td style="text-align: right">0x..ffe9</td>
+      <td>File table overflow</td>
+    </tr>
+    <tr>
+      <td>EMFILE</td>
+      <td style="text-align: right">24</td>
+      <td style="text-align: right">0x18</td>
+      <td style="text-align: right">0x..ffe8</td>
+      <td>Too many open files</td>
+    </tr>
+    <tr>
+      <td>ENOTTY</td>
+      <td style="text-align: right">25</td>
+      <td style="text-align: right">0x19</td>
+      <td style="text-align: right">0x..ffe7</td>
+      <td>Not a typewriter</td>
+    </tr>
+    <tr>
+      <td>ETXTBSY</td>
+      <td style="text-align: right">26</td>
+      <td style="text-align: right">0x1a</td>
+      <td style="text-align: right">0x..ffe6</td>
+      <td>Text file busy</td>
+    </tr>
+    <tr>
+      <td>EFBIG</td>
+      <td style="text-align: right">27</td>
+      <td style="text-align: right">0x1b</td>
+      <td style="text-align: right">0x..ffe5</td>
+      <td>File too large</td>
+    </tr>
+    <tr>
+      <td>ENOSPC</td>
+      <td style="text-align: right">28</td>
+      <td style="text-align: right">0x1c</td>
+      <td style="text-align: right">0x..ffe4</td>
+      <td>No space left on device</td>
+    </tr>
+    <tr>
+      <td>ESPIPE</td>
+      <td style="text-align: right">29</td>
+      <td style="text-align: right">0x1d</td>
+      <td style="text-align: right">0x..ffe3</td>
+      <td>Illegal seek</td>
+    </tr>
+    <tr>
+      <td>EROFS</td>
+      <td style="text-align: right">30</td>
+      <td style="text-align: right">0x1e</td>
+      <td style="text-align: right">0x..ffe2</td>
+      <td>Read-only file system</td>
+    </tr>
+    <tr>
+      <td>EMLINK</td>
+      <td style="text-align: right">31</td>
+      <td style="text-align: right">0x1f</td>
+      <td style="text-align: right">0x..ffe1</td>
+      <td>Too many links</td>
+    </tr>
+    <tr>
+      <td>EPIPE</td>
+      <td style="text-align: right">32</td>
+      <td style="text-align: right">0x20</td>
+      <td style="text-align: right">0x..ffe0</td>
+      <td>Broken pipe</td>
+    </tr>
+    <tr>
+      <td>EDOM</td>
+      <td style="text-align: right">33</td>
+      <td style="text-align: right">0x21</td>
+      <td style="text-align: right">0x..ffdf</td>
+      <td>Math argument out of domain of func</td>
+    </tr>
+    <tr>
+      <td>ERANGE</td>
+      <td style="text-align: right">34</td>
+      <td style="text-align: right">0x22</td>
+      <td style="text-align: right">0x..ffde</td>
+      <td>Math result not representable</td>
+    </tr>
+    <tr>
+      <td>EDEADLK</td>
+      <td style="text-align: right">35</td>
+      <td style="text-align: right">0x23</td>
+      <td style="text-align: right">0x..ffdd</td>
+      <td>Resource deadlock would occur</td>
+    </tr>
+    <tr>
+      <td>ENAMETOOLONG</td>
+      <td style="text-align: right">36</td>
+      <td style="text-align: right">0x24</td>
+      <td style="text-align: right">0x..ffdc</td>
+      <td>File name too long</td>
+    </tr>
+    <tr>
+      <td>ENOLCK</td>
+      <td style="text-align: right">37</td>
+      <td style="text-align: right">0x25</td>
+      <td style="text-align: right">0x..ffdb</td>
+      <td>No record locks available</td>
+    </tr>
+    <tr>
+      <td>ENOSYS</td>
+      <td style="text-align: right">38</td>
+      <td style="text-align: right">0x26</td>
+      <td style="text-align: right">0x..ffda</td>
+      <td>Function not implemented</td>
+    </tr>
+    <tr>
+      <td>ENOTEMPTY</td>
+      <td style="text-align: right">39</td>
+      <td style="text-align: right">0x27</td>
+      <td style="text-align: right">0x..ffd9</td>
+      <td>Directory not empty</td>
+    </tr>
+    <tr>
+      <td>ELOOP</td>
+      <td style="text-align: right">40</td>
+      <td style="text-align: right">0x28</td>
+      <td style="text-align: right">0x..ffd8</td>
+      <td>Too many symbolic links encountered</td>
+    </tr>
+    <tr>
+      <td>EWOULDBLOCK</td>
+      <td style="text-align: right">EAGAIN</td>
+      <td style="text-align: right"> </td>
+      <td style="text-align: right"> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ENOMSG</td>
+      <td style="text-align: right">42</td>
+      <td style="text-align: right">0x2a</td>
+      <td style="text-align: right">0x..ffd6</td>
+      <td>No message of desired type</td>
+    </tr>
+    <tr>
+      <td>EIDRM</td>
+      <td style="text-align: right">43</td>
+      <td style="text-align: right">0x2b</td>
+      <td style="text-align: right">0x..ffd5</td>
+      <td>Identifier removed</td>
+    </tr>
+    <tr>
+      <td>ECHRNG</td>
+      <td style="text-align: right">44</td>
+      <td style="text-align: right">0x2c</td>
+      <td style="text-align: right">0x..ffd4</td>
+      <td>Channel number out of range</td>
+    </tr>
+    <tr>
+      <td>EL2NSYNC</td>
+      <td style="text-align: right">45</td>
+      <td style="text-align: right">0x2d</td>
+      <td style="text-align: right">0x..ffd3</td>
+      <td>Level 2 not synchronized</td>
+    </tr>
+    <tr>
+      <td>EL3HLT</td>
+      <td style="text-align: right">46</td>
+      <td style="text-align: right">0x2e</td>
+      <td style="text-align: right">0x..ffd2</td>
+      <td>Level 3 halted</td>
+    </tr>
+    <tr>
+      <td>EL3RST</td>
+      <td style="text-align: right">47</td>
+      <td style="text-align: right">0x2f</td>
+      <td style="text-align: right">0x..ffd1</td>
+      <td>Level 3 reset</td>
+    </tr>
+    <tr>
+      <td>ELNRNG</td>
+      <td style="text-align: right">48</td>
+      <td style="text-align: right">0x30</td>
+      <td style="text-align: right">0x..ffd0</td>
+      <td>Link number out of range</td>
+    </tr>
+    <tr>
+      <td>EUNATCH</td>
+      <td style="text-align: right">49</td>
+      <td style="text-align: right">0x31</td>
+      <td style="text-align: right">0x..ffcf</td>
+      <td>Protocol driver not attached</td>
+    </tr>
+    <tr>
+      <td>ENOCSI</td>
+      <td style="text-align: right">50</td>
+      <td style="text-align: right">0x32</td>
+      <td style="text-align: right">0x..ffce</td>
+      <td>No CSI structure available</td>
+    </tr>
+    <tr>
+      <td>EL2HLT</td>
+      <td style="text-align: right">51</td>
+      <td style="text-align: right">0x33</td>
+      <td style="text-align: right">0x..ffcd</td>
+      <td>Level 2 halted</td>
+    </tr>
+    <tr>
+      <td>EBADE</td>
+      <td style="text-align: right">52</td>
+      <td style="text-align: right">0x34</td>
+      <td style="text-align: right">0x..ffcc</td>
+      <td>Invalid exchange</td>
+    </tr>
+    <tr>
+      <td>EBADR</td>
+      <td style="text-align: right">53</td>
+      <td style="text-align: right">0x35</td>
+      <td style="text-align: right">0x..ffcb</td>
+      <td>Invalid request descriptor</td>
+    </tr>
+    <tr>
+      <td>EXFULL</td>
+      <td style="text-align: right">54</td>
+      <td style="text-align: right">0x36</td>
+      <td style="text-align: right">0x..ffca</td>
+      <td>Exchange full</td>
+    </tr>
+    <tr>
+      <td>ENOANO</td>
+      <td style="text-align: right">55</td>
+      <td style="text-align: right">0x37</td>
+      <td style="text-align: right">0x..ffc9</td>
+      <td>No anode</td>
+    </tr>
+    <tr>
+      <td>EBADRQC</td>
+      <td style="text-align: right">56</td>
+      <td style="text-align: right">0x38</td>
+      <td style="text-align: right">0x..ffc8</td>
+      <td>Invalid request code</td>
+    </tr>
+    <tr>
+      <td>EBADSLT</td>
+      <td style="text-align: right">57</td>
+      <td style="text-align: right">0x39</td>
+      <td style="text-align: right">0x..ffc7</td>
+      <td>Invalid slot</td>
+    </tr>
+    <tr>
+      <td>EDEADLOCK</td>
+      <td style="text-align: right">EDEADLK</td>
+      <td style="text-align: right"> </td>
+      <td style="text-align: right"> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>EBFONT</td>
+      <td style="text-align: right">59</td>
+      <td style="text-align: right">0x3b</td>
+      <td style="text-align: right">0x..ffc5</td>
+      <td>Bad font file format</td>
+    </tr>
+    <tr>
+      <td>ENOSTR</td>
+      <td style="text-align: right">60</td>
+      <td style="text-align: right">0x3c</td>
+      <td style="text-align: right">0x..ffc4</td>
+      <td>Device not a stream</td>
+    </tr>
+    <tr>
+      <td>ENODATA</td>
+      <td style="text-align: right">61</td>
+      <td style="text-align: right">0x3d</td>
+      <td style="text-align: right">0x..ffc3</td>
+      <td>No data available</td>
+    </tr>
+    <tr>
+      <td>ETIME</td>
+      <td style="text-align: right">62</td>
+      <td style="text-align: right">0x3e</td>
+      <td style="text-align: right">0x..ffc2</td>
+      <td>Timer expired</td>
+    </tr>
+    <tr>
+      <td>ENOSR</td>
+      <td style="text-align: right">63</td>
+      <td style="text-align: right">0x3f</td>
+      <td style="text-align: right">0x..ffc1</td>
+      <td>Out of streams resources</td>
+    </tr>
+    <tr>
+      <td>ENONET</td>
+      <td style="text-align: right">64</td>
+      <td style="text-align: right">0x40</td>
+      <td style="text-align: right">0x..ffc0</td>
+      <td>Machine is not on the network</td>
+    </tr>
+    <tr>
+      <td>ENOPKG</td>
+      <td style="text-align: right">65</td>
+      <td style="text-align: right">0x41</td>
+      <td style="text-align: right">0x..ffbf</td>
+      <td>Package not installed</td>
+    </tr>
+    <tr>
+      <td>EREMOTE</td>
+      <td style="text-align: right">66</td>
+      <td style="text-align: right">0x42</td>
+      <td style="text-align: right">0x..ffbe</td>
+      <td>Object is remote</td>
+    </tr>
+    <tr>
+      <td>ENOLINK</td>
+      <td style="text-align: right">67</td>
+      <td style="text-align: right">0x43</td>
+      <td style="text-align: right">0x..ffbd</td>
+      <td>Link has been severed</td>
+    </tr>
+    <tr>
+      <td>EADV</td>
+      <td style="text-align: right">68</td>
+      <td style="text-align: right">0x44</td>
+      <td style="text-align: right">0x..ffbc</td>
+      <td>Advertise error</td>
+    </tr>
+    <tr>
+      <td>ESRMNT</td>
+      <td style="text-align: right">69</td>
+      <td style="text-align: right">0x45</td>
+      <td style="text-align: right">0x..ffbb</td>
+      <td>Srmount error</td>
+    </tr>
+    <tr>
+      <td>ECOMM</td>
+      <td style="text-align: right">70</td>
+      <td style="text-align: right">0x46</td>
+      <td style="text-align: right">0x..ffba</td>
+      <td>Communication error on send</td>
+    </tr>
+    <tr>
+      <td>EPROTO</td>
+      <td style="text-align: right">71</td>
+      <td style="text-align: right">0x47</td>
+      <td style="text-align: right">0x..ffb9</td>
+      <td>Protocol error</td>
+    </tr>
+    <tr>
+      <td>EMULTIHOP</td>
+      <td style="text-align: right">72</td>
+      <td style="text-align: right">0x48</td>
+      <td style="text-align: right">0x..ffb8</td>
+      <td>Multihop attempted</td>
+    </tr>
+    <tr>
+      <td>EDOTDOT</td>
+      <td style="text-align: right">73</td>
+      <td style="text-align: right">0x49</td>
+      <td style="text-align: right">0x..ffb7</td>
+      <td>RFS specific error</td>
+    </tr>
+    <tr>
+      <td>EBADMSG</td>
+      <td style="text-align: right">74</td>
+      <td style="text-align: right">0x4a</td>
+      <td style="text-align: right">0x..ffb6</td>
+      <td>Not a data message</td>
+    </tr>
+    <tr>
+      <td>EOVERFLOW</td>
+      <td style="text-align: right">75</td>
+      <td style="text-align: right">0x4b</td>
+      <td style="text-align: right">0x..ffb5</td>
+      <td>Value too large for defined data type</td>
+    </tr>
+    <tr>
+      <td>ENOTUNIQ</td>
+      <td style="text-align: right">76</td>
+      <td style="text-align: right">0x4c</td>
+      <td style="text-align: right">0x..ffb4</td>
+      <td>Name not unique on network</td>
+    </tr>
+    <tr>
+      <td>EBADFD</td>
+      <td style="text-align: right">77</td>
+      <td style="text-align: right">0x4d</td>
+      <td style="text-align: right">0x..ffb3</td>
+      <td>File descriptor in bad state</td>
+    </tr>
+    <tr>
+      <td>EREMCHG</td>
+      <td style="text-align: right">78</td>
+      <td style="text-align: right">0x4e</td>
+      <td style="text-align: right">0x..ffb2</td>
+      <td>Remote address changed</td>
+    </tr>
+    <tr>
+      <td>ELIBACC</td>
+      <td style="text-align: right">79</td>
+      <td style="text-align: right">0x4f</td>
+      <td style="text-align: right">0x..ffb1</td>
+      <td>Can not access a needed shared library</td>
+    </tr>
+    <tr>
+      <td>ELIBBAD</td>
+      <td style="text-align: right">80</td>
+      <td style="text-align: right">0x50</td>
+      <td style="text-align: right">0x..ffb0</td>
+      <td>Accessing a corrupted shared library</td>
+    </tr>
+    <tr>
+      <td>ELIBSCN</td>
+      <td style="text-align: right">81</td>
+      <td style="text-align: right">0x51</td>
+      <td style="text-align: right">0x..ffaf</td>
+      <td>.lib section in a.out corrupted</td>
+    </tr>
+    <tr>
+      <td>ELIBMAX</td>
+      <td style="text-align: right">82</td>
+      <td style="text-align: right">0x52</td>
+      <td style="text-align: right">0x..ffae</td>
+      <td>Attempting to link in too many shared libraries</td>
+    </tr>
+    <tr>
+      <td>ELIBEXEC</td>
+      <td style="text-align: right">83</td>
+      <td style="text-align: right">0x53</td>
+      <td style="text-align: right">0x..ffad</td>
+      <td>Cannot exec a shared library directly</td>
+    </tr>
+    <tr>
+      <td>EILSEQ</td>
+      <td style="text-align: right">84</td>
+      <td style="text-align: right">0x54</td>
+      <td style="text-align: right">0x..ffac</td>
+      <td>Illegal byte sequence</td>
+    </tr>
+    <tr>
+      <td>ERESTART</td>
+      <td style="text-align: right">85</td>
+      <td style="text-align: right">0x55</td>
+      <td style="text-align: right">0x..ffab</td>
+      <td>Interrupted system call should be restarted</td>
+    </tr>
+    <tr>
+      <td>ESTRPIPE</td>
+      <td style="text-align: right">86</td>
+      <td style="text-align: right">0x56</td>
+      <td style="text-align: right">0x..ffaa</td>
+      <td>Streams pipe error</td>
+    </tr>
+    <tr>
+      <td>EUSERS</td>
+      <td style="text-align: right">87</td>
+      <td style="text-align: right">0x57</td>
+      <td style="text-align: right">0x..ffa9</td>
+      <td>Too many users</td>
+    </tr>
+    <tr>
+      <td>ENOTSOCK</td>
+      <td style="text-align: right">88</td>
+      <td style="text-align: right">0x58</td>
+      <td style="text-align: right">0x..ffa8</td>
+      <td>Socket operation on non-socket</td>
+    </tr>
+    <tr>
+      <td>EDESTADDRREQ</td>
+      <td style="text-align: right">89</td>
+      <td style="text-align: right">0x59</td>
+      <td style="text-align: right">0x..ffa7</td>
+      <td>Destination address required</td>
+    </tr>
+    <tr>
+      <td>EMSGSIZE</td>
+      <td style="text-align: right">90</td>
+      <td style="text-align: right">0x5a</td>
+      <td style="text-align: right">0x..ffa6</td>
+      <td>Message too long</td>
+    </tr>
+    <tr>
+      <td>EPROTOTYPE</td>
+      <td style="text-align: right">91</td>
+      <td style="text-align: right">0x5b</td>
+      <td style="text-align: right">0x..ffa5</td>
+      <td>Protocol wrong type for socket</td>
+    </tr>
+    <tr>
+      <td>ENOPROTOOPT</td>
+      <td style="text-align: right">92</td>
+      <td style="text-align: right">0x5c</td>
+      <td style="text-align: right">0x..ffa4</td>
+      <td>Protocol not available</td>
+    </tr>
+    <tr>
+      <td>EPROTONOSUPPORT</td>
+      <td style="text-align: right">93</td>
+      <td style="text-align: right">0x5d</td>
+      <td style="text-align: right">0x..ffa3</td>
+      <td>Protocol not supported</td>
+    </tr>
+    <tr>
+      <td>ESOCKTNOSUPPORT</td>
+      <td style="text-align: right">94</td>
+      <td style="text-align: right">0x5e</td>
+      <td style="text-align: right">0x..ffa2</td>
+      <td>Socket type not supported</td>
+    </tr>
+    <tr>
+      <td>EOPNOTSUPP</td>
+      <td style="text-align: right">95</td>
+      <td style="text-align: right">0x5f</td>
+      <td style="text-align: right">0x..ffa1</td>
+      <td>Operation not supported on transport endpoint</td>
+    </tr>
+    <tr>
+      <td>EPFNOSUPPORT</td>
+      <td style="text-align: right">96</td>
+      <td style="text-align: right">0x60</td>
+      <td style="text-align: right">0x..ffa0</td>
+      <td>Protocol family not supported</td>
+    </tr>
+    <tr>
+      <td>EAFNOSUPPORT</td>
+      <td style="text-align: right">97</td>
+      <td style="text-align: right">0x61</td>
+      <td style="text-align: right">0x..ff9f</td>
+      <td>Address family not supported by protocol</td>
+    </tr>
+    <tr>
+      <td>EADDRINUSE</td>
+      <td style="text-align: right">98</td>
+      <td style="text-align: right">0x62</td>
+      <td style="text-align: right">0x..ff9e</td>
+      <td>Address already in use</td>
+    </tr>
+    <tr>
+      <td>EADDRNOTAVAIL</td>
+      <td style="text-align: right">99</td>
+      <td style="text-align: right">0x63</td>
+      <td style="text-align: right">0x..ff9d</td>
+      <td>Cannot assign requested address</td>
+    </tr>
+    <tr>
+      <td>ENETDOWN</td>
+      <td style="text-align: right">100</td>
+      <td style="text-align: right">0x64</td>
+      <td style="text-align: right">0x..ff9c</td>
+      <td>Network is down</td>
+    </tr>
+    <tr>
+      <td>ENETUNREACH</td>
+      <td style="text-align: right">101</td>
+      <td style="text-align: right">0x65</td>
+      <td style="text-align: right">0x..ff9b</td>
+      <td>Network is unreachable</td>
+    </tr>
+    <tr>
+      <td>ENETRESET</td>
+      <td style="text-align: right">102</td>
+      <td style="text-align: right">0x66</td>
+      <td style="text-align: right">0x..ff9a</td>
+      <td>Network dropped connection because of reset</td>
+    </tr>
+    <tr>
+      <td>ECONNABORTED</td>
+      <td style="text-align: right">103</td>
+      <td style="text-align: right">0x67</td>
+      <td style="text-align: right">0x..ff99</td>
+      <td>Software caused connection abort</td>
+    </tr>
+    <tr>
+      <td>ECONNRESET</td>
+      <td style="text-align: right">104</td>
+      <td style="text-align: right">0x68</td>
+      <td style="text-align: right">0x..ff98</td>
+      <td>Connection reset by peer</td>
+    </tr>
+    <tr>
+      <td>ENOBUFS</td>
+      <td style="text-align: right">105</td>
+      <td style="text-align: right">0x69</td>
+      <td style="text-align: right">0x..ff97</td>
+      <td>No buffer space available</td>
+    </tr>
+    <tr>
+      <td>EISCONN</td>
+      <td style="text-align: right">106</td>
+      <td style="text-align: right">0x6a</td>
+      <td style="text-align: right">0x..ff96</td>
+      <td>Transport endpoint is already connected</td>
+    </tr>
+    <tr>
+      <td>ENOTCONN</td>
+      <td style="text-align: right">107</td>
+      <td style="text-align: right">0x6b</td>
+      <td style="text-align: right">0x..ff95</td>
+      <td>Transport endpoint is not connected</td>
+    </tr>
+    <tr>
+      <td>ESHUTDOWN</td>
+      <td style="text-align: right">108</td>
+      <td style="text-align: right">0x6c</td>
+      <td style="text-align: right">0x..ff94</td>
+      <td>Cannot send after transport endpoint shutdown</td>
+    </tr>
+    <tr>
+      <td>ETOOMANYREFS</td>
+      <td style="text-align: right">109</td>
+      <td style="text-align: right">0x6d</td>
+      <td style="text-align: right">0x..ff93</td>
+      <td>Too many references: cannot splice</td>
+    </tr>
+    <tr>
+      <td>ETIMEDOUT</td>
+      <td style="text-align: right">110</td>
+      <td style="text-align: right">0x6e</td>
+      <td style="text-align: right">0x..ff92</td>
+      <td>Connection timed out</td>
+    </tr>
+    <tr>
+      <td>ECONNREFUSED</td>
+      <td style="text-align: right">111</td>
+      <td style="text-align: right">0x6f</td>
+      <td style="text-align: right">0x..ff91</td>
+      <td>Connection refused</td>
+    </tr>
+    <tr>
+      <td>EHOSTDOWN</td>
+      <td style="text-align: right">112</td>
+      <td style="text-align: right">0x70</td>
+      <td style="text-align: right">0x..ff90</td>
+      <td>Host is down</td>
+    </tr>
+    <tr>
+      <td>EHOSTUNREACH</td>
+      <td style="text-align: right">113</td>
+      <td style="text-align: right">0x71</td>
+      <td style="text-align: right">0x..ff8f</td>
+      <td>No route to host</td>
+    </tr>
+    <tr>
+      <td>EALREADY</td>
+      <td style="text-align: right">114</td>
+      <td style="text-align: right">0x72</td>
+      <td style="text-align: right">0x..ff8e</td>
+      <td>Operation already in progress</td>
+    </tr>
+    <tr>
+      <td>EINPROGRESS</td>
+      <td style="text-align: right">115</td>
+      <td style="text-align: right">0x73</td>
+      <td style="text-align: right">0x..ff8d</td>
+      <td>Operation now in progress</td>
+    </tr>
+    <tr>
+      <td>ESTALE</td>
+      <td style="text-align: right">116</td>
+      <td style="text-align: right">0x74</td>
+      <td style="text-align: right">0x..ff8c</td>
+      <td>Stale NFS file handle</td>
+    </tr>
+    <tr>
+      <td>EUCLEAN</td>
+      <td style="text-align: right">117</td>
+      <td style="text-align: right">0x75</td>
+      <td style="text-align: right">0x..ff8b</td>
+      <td>Structure needs cleaning</td>
+    </tr>
+    <tr>
+      <td>ENOTNAM</td>
+      <td style="text-align: right">118</td>
+      <td style="text-align: right">0x76</td>
+      <td style="text-align: right">0x..ff8a</td>
+      <td>Not a XENIX named type file</td>
+    </tr>
+    <tr>
+      <td>ENAVAIL</td>
+      <td style="text-align: right">119</td>
+      <td style="text-align: right">0x77</td>
+      <td style="text-align: right">0x..ff89</td>
+      <td>No XENIX semaphores available</td>
+    </tr>
+    <tr>
+      <td>EISNAM</td>
+      <td style="text-align: right">120</td>
+      <td style="text-align: right">0x78</td>
+      <td style="text-align: right">0x..ff88</td>
+      <td>Is a named type file</td>
+    </tr>
+    <tr>
+      <td>EREMOTEIO</td>
+      <td style="text-align: right">121</td>
+      <td style="text-align: right">0x79</td>
+      <td style="text-align: right">0x..ff87</td>
+      <td>Remote I/O error</td>
+    </tr>
+    <tr>
+      <td>EDQUOT</td>
+      <td style="text-align: right">122</td>
+      <td style="text-align: right">0x7a</td>
+      <td style="text-align: right">0x..ff86</td>
+      <td>Quota exceeded</td>
+    </tr>
+    <tr>
+      <td>ENOMEDIUM</td>
+      <td style="text-align: right">123</td>
+      <td style="text-align: right">0x7b</td>
+      <td style="text-align: right">0x..ff85</td>
+      <td>No medium found</td>
+    </tr>
+    <tr>
+      <td>EMEDIUMTYPE</td>
+      <td style="text-align: right">124</td>
+      <td style="text-align: right">0x7c</td>
+      <td style="text-align: right">0x..ff84</td>
+      <td>Wrong medium type</td>
+    </tr>
+    <tr>
+      <td>ECANCELED</td>
+      <td style="text-align: right">125</td>
+      <td style="text-align: right">0x7d</td>
+      <td style="text-align: right">0x..ff83</td>
+      <td>Operation Canceled</td>
+    </tr>
+    <tr>
+      <td>ENOKEY</td>
+      <td style="text-align: right">126</td>
+      <td style="text-align: right">0x7e</td>
+      <td style="text-align: right">0x..ff82</td>
+      <td>Required key not available</td>
+    </tr>
+    <tr>
+      <td>EKEYEXPIRED</td>
+      <td style="text-align: right">127</td>
+      <td style="text-align: right">0x7f</td>
+      <td style="text-align: right">0x..ff81</td>
+      <td>Key has expired</td>
+    </tr>
+    <tr>
+      <td>EKEYREVOKED</td>
+      <td style="text-align: right">128</td>
+      <td style="text-align: right">0x80</td>
+      <td style="text-align: right">0x..ff80</td>
+      <td>Key has been revoked</td>
+    </tr>
+    <tr>
+      <td>EKEYREJECTED</td>
+      <td style="text-align: right">129</td>
+      <td style="text-align: right">0x81</td>
+      <td style="text-align: right">0x..ff7f</td>
+      <td>Key was rejected by service</td>
+    </tr>
+    <tr>
+      <td>EOWNERDEAD</td>
+      <td style="text-align: right">130</td>
+      <td style="text-align: right">0x82</td>
+      <td style="text-align: right">0x..ff7e</td>
+      <td>Owner died</td>
+    </tr>
+    <tr>
+      <td>ENOTRECOVERABLE</td>
+      <td style="text-align: right">131</td>
+      <td style="text-align: right">0x83</td>
+      <td style="text-align: right">0x..ff7d</td>
+      <td>State not recoverable</td>
+    </tr>
+    <tr>
+      <td>ERFKILL</td>
+      <td style="text-align: right">132</td>
+      <td style="text-align: right">0x84</td>
+      <td style="text-align: right">0x..ff7c</td>
+      <td>Operation not possible due to RF-kill</td>
+    </tr>
+    <tr>
+      <td>EHWPOISON</td>
+      <td style="text-align: right">133</td>
+      <td style="text-align: right">0x85</td>
+      <td style="text-align: right">0x..ff7b</td>
+      <td>Memory page has hardware error</td>
+    </tr>
+    <tr>
+      <td>ERESTARTSYS</td>
+      <td style="text-align: right">512</td>
+      <td style="text-align: right">0x200</td>
+      <td style="text-align: right">0x..ff200</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ERESTARTNOINTR</td>
+      <td style="text-align: right">513</td>
+      <td style="text-align: right">0x201</td>
+      <td style="text-align: right">0x..ff1ff</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>ERESTARTNOHAND</td>
+      <td style="text-align: right">514</td>
+      <td style="text-align: right">0x202</td>
+      <td style="text-align: right">0x..ff1fe</td>
+      <td>restart if no handler..</td>
+    </tr>
+    <tr>
+      <td>ENOIOCTLCMD</td>
+      <td style="text-align: right">515</td>
+      <td style="text-align: right">0x203</td>
+      <td style="text-align: right">0x..ff1fd</td>
+      <td>No ioctl command</td>
+    </tr>
+    <tr>
+      <td>ERESTART_RESTARTBLOCK</td>
+      <td style="text-align: right">516</td>
+      <td style="text-align: right">0x204</td>
+      <td style="text-align: right">0x..ff1fc</td>
+      <td>restart by calling sys_restart_syscall</td>
+    </tr>
+    <tr>
+      <td>EBADHANDLE</td>
+      <td style="text-align: right">521</td>
+      <td style="text-align: right">0x209</td>
+      <td style="text-align: right">0x..ff1f7</td>
+      <td>Illegal NFS file handle</td>
+    </tr>
+    <tr>
+      <td>ENOTSYNC</td>
+      <td style="text-align: right">522</td>
+      <td style="text-align: right">0x20a</td>
+      <td style="text-align: right">0x..ff1f6</td>
+      <td>Update synchronization mismatch</td>
+    </tr>
+    <tr>
+      <td>EBADCOOKIE</td>
+      <td style="text-align: right">523</td>
+      <td style="text-align: right">0x20b</td>
+      <td style="text-align: right">0x..ff1f5</td>
+      <td>Cookie is stale</td>
+    </tr>
+    <tr>
+      <td>ENOTSUPP</td>
+      <td style="text-align: right">524</td>
+      <td style="text-align: right">0x20c</td>
+      <td style="text-align: right">0x..ff1f4</td>
+      <td>Operation is not supported</td>
+    </tr>
+    <tr>
+      <td>ETOOSMALL</td>
+      <td style="text-align: right">525</td>
+      <td style="text-align: right">0x20d</td>
+      <td style="text-align: right">0x..ff1f3</td>
+      <td>Buffer or request is too small</td>
+    </tr>
+    <tr>
+      <td>ESERVERFAULT</td>
+      <td style="text-align: right">526</td>
+      <td style="text-align: right">0x20e</td>
+      <td style="text-align: right">0x..ff1f2</td>
+      <td>An untranslatable error occurred</td>
+    </tr>
+    <tr>
+      <td>EBADTYPE</td>
+      <td style="text-align: right">527</td>
+      <td style="text-align: right">0x20f</td>
+      <td style="text-align: right">0x..ff1f1</td>
+      <td>Type not supported by server</td>
+    </tr>
+    <tr>
+      <td>EJUKEBOX</td>
+      <td style="text-align: right">528</td>
+      <td style="text-align: right">0x210</td>
+      <td style="text-align: right">0x..ff1f0</td>
+      <td>Request initiated, but will not complete before timeout</td>
+    </tr>
+    <tr>
+      <td>EIOCBQUEUED</td>
+      <td style="text-align: right">529</td>
+      <td style="text-align: right">0x211</td>
+      <td style="text-align: right">0x..ff1ef</td>
+      <td>iocb queued, will get completion event</td>
+    </tr>
+    <tr>
+      <td>EIOCBRETRY</td>
+      <td style="text-align: right">530</td>
+      <td style="text-align: right">0x212</td>
+      <td style="text-align: right">0x..ff1ee</td>
+      <td>iocb queued, will trigger a retry</td>
+    </tr>
+  </tbody>
+</table>
+
+</p>
+<hr>
+</li>
+
+<li>2016-11-05 - <a href="/escaped-snapper-snapshots/">Escaped snapper snapshots</a> <tt>[tags: btrfs, snapper]</tt></li>
+<p>
+<p>Happened to me, that space on my root partition was going low, no matter what I
+removed. I have <code class="language-plaintext highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
+settings, so the usual problem of running out of space is prevented. Also
+before doing a big update of Tumbleweed (openSUSE rolling distro) I check the
+available space to roughly match what <code class="language-plaintext highlighter-rouge">zypper</code> says it’d need.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
+Type   | #   | Pre # | Date                             | User | Cleanup  | Description  | Userdata
+-------+-----+-------+----------------------------------+------+----------+--------------+--------------
+single | 0   |       |                                  | root |          | current      |
+single | 395 |       | Mon 26 Sep 2016 10:30:01 PM CEST | root | timeline | timeline     |
+</code></pre></div></div>
+
+<p>So what happened? I was removing some old kernels, manually by rpm. And it
+started to report write errors, no space. Indeed, df reported just 64K
+available. This is within the margin of accuracy that we’re able to get from
+the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
+is as good as it gets.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        30G   30G   64K  86% /
+</code></pre></div></div>
+
+<p>RPM continued to spew lots of errors, I removed rest of the snapper snapshots,
+no improvement. So then I resorted to the bare ‘btrfs’ command and found a stale
+snapper snapshot. The snapshot directory itself was there, but the metadata
+were lacking (a xml file). After deleting it manually, the free space jumped up
+by 6GB!</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
+...
+... .snapshots/3721/snapshot
+...
+</code></pre></div></div>
+
+<p>The theory is that I have once removed all snapshots so the numbering started
+from 1 again, as the current series is around ~390, while the number of stale
+snapshot is much higher.</p>
+
+<p>Takeaways:</p>
+
+<ul>
+  <li>synthetic tools may not give our an accurate view: snapper requires some
+metadata describing its snapshot, which is obviously OK, given that the user
+has the freedom to create snapshots anywhere</li>
+  <li>learn how to use the low-level tools to cross-verify the state of the system</li>
+</ul>
+
+<p>Summary of used tools:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
+  <li><code class="language-plaintext highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
+</ul>
+
+<p><strong>Update {{ page.update1 }}</strong></p>
+
+<p>Again. There were 2 stale snapper snapshots, age of like 8 months until
+discovered. The space got up by 12GiB after deletion. The root partition is
+50GiB, I think it survived pretty long given the frequent updates of the rolling
+distro. There’s an <a href="https://github.com/openSUSE/snapper/issues/98">open issue</a>.</p>
+
+</p>
+<hr>
+</li>
+
+</ul>
+</p>
+
+
+      </div>
+    </div>
+    <footer class="site-footer">
+	<hr>
+	&#9993;
+	|
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" viewBox="0 0 47.999998 48.000002" width="16" height="16"><style id="style3">.Round_x0020_Corners_x0020_2_x0020_pt{fill:#FFF;stroke:#000;stroke-miterlimit:10}.Live_x0020_Reflect_x0020_X{fill:none}.Bevel_x0020_Soft{fill:url(#SVGID_1_)}.Dusk{fill:#FFF}.Foliage_GS{fill:#FD0}.Pompadour_GS{fill:#44ade2}.Pompadour_GS,.st0{fill-rule:evenodd;clip-rule:evenodd}.st0{fill:#191717}</style><linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-216.625" y1="-385.75" x2="-215.918" y2="-385.043"><stop offset="0" id="stop6" stop-color="#dedfe3"/><stop offset=".174" id="stop8" stop-color="#d8d9dd"/><stop offset=".352" id="stop10" stop-color="#c9cacd"/><stop offset=".532" id="stop12" stop-color="#b4b5b8"/><stop offset=".714" id="stop14" stop-color="#989a9c"/><stop offset=".895" id="stop16" stop-color="#797c7e"/><stop offset="1" id="stop18" stop-color="#656b6c"/></linearGradient><path class="st0" d="M23.928 1.15C11 1.15.514 11.638.514 24.566c0 10.343 6.75 19.105 15.945 22.265 1.148.144 1.58-.574 1.58-1.15v-4.02c-6.465 1.436-7.902-3.16-7.902-3.16-1.005-2.73-2.586-3.45-2.586-3.45-2.154-1.435.144-1.435.144-1.435 2.298.144 3.59 2.442 3.59 2.442 2.156 3.59 5.46 2.586 6.753 2.01.142-1.58.86-2.585 1.435-3.16-5.17-.574-10.63-2.585-10.63-11.635 0-2.585.862-4.596 2.442-6.32-.287-.575-1.005-3.017.288-6.177 0 0 2.01-.574 6.464 2.442 1.866-.574 3.877-.718 5.888-.718 2.01 0 4.022.286 5.89.717 4.453-3.016 6.464-2.442 6.464-2.442 1.293 3.16.43 5.602.287 6.177a9.29 9.29 0 0 1 2.44 6.32c0 9.05-5.458 10.918-10.63 11.492.863.718 1.58 2.155 1.58 4.31v6.464c0 .574.432 1.292 1.58 1.15 9.338-3.16 15.946-11.924 15.946-22.266-.143-12.785-10.63-23.27-23.558-23.27z" id="path20" clip-rule="evenodd" fill="#191717" fill-rule="evenodd"/></svg>
+	<a href="https://github.com/kdave">github/kdave</a>
+	|
+<!--
+<svg width="16px" height="16px" viewBox="0 0 256 236" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+    <g>
+        <path d="M128.07485,236.074667 L128.07485,236.074667 L175.17885,91.1043048 L80.9708495,91.1043048 L128.07485,236.074667 L128.07485,236.074667 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L80.9708495,91.104061 L14.9557638,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M14.9558857,91.1044267 L14.9558857,91.1044267 L0.641828571,135.159589 C-0.663771429,139.17757 0.766171429,143.57955 4.18438095,146.06275 L128.074971,236.074789 L14.9558857,91.1044267 L14.9558857,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M14.9558857,91.1045486 L80.9709714,91.1045486 L52.6000762,3.79026286 C51.1408762,-0.703146667 44.7847619,-0.701927619 43.3255619,3.79026286 L14.9558857,91.1045486 L14.9558857,91.1045486 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L175.17885,91.104061 L241.193935,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M241.193935,91.1044267 L241.193935,91.1044267 L255.507992,135.159589 C256.813592,139.17757 255.38365,143.57955 251.96544,146.06275 L128.07485,236.074789 L241.193935,91.1044267 L241.193935,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M241.193935,91.1045486 L175.17885,91.1045486 L203.549745,3.79026286 C205.008945,-0.703146667 211.365059,-0.701927619 212.824259,3.79026286 L241.193935,91.1045486 L241.193935,91.1045486 Z" fill="#E24329"></path>
+    </g>
+</svg>
+	<a href="https://gitlab.com/kdave">gitlab/kdave</a>
+	|
+	-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 216.4144 232.00976"><path d="M211.80734 139.0875c-3.18125 16.36625-28.4925 34.2775-57.5625 37.74875-15.15875 1.80875-30.08375 3.47125-45.99875 2.74125-26.0275-1.1925-46.565-6.2125-46.565-6.2125 0 2.53375.15625 4.94625.46875 7.2025 3.38375 25.68625 25.47 27.225 46.39125 27.9425 21.11625.7225 39.91875-5.20625 39.91875-5.20625l.8675 19.09s-14.77 7.93125-41.08125 9.39c-14.50875.7975-32.52375-.365-53.50625-5.91875C9.23234 213.82 1.40609 165.31125.20859 116.09125c-.365-14.61375-.14-28.39375-.14-39.91875 0-50.33 32.97625-65.0825 32.97625-65.0825C49.67234 3.45375 78.20359.2425 107.86484 0h.72875c29.66125.2425 58.21125 3.45375 74.8375 11.09 0 0 32.975 14.7525 32.975 65.0825 0 0 .41375 37.13375-4.59875 62.915" fill="#3088d4"/><path d="M177.50984 80.077v60.94125h-24.14375v-59.15c0-12.46875-5.24625-18.7975-15.74-18.7975-11.6025 0-17.4175 7.5075-17.4175 22.3525v32.37625H96.20734V85.42325c0-14.845-5.81625-22.3525-17.41875-22.3525-10.49375 0-15.74 6.32875-15.74 18.7975v59.15H38.90484V80.077c0-12.455 3.17125-22.3525 9.54125-29.675 6.56875-7.3225 15.17125-11.07625 25.85-11.07625 12.355 0 21.71125 4.74875 27.8975 14.2475l6.01375 10.08125 6.015-10.08125c6.185-9.49875 15.54125-14.2475 27.8975-14.2475 10.6775 0 19.28 3.75375 25.85 11.07625 6.36875 7.3225 9.54 17.22 9.54 29.675" fill="#fff"/></svg>
+	<a href="https://social.kernel.org/kdave">@kdave@social.kernel.org</a>
+	|
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="16" height="16">
+<g>
+	<path style="fill:#FFB500;" d="M437,0H75C33.645,0,0,33.645,0,75v362c0,41.355,33.645,75,75,75h362c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z M106.176,446.374c-24.293,0-44.057-19.764-44.057-44.056c0-24.293,19.764-44.057,44.057-44.057   s44.057,19.764,44.057,44.057C150.232,426.61,130.469,446.374,106.176,446.374z M255.212,438.281c-22.056,0-40-17.944-40-40   c0-57.898-47.103-105-105-105c-22.056,0-40-17.944-40-40c0-22.056,17.944-40,40-40c102.009,0,185,82.99,185,185   C295.212,420.337,277.269,438.281,255.212,438.281z M405.212,438.281c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-48.163-48.163-112.199-74.688-180.313-74.688c-22.056,0-40-17.944-40-40   c0-22.056,17.944-40,40-40c89.481,0,173.607,34.846,236.881,98.119c63.273,63.273,98.12,147.399,98.12,236.881   C445.212,420.337,427.269,438.281,405.212,438.281z"/>
+	<path style="fill:#FF9300;" d="M437,0H257.712v97.335c32.691,16.058,62.871,37.555,89.381,64.065   c63.273,63.273,98.12,147.399,98.12,236.881c0,22.056-17.944,40-40,40c-22.056,0-40-17.944-40-40   c0-68.112-26.524-132.148-74.688-180.313c-10.254-10.254-21.233-19.517-32.812-27.762v96.545   c23.522,31.032,37.5,69.677,37.5,111.53c0,21.215-16.605,38.618-37.5,39.914V512H437c41.355,0,75-33.645,75-75V75   C512,33.645,478.355,0,437,0z"/>
+</g>
+</svg>
+	<a href="/rss-all.xml">RSS</a>
+	|
+	<img class="img-nav" src="https://kdave.github.io/images/cc-by-sa.svg" />
+	Content licensed under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY SA 4.0</a>
+</footer>
+
+  </body>
+</html>

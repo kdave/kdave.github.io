@@ -1,0 +1,12 @@
+/root/test/mmtests/configs/config-global-dhp__io-dbench4-fsync
+#!/bin/sh
+export TESTDISK_FILESYSTEM=btrfs
+export TESTDISK_MKFS_PARAM='-f'
+export TESTDISK_MOUNT_ARGS='noatime'
+#!/bin/sh
+export TESTDISK_PARTITION='/dev/sdb1'
+export TESTDISK_MKFS_PARAM_SUFFIX='/dev/sdc1 /dev/sdd1 /dev/sde1 /dev/sdb2 /dev/sdc2 /dev/sdd2 /dev/sde2'
+#export TESTDISK_MKFS_PARAM="$TESTDISK_MKFS_PARAM -K -f -d raid0 -m raid1"
+export TESTDISK_MKFS_PARAM="$TESTDISK_MKFS_PARAM -K -f"
+
+export XFSTESTS_SCRATCH_DEV_POOL='/dev/sdc1 /dev/sdd1 /dev/sde1 /dev/sdb2 /dev/sdc2 /dev/sdd2 /dev/sde2'
