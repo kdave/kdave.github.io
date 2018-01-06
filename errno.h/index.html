@@ -39,10 +39,15 @@
         <div class="post">
   <header class="post-header">
     <h1 class="post-title">errno.h for the masses</h1>
-    [ date: <i>2017-11-23</i> || tags: <i>errno,debugging</i> ]
+    [ date: <i>2017-11-23</i> || updated: <i>2018-01-02</i> || tags: <i>errno,debugging</i> ]
   </header>
   <article class="post-content">
-    <p>The <code class="highlighter-rouge">errno</code> values, in various formats you may encounter:</p>
+    <p>The <code class="highlighter-rouge">errno</code> values, in various formats you may encounter. The standard errno is
+a positive number, linux kernel uses the negative values. Besides the sources
+(going through like 5 include hops from <code class="highlighter-rouge">/usr/include/errno.h</code> to
+<code class="highlighter-rouge">/usr/include/asm-generic/errno.h</code> and <code class="highlighter-rouge">/usr/include/asm-generic/errno-base.h</code>)
+there’s no direct way to get the symbolic &lt;-&gt; numeric mapping. The hexa values
+commonly appear in the stacktrace dumps.</p>
 
 <table>
   <thead>
