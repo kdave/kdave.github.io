@@ -27,5 +27,5 @@ MMTests results:
 - [fio-async-randrw 1, 2, 3](fio-async-randrw/results)
 - [fio-async-seqw 1, 2](fio-async-seqw/results-12)
 - [fio-async-seqw 1, 2, 3](fio-async-seqw/results)
-- [fsmark-metadata 1, 2](meta-fsmark/results-12)
-- [fsmark-metadata 1, 2, 3](meta-fsmark/results)
+- [fsmark-metadata 1, 2](fsmark-metadata/results-12)
+- [fsmark-metadata 1, 2, 3](fsmark-metadata/results)
