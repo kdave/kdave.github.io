@@ -1,0 +1,1 @@
+./fs_mark -d /tmp/fsmark-4298/1 -d /tmp/fsmark-4298/2 -d /tmp/fsmark-4298/3 -D 10000 -n 33333 -L 30 -t 3 -S0 -s 0

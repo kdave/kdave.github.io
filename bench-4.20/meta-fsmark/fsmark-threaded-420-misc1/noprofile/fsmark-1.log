@@ -1,0 +1,40 @@
+
+#  ./fs_mark  -d  /tmp/fsmark-2750/1  -D  10000  -n  100000  -L  30  -t  1  -S0  -s  0 
+#	Version 3.3, 1 thread(s) starting at Wed Oct 17 13:39:44 2018
+#	Sync method: NO SYNC: Test does not issue sync() or fsync() calls.
+#	Directories:  Time based hash between directories across 10000 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 0 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     2       100000            0       3783.6          2500365
+     2       200000            0       3789.3          2487633
+     2       300000            0       3794.4          2482566
+     2       400000            0       3762.6          2502909
+     2       500000            0       3698.4          2577352
+     2       600000            0       3763.8          2520314
+     2       700000            0       3771.9          2506842
+     2       800000            0       3640.1          2637517
+     2       900000            0       3742.7          2539840
+     2      1000000            0       3585.0          2671843
+     2      1100000            0       3735.2          2548421
+     2      1200000            0       3522.4          2719036
+     2      1300000            0       3699.8          2587808
+     2      1400000            0       3717.0          2568009
+     2      1500000            0       3728.3          2560050
+     2      1600000            0       3740.3          2528201
+     2      1700000            0       3733.2          2549493
+     2      1800000            0       3713.9          2544527
+     2      1900000            0       3720.6          2550120
+     2      2000000            0       3615.0          2637551
+     2      2100000            0       3700.9          2564089
+     5      2200000            0       3716.0          2580409
+     5      2300000            0       3694.4          2572649
+     5      2400000            0       3710.4          2569677
+     5      2500000            0       3709.1          2576111
+     5      2600000            0       3693.0          2565810
+     5      2700000            0       3685.3          2587456
+     5      2800000            0       3689.3          2577328
+     5      2900000            0       3689.6          2579309
+     5      3000000            0       3688.4          2586682

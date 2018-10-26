@@ -1,0 +1,8 @@
+1539775857 run-mmtests: Start
+1539775915 dbench-bench: client 1/128
+1539776097 dbench-bench: client 2/128
+1539776278 dbench-bench: client 4/128
+1539776460 dbench-bench: client 8/128
+1539776643 dbench-bench: client 16/128
+1539776829 dbench-bench: client 128/128
+1539777072 run-mmtests: End

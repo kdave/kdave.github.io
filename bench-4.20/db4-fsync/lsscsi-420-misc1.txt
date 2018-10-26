@@ -1,0 +1,6 @@
+[0:1:0:0]    disk    HP       LOGICAL VOLUME   2.74  /dev/sda 
+[0:1:0:1]    disk    HP       LOGICAL VOLUME   2.74  /dev/sdb 
+[0:1:0:2]    disk    HP       LOGICAL VOLUME   2.74  /dev/sdc 
+[0:1:0:3]    disk    HP       LOGICAL VOLUME   2.74  /dev/sdd 
+[0:1:0:4]    disk    HP       LOGICAL VOLUME   2.74  /dev/sde 
+[0:3:0:0]    storage HP       P410i            2.74  -        
