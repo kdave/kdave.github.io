@@ -12,7 +12,7 @@ type MTYPE;
 
 * struct STRUCT {
   ...
-* MTYPE MEMB;
+* MTYPE MEMBER;
   ...
   }
 
@@ -21,3 +21,18 @@ stru << m.STRUCT;
 memb << m.MEMBER;
 @@
 print "STRUCT: %s %s" % (stru, memb)
+
+@@
+identifier STRUCT, MEMBER;
+type MTYPE;
+@@
+
+* struct STRUCT {
+  ...
+  struct {
+    ...
+*   MTYPE MEMBER;
+    ...
+  };
+  ...
+  }
