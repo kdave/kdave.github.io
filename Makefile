@@ -10,7 +10,7 @@ build:
 commit:
 	git add .
 	git status
-	git commit -ave
+	-git commit -ave
 
 sync:
 	cd $(TOPUSH) && pwd
