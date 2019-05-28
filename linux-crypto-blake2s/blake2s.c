@@ -30,7 +30,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 #define printk	printf
-#define KERN_ERR
+#define KERN_DBG
 
 #endif
 
@@ -326,7 +326,7 @@ static int chksum_init(struct shash_desc *desc)
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 	int ret;
 
-	printk(KERN_ERR "BLAKE2s: init\n");
+	printk(KERN_DBG "BLAKE2s: init\n");
 	ret = blake2s_init_key(ctx->S, BLAKE2S_OUTBYTES, mctx->key, BLAKE2S_KEYBYTES);
 	if (ret)
 		return -EINVAL;
@@ -339,7 +339,7 @@ static int chksum_setkey(struct crypto_shash *tfm, const u8 *key,
 {
 	struct chksum_ctx *mctx = crypto_shash_ctx(tfm);
 
-	printk(KERN_ERR "BLAKE2s: setkey: keylen=%d\n", keylen);
+	printk(KERN_DBG "BLAKE2s: setkey: keylen=%d\n", keylen);
 	if (keylen != BLAKE2S_KEYBYTES) {
 		crypto_shash_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
@@ -354,7 +354,7 @@ static int chksum_update(struct shash_desc *desc, const u8 *data,
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 	int ret;
 
-	printk(KERN_ERR "BLAKE2s: update: len=%d\n", length);
+	printk(KERN_DBG "BLAKE2s: update: len=%d\n", length);
 	ret = blake2s_update(ctx->S, data, length);
 	if (ret)
 		return -EINVAL;
@@ -366,7 +366,7 @@ static int chksum_final(struct shash_desc *desc, u8 *out)
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 	int ret;
 
-	printk(KERN_ERR "BLAKE2s: final\n");
+	printk(KERN_DBG "BLAKE2s: final\n");
 	ret = blake2s_final(ctx->S, out, BLAKE2S_OUTBYTES);
 	if (ret)
 		return -EINVAL;
@@ -379,7 +379,7 @@ static int chksum_finup(struct shash_desc *desc, const u8 *data,
 	struct chksum_desc_ctx *ctx = shash_desc_ctx(desc);
 	int ret;
 
-	printk(KERN_ERR "BLAKE2s: finup: len=%d\n", len);
+	printk(KERN_DBG "BLAKE2s: finup: len=%d\n", len);
 	ret = blake2s_update(ctx->S, data, len);
 	if (ret)
 		return -EINVAL;
@@ -395,7 +395,7 @@ static int blake2s_cra_init(struct crypto_tfm *tfm)
 	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
 	int i;
 
-	printk(KERN_ERR "BLAKE2s: cra_init");
+	printk(KERN_DBG "BLAKE2s: cra_init");
 	for (i = 0; i <BLAKE2S_KEYBYTES; i++)
 		mctx->key[i] = (u8)i;
 
@@ -424,14 +424,14 @@ static struct shash_alg alg = {
 
 static int __init blake2s_mod_init(void)
 {
-	printk(KERN_ERR "BLAKE2s: blake2s loaded\n");
+	printk(KERN_DBG "BLAKE2s: blake2s loaded\n");
 	return crypto_register_shash(&alg);
 }
 
 static void __exit blake2s_mod_fini(void)
 {
 	crypto_unregister_shash(&alg);
-	printk(KERN_ERR "BLAKE2s: blake2s unloaded\n");
+	printk(KERN_DBG "BLAKE2s: blake2s unloaded\n");
 }
 
 subsys_initcall(blake2s_mod_init);
