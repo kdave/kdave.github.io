@@ -1,4 +1,4 @@
-body { margin: 1em }
+body { margin: 2em }
 a { color: #46574D; background: inherit; }
 a:hover { color: #647B6D; background: inherit;}
 
@@ -10,15 +10,15 @@ h1 a:hover, h2 a:hover {
 }
 
 p {
-	line-height: 1.1em;
+	/* line-height: 1.1em; */
 	width: 70%;
-	font-size: 1.1em;
+	/* font-size: 1.1em; */
 }
 
 li {
 	line-height: 1.1em;
-	width: 70%;
-	font-size: 1.1em;
+	/* width: 70%; */
+	/* font-size: 1.1em; */
 }
 
 .navlink {
