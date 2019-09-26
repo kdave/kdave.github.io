@@ -3,7 +3,7 @@
   <head>
   <meta charset="utf-8">
 
-  <title>WIP benchmarks for 4.20</title>
+  <title>Some btrfs benchmarks of changes pending for 4.20</title>
   <meta name="description" content="something
 ">
 
@@ -48,25 +48,56 @@
       <div class="wrapper">
         <div class="post">
   <header class="post-header">
-    <h1 class="post-title">WIP benchmarks for 4.20</h1>
-    [ date: <i>2018-10-18</i> || tags: <i>btrfs,kernel,benchmark</i> ]
+    <h1 class="post-title">Some btrfs benchmarks of changes pending for 4.20</h1>
+    [ date: <i>2018-10-18</i> || updated: <i>2019-09-27</i> || tags: <i>btrfs,kernel,benchmark</i> ]
   </header>
   <article class="post-content">
-    <p>base/misc1: v4.19-rc8</p>
+    <p>Update: enhance the text, still a bit raw, check the numbers</p>
 
-<p>misc2: v4.19-rc8 + btrfs pull request</p>
+<p>Example of benchmarks of patches going to 4.20 kernel. The goal was to identify
+potential differences between the devleopment branch with and without merge
+to the mainline. The factors affecting the difference are usually in other
+subsystems like block layer (IO queuing) or memory management (namely page
+cache, memory allocator, writeback), core (scheduling, locking primitives).</p>
 
-<p>misc3: v4.19 with btrfs changes merged</p>
+<ul>
+  <li>base/misc1: v4.19-rc8</li>
+  <li>misc2: v4.19-rc8 + btrfs pull request</li>
+  <li>misc3: v4.19 with btrfs changes merged</li>
+</ul>
 
-<p>MMTests results:</p>
+<p>The numbers are reflected in the results below, referring to comparisons of
+the branches. 1-to-2 is the net effect of the patches, 1-to-3 is the same
+patches after merge.</p>
+
+<p>The testsuite used is <a href="https://github.com/mgorman/mmtests">MMTests</a>, that’s
+internally used for performance evaluation and provides wide range of workloads</p>
+
+<p>The expected performance delta should be roughly the same for 2 and 3, the
+tables show if the delta is significant (green: positive, red: negative), so it
+can be easily observed. Note that the values need to be properly interpreted in
+the context of the benchmark and perhaps other values.</p>
+
+<h2 id="mmtests-results">MMTests results</h2>
 
 <ul>
   <li><a href="blogbench/results-12">blogbench 1, 2</a></li>
   <li><a href="blogbench/results">blogbench 1, 2, 3</a></li>
   <li><a href="dbench4-async/results-12">dbench4-async 1, 2</a></li>
-  <li><a href="dbench4-async/results">dbench4-async 1, 2, 3</a></li>
+  <li><a href="dbench4-async/results">dbench4-async 1, 2, 3</a>
+    <ul>
+      <li>good: slight improvement in 128 thread latency</li>
+      <li>good: decreased system cpu time</li>
+      <li>bad: longer overall runtime</li>
+    </ul>
+  </li>
   <li><a href="dbench4-fsync/results-12">dbench4-fsync 1, 2</a></li>
-  <li><a href="dbench4-fsync/results">dbench4-fsync 1, 2, 3</a></li>
+  <li><a href="dbench4-fsync/results">dbench4-fsync 1, 2, 3</a>
+    <ul>
+      <li>good: slight improvement in 128 thread latency</li>
+      <li>good: decreased system cpu time</li>
+    </ul>
+  </li>
   <li><a href="filebench-webproxy/results-12">filebench-webproxy 1, 2</a></li>
   <li><a href="filebench-webproxy/results">filebench-webproxy 1, 2, 3</a></li>
   <li><a href="fio-async-randrw/results-12">fio-async-randrw 1, 2</a></li>
@@ -74,7 +105,29 @@
   <li><a href="fio-async-seqw/results-12">fio-async-seqw 1, 2</a></li>
   <li><a href="fio-async-seqw/results">fio-async-seqw 1, 2, 3</a></li>
   <li><a href="fsmark-metadata/results-12">fsmark-metadata 1, 2</a></li>
-  <li><a href="fsmark-metadata/results">fsmark-metadata 1, 2, 3</a></li>
+  <li><a href="fsmark-metadata/results">fsmark-metadata 1, 2, 3</a>
+    <ul>
+      <li>good: overall improvements in transaction counts for 3</li>
+    </ul>
+  </li>
+</ul>
+
+<p>The raw stats are available.</p>
+
+<h2 id="test-setup">Test setup</h2>
+
+<ul>
+  <li>HP ProLiant DL380 G6</li>
+  <li>16 CPUs (Intel(R) Xeon(R), E5520 2.27GHz)</li>
+  <li>16 GiB RAM</li>
+  <li>4x SAS 136 GiB disks, partitioned</li>
+  <li>filesystem:
+    <ul>
+      <li>btrfs</li>
+      <li>mkfs: data: raid0, metadata: raid1</li>
+      <li>mount: noatime</li>
+    </ul>
+  </li>
 </ul>
 
   </article>
