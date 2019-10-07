@@ -1,10 +1,10 @@
 ---
 layout: page
-title: qemu 2.12 does not support if=scsi
 category: b
 tags: [ qemu ]
 date: 2018-06-08
-status: draft
+status: finished
+title: qemu 2.12 does not support if=scsi
 ---
 
 Afterh update of qemu to version 2.12, my testing vms stopped to just warn

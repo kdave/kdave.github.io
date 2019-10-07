@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ crypto, linux, blake2 ]
 date: 2019-04-27
-status: draft
+status: finished
 title: "Linux crypto: testing blake2s"
 ---
 

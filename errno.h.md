@@ -4,7 +4,7 @@ category: b
 tags: [ errno, debugging ]
 date: 2017-11-23
 update1: 2018-01-02
-status: draft
+status: finished
 title: errno.h for the masses
 ---
 

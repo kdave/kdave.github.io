@@ -5,7 +5,7 @@ category: b
 tags: [ btrfs, kernel, benchmark ]
 date: 2018-10-18
 update1: 2019-09-27
-status: final
+status: finished
 ---
 
 Update: enhance the text, still a bit raw, check the numbers

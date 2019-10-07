@@ -1,11 +1,11 @@
 ---
 layout: page
-title: Escaped snapper snapshots
 category: b
 tags: [ btrfs, snapper ]
 date: 2016-11-05
 update1: 2017-09-05
 status: finished
+title: Escaped snapper snapshots
 ---
 
 Happened to me, that space on my root partition was going low, no matter what I
