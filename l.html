@@ -27,11 +27,17 @@
 		
 		
 		
+		
+		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
 		
 		<a class="navlink" href="/">[index.html]</a>
+		
+		
 		
 		
 		
@@ -2005,6 +2011,312 @@ needs to be submitted and merged, hopefully they’ll make it to 5.5 as well.</p
 <p>One of my merge process requirements was to do a call for public testing, so
 we’re going to do that once all the kernel and progs code is ready for testing.
 Stay tuned.</p>
+
+</p>
+<hr>
+</li>
+
+
+
+<li>2019-10-12 - <a href="/simple-asm-diff-filter/">Simple asm diff filter</a> <tt>[tags: asm, diff, perl]</tt></li>
+<p>
+<p>One thing you windows guys have is a decent binary diff. I know there’s radare2
+on linux, but I’m a noob to set it up and I’d be fine with something less
+fancy. Something like 2 <code class="highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="highlighter-rouge">vimdiff</code>.</p>
+
+<p>The tricky part is the intelligent filter. I say <em>intelligent</em>, but in fact it’s
+a 20 line perl script that basically filters out things that are not important
+or are likely to change in a slightly modified C source.</p>
+
+<p>The result is lossy, eg. there are no addresses and thus jumps can’t be
+followed, but having that would actually deserve the ‘intellingent’ title.
+My usecase is simpler, eg. doing small tweaks like reodering lines, adding
+annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
+
+<p>Which takes eg.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+       0:       e8 00 00 00 00          callq  5 &lt;btrfs_set_lock_blocking_read+0x5&gt;
+                        1: R_X86_64_PLT32       __fentry__-0x4
+       5:       55                      push   %rbp
+       6:       53                      push   %rbx
+       7:       48 89 fb                mov    %rdi,%rbx
+       a:       0f 1f 44 00 00          nopl   0x0(%rax,%rax,1)
+       f:       65 8b 05 00 00 00 00    mov    %gs:0x0(%rip),%eax        # 16 &lt;btrfs_set_lock_blocking_read+0x16&gt;
+                        12: R_X86_64_PC32       cpu_number-0x4
+      16:       89 c0                   mov    %eax,%eax
+      18:       48 0f a3 05 00 00 00    bt     %rax,0x0(%rip)        # 20 &lt;btrfs_set_lock_blocking_read+0x20&gt;
+      1f:       00
+                        1c: R_X86_64_PC32       __cpu_online_mask-0x4
+      20:       0f 82 b5 00 00 00       jb     db &lt;btrfs_set_lock_blocking_read+0xdb&gt;
+      26:       0f b6 ab 94 00 00 00    movzbl 0x94(%rbx),%ebp
+      2d:       40 80 fd 01             cmp    $0x1,%bpl
+      31:       0f 87 00 00 00 00       ja     37 &lt;btrfs_set_lock_blocking_read+0x37&gt;
+                        33: R_X86_64_PC32       .text.unlikely+0x11
+      37:       83 e5 01                and    $0x1,%ebp
+      3a:       74 1b                   je     57 &lt;btrfs_set_lock_blocking_read+0x57&gt;
+      3c:       8b 8b 88 00 00 00       mov    0x88(%rbx),%ecx
+      42:       65 48 8b 04 25 00 00    mov    %gs:0x0,%rax
+      49:       00 00
+                        47: R_X86_64_32S        current_task
+      4b:       39 88 c0 04 00 00       cmp    %ecx,0x4c0(%rax)
+      51:       0f 84 bd 00 00 00       je     114 &lt;btrfs_set_lock_blocking_read+0x114&gt;
+      57:       8b 83 18 02 00 00       mov    0x218(%rbx),%eax
+      5d:       85 c0                   test   %eax,%eax
+      5f:       0f 84 b2 00 00 00       je     117 &lt;btrfs_set_lock_blocking_read+0x117&gt;
+      65:       f0 ff 83 90 00 00 00    lock incl 0x90(%rbx)
+      6c:       8b 83 14 02 00 00       mov    0x214(%rbx),%eax
+      72:       85 c0                   test   %eax,%eax
+      74:       0f 84 ab 00 00 00       je     125 &lt;btrfs_set_lock_blocking_read+0x125&gt;
+      7a:       f0 ff 8b 14 02 00 00    lock decl 0x214(%rbx)
+      81:       48 8d bb 98 00 00 00    lea    0x98(%rbx),%rdi
+      88:       5b                      pop    %rbx
+      89:       5d                      pop    %rbp
+      ...
+</code></pre></div></div>
+
+<p>and produces</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+callq  btrfs_set_lock_blocking_read
+TARGET __fentry__
+push   %rbp
+push   %rbx
+mov    %rdi,%rbx
+NOP
+mov    %gs:0x0(%rip),%eax
+mov    %eax,%eax
+bt     %rax,0x0(%rip)
+jb     btrfs_set_lock_blocking_read
+movzbl 0x94(%rbx),%ebp
+cmp    $0x1,%bpl
+ja     btrfs_set_lock_blocking_read
+and    $0x1,%ebp
+je     btrfs_set_lock_blocking_read
+mov    0x88(%rbx),%ecx
+mov    %gs:0x0,%rax
+cmp    %ecx,0x4c0(%rax)
+je     btrfs_set_lock_blocking_read
+mov    0x218(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock incl 0x90(%rbx)
+mov    0x214(%rbx),%eax
+test   %eax,%eax
+je     btrfs_set_lock_blocking_read
+lock decl 0x214(%rbx)
+lea    0x98(%rbx),%rdi
+pop    %rbx
+pop    %rbp
+...
+</code></pre></div></div>
+
+<p>This looks quite simple and when lined together, the diff is readable.</p>
+
+<p>So here’s the magic script (pardon my perl skills):</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/perl</span>
+
+<span class="nv">@c</span><span class="o">=&lt;&gt;</span><span class="p">;</span>
+<span class="k">foreach</span><span class="p">(</span><span class="nv">@c</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nb">chomp</span><span class="p">;</span>
+        <span class="sr">s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/</span><span class="p">;</span>
+        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/R_X86_/</span><span class="p">);</span>
+        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/</span><span class="p">);</span>
+        <span class="sr">s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//</span><span class="p">;</span>
+        <span class="sr">s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/</span><span class="p">;</span>
+        <span class="sr">s/\s+#.*$//</span><span class="p">;</span>
+        <span class="sr">s/nopl.*/NOP/</span><span class="p">;</span>
+        <span class="sr">s/xchg.*ax.*ax/NOP/</span><span class="p">;</span>
+        <span class="sr">s/data16 nop/NOP/</span><span class="p">;</span>
+        <span class="sr">s/nop/NOP/</span><span class="p">;</span>
+        <span class="k">print</span><span class="p">("</span><span class="si">$_</span><span class="se">\n</span><span class="p">");</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Use like:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
+$ objdump -dr after/lockng.o &gt; after
+$ vimdiff before after
+</code></pre></div></div>
+
+</p>
+<hr>
+</li>
+
+
+
+<li>2019-12-11 - <a href="/btrfs-hilights-5.3/">Btrfs hilights in 5.3</a> <tt>[tags: btrfs, kernel]</tt></li>
+<p>
+<p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/a18f8775419d3df282dd83efdb51c5a64d092f31">pull request</a>
+for the rest.</p>
+
+<p><em>CRC32C uses accelerated versions on other architectures</em></p>
+
+<p>… than just Intel-based ones. There was a hardcoded check for the intel SSE
+feature providing the accelerated instruction, but this totally skipped other
+architectuers. A brief check in <code class="highlighter-rouge">linux.git/arch/*/crypto</code> for files
+implementing the accelrated versions revealed that there’s a bunch of them:
+ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
+the improvements, though.</p>
+
+<p><em>Automatically remove incompat bit for RAID5/6</em></p>
+
+<p>While this is not the fix everybody is waiting on, it’s demonstrating
+user-developer-user cycle how things can be improved. A filesystem created
+with RAID5 or -6 profiles sets an incompatibility bit. That’s supposed to be
+there as long as there’s any chunk using the profiles. User expectation is that
+the bit should be removed once the chunks are eg. balanced away. This is what
+got implemented and serves as a prior example for any future feature that
+might get removed on a given filesystem. (Note from the future: I did that for the
+RAID1C34 as well).</p>
+
+<p>Side note: for the chunk profile it’s easy because the runtime check of
+presence is quick and requires only going through a list of chunk profiles
+types. Example of the worst case would be dropping the incompat bit for LZO
+after there are no compressed files using that algorithm. You can easily see
+that this would require either enumerating all extent metadata (one time check)
+or keeping track of count since mkfs time. This is IMHO not a typical request
+and can be eventually done using the <code class="highlighter-rouge">btrfstune</code> tool on an unmounted
+filesystem.</p>
+
+</p>
+<hr>
+</li>
+
+
+
+<li>2020-01-21 - <a href="/blake3-vs-blake2-in-btrfs/">BLAKE3 vs BLAKE2 for BTRFS</a> <tt>[tags: BTRFS, blake2, blake3]</tt></li>
+<p>
+<p>Irony isn’t it. The paint of BLAKE2 as BTRFS checksum algorithm hasn’t dried
+yet, 1-2 weeks to go but there’s a successor to it. Faster, yet still supposed to
+be strong. For a second or two I considered ripping out all the work and … no
+not really but I do admit the excitement.</p>
+
+<p>Speed and strength are competing goals for a hash algorithm. The speed can be
+evaluated by anyone, not so much for the strength. I am no cryptographer and
+for that area rely on expertise and opinion of others. That BLAKE was a SHA3
+finalist is a good indication, where BLAKE2 is it’s successor, weakened but not
+weak. BLAKE3 is yet another step trading off strength and speed.</p>
+
+<p>Regarding BTRFS, BLAKE2 is going to be the faster of strong hashes for now (the
+other one is SHA256). The argument I have for it now is proof of time. It’s
+been deployed in many projects (even cryptocurrencies!), there are optimized
+implementations, various language ports.</p>
+
+<p>The look ahead regarding more checksums is to revisit them in about 5 years.
+Hopefully by that time there will be deployments, real workload performance
+evaluations and overall user experience that will back future decisions.</p>
+
+<p>Maybe there are going to be new strong yet fast hashes developed. During my
+research I learned about Kangaroo 12 that’s a reduced version of SHA3 (Keccak).
+The hash is constructed in a different way, perhaps there might be a Kangaroo 2π
+one day on par with BLAKE3. Or something else. Why not EDON-R, it’s #1 in many
+of the cr.yp.to/hash benchmarks? Another thing I learned during the research is
+that hash algorithms are twelve in a dozen, IOW too many to choose from. That
+Kangaroo 12 is internally of a different construction might be a point for
+selecting it to have wider range of “building block types”.</p>
+
+<h2 id="quick-evaluation">Quick evaluation</h2>
+
+<p>For BTRFS I have a micro benchmark, repeatedly hashing a 4 KiB block and using
+cycles per block as a metric.</p>
+
+<ul>
+  <li>Block size: 4KiB</li>
+  <li>Iterations: 10000000</li>
+  <li>Digest size: 256 bits (32 bytes)</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Hash</th>
+      <th style="text-align: right">Total cycles</th>
+      <th style="text-align: right">Cycles/iteration</th>
+      <th style="text-align: left">Perf vs BLAKE3</th>
+      <th style="text-align: left">Perf vs BLAKE2b</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">BLAKE3  (AVX2)</td>
+      <td style="text-align: right">111260245256</td>
+      <td style="text-align: right">11126</td>
+      <td style="text-align: left">1.0</td>
+      <td style="text-align: left">0.876 (-13%)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (AVX2)</td>
+      <td style="text-align: right">127009487092</td>
+      <td style="text-align: right">12700</td>
+      <td style="text-align: left">1.141 (+14%)</td>
+      <td style="text-align: left">1.0</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (AVX)</td>
+      <td style="text-align: right">166426785907</td>
+      <td style="text-align: right">16642</td>
+      <td style="text-align: left">1.496 (+50%)</td>
+      <td style="text-align: left">1.310 (+31%)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2b (ref)</td>
+      <td style="text-align: right">225053579540</td>
+      <td style="text-align: right">22505</td>
+      <td style="text-align: left">2.022 (+102%)</td>
+      <td style="text-align: left">1.772 (+77%)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Right now there’s only the reference Rust implementation and a derived C
+implementation of BLAKE3, claimed not to be optimized but from my other
+experience the compiler can do a good job optimizing programmers ideas away.
+There’s only one BLAKE3 entry with the AVX2 implementation, the best hardware
+support my testing box provides. As I had the other results of BLAKE2 at hand,
+they’re in the table for comparison, but the most interesting pair are the AVX2
+versions anyway.</p>
+
+<p>The improvement is 13-14%. Not much ain’t it, way less that the announced 4+x
+faster than BLAKE2b. Well, it’s always important to interpret results of a
+benchmark with respect to the environment of measurement and the tested
+parameters.</p>
+
+<p>For BTRFS filesystem the block size is always going to be in kilobytes. I can’t
+find what was the size of the official benchmark results, the bench.rs script
+iterates over various sizes, so I assume it’s an average. Short input buffers
+can skew the results as the setup/output overhead can be significant, while for
+long buffers the compression phase is significant. I don’t have explanation for
+the difference and won’t draw conclusions about BLAKE3 in general.</p>
+
+<p>One thing that I dare to claim is that I can sleep well because upon the above
+evaluation, BLAKE3 won’t bring a notable improvement if used as a checksum
+hash.</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li><a href="https://kdave.github.io/selecting-hash-for-BTRFS">new hash for BTRFS selection</a>, same testing box for the measurements</li>
+  <li>https://github.com/BLAKE3-team/BLAKE3 – top commit 02250a7b7c80ded, 2020-01-13, upsteam version 0.1.1</li>
+  <li><a href="https://bench.cr.yp.to/primitives-hash.html">DJB’s hash menu</a> and <a href="https://bench.cr.yp.to/results-hash.html">per-machine results</a> with numbers</li>
+</ul>
+
+<h2 id="personal-addendum">Personal addendum</h2>
+
+<p>During the evaulations now and in the past, I’ve found it convenient if there’s
+an offer of implementations in various languages. That eg. Keccak project pages
+does not point me directly to a C implementation slightly annoyed me, but the
+refernce implementation in C++ was worse than BLAKE2 I did not take the next
+step to compare the C version, wherever I would find it.</p>
+
+<p>BLAKE3 is fresh and Rust seems to be the only thing that has been improved
+since the initial release. A plain C implementaion without any
+warning-not-optimized labels would be good. I think that C versions will appear
+eventually, besides that Rust is now the new language hotness, there are
+projects not yet <em>“let’s rewrite it in Rust”</em>. Please Bear with us.</p>
 
 </p>
 <hr>
