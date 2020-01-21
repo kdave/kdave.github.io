@@ -1,5 +1,5 @@
 ---
-status: draft
+status: finished
 layout: page
 category: b
 tags: [ blake2, fun ]
