@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+
+  <title>Btrfs hilights in 5.5: 3-copy and 4-copy block groups</title>
+  <meta name="description" content="something
+">
+
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="canonical" href="https://kdave.github.io/btrfs-hilights-5.5-raid1c34/">
+  <link rel="alternate" type="application/rss+xml" title="(void)0;" href="https://kdave.github.io/feed.xml" />
+</head>
+
+  <body>
+    <header>
+	<nav>
+		
+		
+		<a class="navlink" href="/a/">[about]</a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		<a class="navlink" href="/l">[index-long.html]</a>
+		
+		
+		
+		<a class="navlink" href="/">[index.html]</a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	</nav>
+	<hr>
+</header>
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+  <header class="post-header">
+    <h1 class="post-title">Btrfs hilights in 5.5: 3-copy and 4-copy block groups</h1>
+    [ date: <i>2020-02-02</i> || tags: <i>btrfs,kernel</i> ]
+  </header>
+  <article class="post-content">
+    <p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/97d0bf96a0d0986f466c3ff59f2ace801e33dc69">pull
+request</a>
+for the rest.</p>
+
+<h2 id="new-block-group-profiles-raid1c3-and-raid1c4">New block group profiles RAID1C3 and RAID1C4</h2>
+
+<p>There are two new block group profiles enhancing capabilities of the RAID1
+types with more copies than 2. Brief overview of the profiles is in the table
+below, for table with all profiles see manual page of <code class="highlighter-rouge">mkfs.brtfs</code>, also
+available <a href="https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#PROFILES">on
+wiki</a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Profile</th>
+      <th style="text-align: right">Copies</th>
+      <th style="text-align: right">Utilization</th>
+      <th style="text-align: right">Min devices</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">RAID1</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">50%</td>
+      <td style="text-align: right">2</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RAID1C3</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">33%</td>
+      <td style="text-align: right">3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RAID1C4</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">25%</td>
+      <td style="text-align: right">4</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The way all the RAID1 types work is that there are 2 / 3 / 4 exact copies over
+all available devices. The terminology is different from linux MD RAID, that
+can do any number of copies. We decided not to do that in btrfs to keep the
+implementation simple. Another point for simplicity is from the users’
+perspective. That RAID1C3 provides 3 copies is clear from the type. Even after
+adding a new device and not doing balance, the guarantees about redundancy
+still hold. Newly written data will use the new device together with 2 devices
+from the original set.</p>
+
+<p>Compare that with a hypothetical RAID1CN, on a filesystem with M devices (N &lt;=
+M). When the filesystem starts with 2 devices, equivalent to RAID1, adding a
+new one will have mixed redundancy guarantees after writing more data. Old data
+with RAID1, new with RAID1C3 – but all accounted under RAID1CN profile. A full
+rebalance would be required to make it a reliable 3-copy RAID1. Add another
+device, going to RAID1C4, same problem with more data to shuffle around.</p>
+
+<p>The allocation policy would depend on number of devices, making it hard for the
+user to know the redundancy level. This is already the case for
+RAID0/RAID5/RAID6. For the striped profile RAID0 it’s not much of a problem,
+there’s no redundancy. For the parity profiles it’s been a known problem and
+new balance filter <code class="highlighter-rouge">stripe</code> has been added to support fine grained selection of
+block groups.</p>
+
+<p>Speaking about RAID6, there’s the elephant in the room, trying to cover write
+hole. Lack of a resiliency against 2 device damage has been bothering all of us
+because of the known write hole problem in the RAID6 implementation. How this
+is going to be addressed is for another post, but for now, the newly added
+RAID1C3 profile is a reasonable substitute for RAID6.</p>
+
+<h3 id="how-to-use-it">How to use it</h3>
+
+<p>On a freshly created filesystem it’s simple:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
+</code></pre></div></div>
+
+<p>The command combines both new profiles for sake of demonstration, you should
+always consider the expected use and required guarantees and choose the
+appropriate profiles.</p>
+
+<p>Changing the profile later on an existing filesystem works as usual, you can
+use:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
+</code></pre></div></div>
+
+<p>Provided there are enough devices and enough space to do the conversion, this
+will go through all metadadata block groups and after it finishes, all of them
+will be of the of the desired type.</p>
+
+<h3 id="backward-compatibility">Backward compatibility</h3>
+
+<p>The new block groups are not understood by old kernels and can’t be mounted,
+not even in the read-only mode. To prevent that a new incompatibility bit is
+introduced, called <code class="highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
+<code class="highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="highlighter-rouge">incompat_flags</code>. On a running
+system the incompat features are exported in sysfs,
+<code class="highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
+
+<h3 id="outlook">Outlook</h3>
+
+<p>There is no demand for RAID1C5 at the moment (I asked more than once). The
+space utilization is low already, the RAID1C4 survives 3 dead devices so IMHO
+this is enough for most users. Extending resilience to more devices should
+perhaps take a different route.</p>
+
+<p>With more copies there’s potential for parallelization of reads from multiple
+devices. Up to now this is not optimal, there’s a decision logic that’s
+semi-random based on process ID of the btrfs worker threads or process
+submitting the IO. Better load balancing policy is a work in progress and could
+appear in 5.7 at the earliest (because 5.6 development is now in fixes-only
+mode).</p>
+
+<h3 id="look-back">Look back</h3>
+
+<p>The history of the patchset is a bit bumpy. There was enough motivation and
+requests for the functionality, so I started the analysis what needs to be
+done. Several cleanups were necessary to unify code and to make it easily
+extendable for more copies while using the same mirroring code. In the end
+change a few constants and be done.</p>
+
+<p>Following with testing, I tried simple mkfs and conversions, that worked well.
+Then scrub, overwrite some blocks and let the auto-repair do the work. No
+hiccups. The remaining and important part was the device replace, as the
+expected use case was to substitute RAID6, replacing a missing or damaged disk.
+I wrote the test script, replace 1 missing, replace 2 missing. And it did not
+work. While the filesystem was mounted, everything seemed ok. Unmount, check
+again and the devices were still missing. Not cool, right.</p>
+
+<p>Due to lack of time before the upcoming merge window (a code freeze before next
+development cycle), I had to declare it not ready and put it aside. This was in
+late 2018. For a highly requested feature this was not an easy decision. Should
+it be something less important, the development cycle between rc1 and final
+release provides enough time to fix things up. But due to the maintainer role
+with its demands I was not confident that I could find enough time to debug and
+fix the remaining problem. Also nobody offered help to continue the work, but
+that’s how it goes.</p>
+
+<p>At the late 2019 I had some spare time and looked at the pending work again.
+Enhanced the test script with more debugging messages and more checks. The code
+worked well, the test script was subtly broken. Oh well, what a blunder. That
+cost a year, but on the other hand releasing a highly requested feature that
+lacks an important part was not an appealing option.</p>
+
+<p>The patchset was added to 5.5 development queue at about the last time before
+freeze, final 5.5 release happened a week ago.</p>
+
+  </article>
+</div>
+
+      </div>
+    </div>
+    <footer class="site-footer">
+	<hr>
+	&#9993;
+	|
+	<!--
+	<img src="../images/github-logo.ico" width="16" height="16" />
+	-->
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" viewBox="0 0 47.999998 48.000002" width="16" height="16"><style id="style3">.Round_x0020_Corners_x0020_2_x0020_pt{fill:#FFF;stroke:#000;stroke-miterlimit:10}.Live_x0020_Reflect_x0020_X{fill:none}.Bevel_x0020_Soft{fill:url(#SVGID_1_)}.Dusk{fill:#FFF}.Foliage_GS{fill:#FD0}.Pompadour_GS{fill:#44ade2}.Pompadour_GS,.st0{fill-rule:evenodd;clip-rule:evenodd}.st0{fill:#191717}</style><linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-216.625" y1="-385.75" x2="-215.918" y2="-385.043"><stop offset="0" id="stop6" stop-color="#dedfe3"/><stop offset=".174" id="stop8" stop-color="#d8d9dd"/><stop offset=".352" id="stop10" stop-color="#c9cacd"/><stop offset=".532" id="stop12" stop-color="#b4b5b8"/><stop offset=".714" id="stop14" stop-color="#989a9c"/><stop offset=".895" id="stop16" stop-color="#797c7e"/><stop offset="1" id="stop18" stop-color="#656b6c"/></linearGradient><path class="st0" d="M23.928 1.15C11 1.15.514 11.638.514 24.566c0 10.343 6.75 19.105 15.945 22.265 1.148.144 1.58-.574 1.58-1.15v-4.02c-6.465 1.436-7.902-3.16-7.902-3.16-1.005-2.73-2.586-3.45-2.586-3.45-2.154-1.435.144-1.435.144-1.435 2.298.144 3.59 2.442 3.59 2.442 2.156 3.59 5.46 2.586 6.753 2.01.142-1.58.86-2.585 1.435-3.16-5.17-.574-10.63-2.585-10.63-11.635 0-2.585.862-4.596 2.442-6.32-.287-.575-1.005-3.017.288-6.177 0 0 2.01-.574 6.464 2.442 1.866-.574 3.877-.718 5.888-.718 2.01 0 4.022.286 5.89.717 4.453-3.016 6.464-2.442 6.464-2.442 1.293 3.16.43 5.602.287 6.177a9.29 9.29 0 0 1 2.44 6.32c0 9.05-5.458 10.918-10.63 11.492.863.718 1.58 2.155 1.58 4.31v6.464c0 .574.432 1.292 1.58 1.15 9.338-3.16 15.946-11.924 15.946-22.266-.143-12.785-10.63-23.27-23.558-23.27z" id="path20" clip-rule="evenodd" fill="#191717" fill-rule="evenodd"/></svg>
+	<a href="https://github.com/kdave">github/kdave</a>
+	|
+	<svg id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" height="16" width="16" version="1.1" xmlns:cc="http://creativecommons.org/ns#" viewBox="0 0 182.66667 150.66667" xmlns:dc="http://purl.org/dc/elements/1.1/"><defs id="defs6"><clipPath id="clipPath20" clipPathUnits="userSpaceOnUse"><path id="path18" d="m0 10.012h1366.9v1110.9h-1366.9z"/></clipPath></defs><g id="g10" transform="matrix(1.3333 0 0 -1.3333 0 150.67)"><g id="g12" transform="scale(.1)"><g id="g14"><g id="g16" clip-path="url(#clipPath20)"><path id="path22" d="m1366.9 989.39c-50.27-22.309-104.33-37.387-161.05-44.18 57.89 34.723 102.34 89.679 123.28 155.15-54.18-32.15-114.18-55.47-178.09-68.04-51.13 54.49-124.02 88.55-204.68 88.55-154.89 0-280.43-125.55-280.43-280.43 0-21.988 2.457-43.398 7.258-63.91-233.08 11.68-439.72 123.36-578.04 293.01-24.141-41.4-37.969-89.567-37.969-140.97 0-97.308 49.489-183.13 124.76-233.44-45.969 1.437-89.218 14.058-127.03 35.078-0.043-1.18-0.043-2.348-0.043-3.52 0-135.9 96.68-249.22 224.96-275-23.512-6.41-48.281-9.8-73.86-9.8-18.089 0-35.628 1.711-52.781 5 35.711-111.41 139.26-192.5 262-194.77-96.058-75.23-216.96-120.04-348.36-120.04-22.621 0-44.961 1.332-66.918 3.91 124.16-79.568 271.55-125.98 429.94-125.98 515.82 0 797.86 427.31 797.86 797.93 0 12.153-0.28 24.223-0.79 36.25 54.77 39.571 102.31 88.95 139.93 145.2" fill="#55ACEE"/></g></g></g></g></svg>
+	<a href="https://twitter.com/kdaveh">@kdaveh</a>
+	|
+	<!--
+	<img src="../images/gitlab-logo.svg" width="16" height="16" />
+	-->
+<svg width="16px" height="16px" viewBox="0 0 256 236" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+    <g>
+        <path d="M128.07485,236.074667 L128.07485,236.074667 L175.17885,91.1043048 L80.9708495,91.1043048 L128.07485,236.074667 L128.07485,236.074667 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L80.9708495,91.104061 L14.9557638,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M14.9558857,91.1044267 L14.9558857,91.1044267 L0.641828571,135.159589 C-0.663771429,139.17757 0.766171429,143.57955 4.18438095,146.06275 L128.074971,236.074789 L14.9558857,91.1044267 L14.9558857,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M14.9558857,91.1045486 L80.9709714,91.1045486 L52.6000762,3.79026286 C51.1408762,-0.703146667 44.7847619,-0.701927619 43.3255619,3.79026286 L14.9558857,91.1045486 L14.9558857,91.1045486 Z" fill="#E24329"></path>
+        <path d="M128.07485,236.074423 L175.17885,91.104061 L241.193935,91.104061 L128.07485,236.074423 L128.07485,236.074423 Z" fill="#FC6D26"></path>
+        <path d="M241.193935,91.1044267 L241.193935,91.1044267 L255.507992,135.159589 C256.813592,139.17757 255.38365,143.57955 251.96544,146.06275 L128.07485,236.074789 L241.193935,91.1044267 L241.193935,91.1044267 Z" fill="#FCA326"></path>
+        <path d="M241.193935,91.1045486 L175.17885,91.1045486 L203.549745,3.79026286 C205.008945,-0.703146667 211.365059,-0.701927619 212.824259,3.79026286 L241.193935,91.1045486 L241.193935,91.1045486 Z" fill="#E24329"></path>
+    </g>
+</svg>
+	<a href="https://gitlab.com/kdave">gitlab/kdave</a>
+	|
+	Content licensed under <a href="http://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+</footer>
+
+  </body>
+</html>
