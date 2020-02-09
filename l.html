@@ -58,6 +58,8 @@
 		
 		
 		
+		
+		
 	</nav>
 	<hr>
 </header>
@@ -90,7 +92,7 @@ single | 395 |       | Mon 26 Sep 2016 10:30:01 PM CEST | root | timeline | time
 <p>So what happened? I was removing some old kernels, manually by rpm. And it
 started to report write errors, no space. Indeed, df reported just 64K
 available. This is within the margin of accuracy that we’re able to get from
-the statfs syscall.  Sidenote, getting this right is a lot of guesswork, so 64K
+the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
 is as good as it gets.</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
@@ -114,7 +116,7 @@ by 6GB!</p>
 from 1 again, as the current series is around ~390, while the number of stale
 snapshot is much higher.</p>
 
-<p>Take aways:</p>
+<p>Takeaways:</p>
 
 <ul>
   <li>synthetic tools may not give our an accurate view: snapper requires some
@@ -150,7 +152,7 @@ a positive number, linux kernel uses the negative values. Besides the sources
 (going through like 5 include hops from <code class="highlighter-rouge">/usr/include/errno.h</code> to
 <code class="highlighter-rouge">/usr/include/asm-generic/errno.h</code> and <code class="highlighter-rouge">/usr/include/asm-generic/errno-base.h</code>)
 there’s no direct way to get the symbolic &lt;-&gt; numeric mapping. The hexa values
-commonly appear in the stacktrace dumps.</p>
+commonly appear in the stack trace dumps.</p>
 
 <table>
   <thead>
@@ -1216,7 +1218,7 @@ commonly appear in the stacktrace dumps.</p>
 
 <li>2018-06-08 - <a href="/qemu-2.11-if=scsi/">qemu 2.12 does not support if=scsi</a> <tt>[tags: qemu]</tt></li>
 <p>
-<p>Afterh update of qemu to version 2.12, my testing vms stopped to just warn
+<p>After update of qemu to version 2.12, my testing vms stopped to just warn
 about the <code class="highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
 start.</p>
 
@@ -1250,7 +1252,7 @@ caching.</p>
 there’s no SCSI. Second line is to define the file backed drive and the third
 one puts that together.</p>
 
-<p>Usin SCSI might not be the best idea for a qemu VM as the emulated driver is
+<p>Using SCSI might not be the best idea for a qemu VM as the emulated driver is
 buggy and crashes, so I’d recommend to use virtio, but for a almost read-only
 root image it’s fine. Also the device names are predictable.</p>
 
@@ -1346,13 +1348,13 @@ the context of the benchmark and perhaps other values.</p>
 <p>
 <p>The BLAKE2 algorithm is out for some time, yet there’s no port to linux crypto
 API. The recent push of WireGuard would add it to linux kernel, but using a
-diffent API (zinc) than the existing one. I haven’t explored zinc, I assume
+different API (zinc) than the existing one. I haven’t explored zinc, I assume
 there will be a way to use it from inside kernel, but this would need another
 layer to switch the APIs according to the algorithm.</p>
 
 <p>As btrfs is going to use more hashing algos, we are in the process of
 selection.  One of the contenders is BLAKE2, though everybody would have a
-different suggestion.  In order to test it, a port is needed. Which basicaly is
+different suggestion.  In order to test it, a port is needed. Which basically is
 a glue code between the linux crypto API and the BLAKE2 implementation.</p>
 
 <p>I’m not going to reimplement crypto or anything, so the the default
@@ -1376,7 +1378,7 @@ Standard C code, some definitions. Adapting for linux kernel would need to
 replace the <code class="highlighter-rouge">stdint.h</code> types (<code class="highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="highlighter-rouge">u8</code> etc) and change
 path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.</p>
 
-<h2 id="add-the-new-algorithm-definiton-cra">Add the new algorithm definiton (CRA)</h2>
+<h2 id="add-the-new-algorithm-definition-cra">Add the new algorithm definition (CRA)</h2>
 
 <p>Though it’s possible to prepare a module for an out-of-tree build (see below),
 let’s do it inside the <code class="highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
@@ -1385,7 +1387,7 @@ useful.</p>
 
 <p>The crypto hash description is defined in <code class="highlighter-rouge">struct shash_alg</code>, contains the
 technical description like type of the algorithm, length of the context and
-callbacks for various phases of the hash calculation (init, update, fnial), and
+callbacks for various phases of the hash calculation (init, update, final), and
 identification of the algorithm and the implementation. The default
 implementations are C and use the string “-generic” in the name.</p>
 
@@ -1501,7 +1503,7 @@ modules_install:
 
 <h2 id="what-next">What next?</h2>
 
-<p>Send it upsteram. Well, after some work of course.</p>
+<p>Send it upstream. Well, after some work of course.</p>
 
 <ul>
   <li>update the coding style of the blake2 sources</li>
@@ -1647,7 +1649,7 @@ another option and inevitable on some occasions.</p>
 
 <p>The write side check aims to catch silent errors that could make it to the
 permanent storage. The reasons why this happens are two fold, but the main idea
-is to catch memory bitflips. You’d be surprised how often this happens, that
+is to catch memory bit flips. You’d be surprised how often this happens, that
 would be for a separate article entirely.</p>
 
 <p>The new checks in 5.2 improve:</p>
@@ -1660,7 +1662,7 @@ and that usage and total sizes are within limits of the physical device</li>
 <code class="highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
 consistent with the global one and the basic sanity of mode, flags/attributes
 and link count</li>
-  <li>block group profiles – check that only a single type is set in the bitmask
+  <li>block group profiles – check that only a single type is set in the bit mask
 that represents block group profile type of a chunk (ie.
 single/dup/raid1/…)</li>
 </ul>
@@ -1718,7 +1720,7 @@ think and hope the solution will address that.</p>
 <p>The first hash type is to replace crc32c with focus on <strong>speed</strong> and not
 necessarily strength (ie. collision resistance).</p>
 
-<p>The second type focus is <strong>strength</strong>, in the cryptographical sense.</p>
+<p>The second type focus is <strong>strength</strong>, in the cryptographic sense.</p>
 
 <p>In addition to the technical aspects of the hashes, there are some requirements
 that would allow free distribution and use of the implementations:</p>
@@ -1763,7 +1765,7 @@ and on multiple architectures.</p>
 easily as for crc32c. For strong hash it’s obvious that finding a collision
 would be jackpot.</p>
 
-<p>In case of the fast hash the quality can be evaluated using the SMHash suite.</p>
+<p>In case of the fast hash the quality can be evaluated using the SMHasher suite.</p>
 
 <h2 id="the-contenders">The contenders</h2>
 
@@ -1781,11 +1783,11 @@ would be jackpot.</p>
 
 <h3 id="xxhash">xxhash</h3>
 
-<p><em>criteria</em>: license ok, implementation ok, digest size ok, not standardized but
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, not standardized but
 in wide use</p>
 
 <p>The hash is quite fast as it tries to exploit the CPU features that allow
-instruction parallelism. The SMhash score is 10, that’s great. The linux kernel
+instruction parallelism. The SMHasher score is 10, that’s great. The linux kernel
 implementation landed in 5.3.</p>
 
 <p>Candidate for <em>fast hash</em>.</p>
@@ -1809,7 +1811,7 @@ microbenchmark.</p>
 
 <h3 id="sha256">SHA256</h3>
 
-<p><em>criteria</em>: license ok, implementation ok, digest size ok, standardized in FIPS</p>
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, standardized in FIPS</p>
 
 <p>The SHA family of hashes is well known, has decent support in CPU and is
 standardized. Specifically, SHA256 is the strongest that still fits into the
@@ -1819,7 +1821,7 @@ available 32 bytes.</p>
 
 <h3 id="sha3">SHA3</h3>
 
-<p><em>criteria</em>: license ok, implementation ok, digest size ok, standardized in FIPS</p>
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, standardized in FIPS</p>
 
 <p>Winner of the 2012 hash contest, we can’t leave it out. From the practical
 perspective of checksum, the speed is bad even for the strong hash type. One of
@@ -1830,7 +1832,7 @@ was preferred during the SHA3 contest.</p>
 
 <h3 id="blake2">BLAKE2</h3>
 
-<p><em>criteria</em>: license ok, implementation ok, digest size ok, not standardized</p>
+<p><em>criteria</em>: license OK, implementation OK, digest size OK, not standardized</p>
 
 <p>From the family of BLAKE that participated in the 2012 SHA contest, the ‘2’
 provides a trade-off speed vs. strength. More and more projects adopt it.</p>
@@ -1973,7 +1975,7 @@ curiosity satisfied.</p>
 
 <h3 id="what-isnt-here">What isn’t here</h3>
 
-<p>There are non-cryptographical hashes like CityHash, FarmHash, Murmur3 and more,
+<p>There are non-cryptographic hashes like CityHash, FarmHash, Murmur3 and more,
 that were found unsuitable or not meeting some of the basic criteria.  Others
 like FNV or Fletcher used in ZFS are of comparable strength of crc32c, so that
 won’t be a progress.</p>
@@ -2010,8 +2012,8 @@ a 20 line perl script that basically filters out things that are not important
 or are likely to change in a slightly modified C source.</p>
 
 <p>The result is lossy, eg. there are no addresses and thus jumps can’t be
-followed, but having that would actually deserve the ‘intellingent’ title.
-My usecase is simpler, eg. doing small tweaks like reodering lines, adding
+followed, but having that would actually deserve the ‘intelligent’ title.
+My use case is simpler, eg. doing small tweaks like reordering lines, adding
 annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>Which takes eg.</p>
@@ -2118,7 +2120,7 @@ pop    %rbp
 <p>Use like:</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
-$ objdump -dr after/lockng.o &gt; after
+$ objdump -dr after/locking.o &gt; after
 $ vimdiff before after
 </code></pre></div></div>
 
@@ -2134,10 +2136,10 @@ for the rest.</p>
 
 <h2 id="crc32c-uses-accelerated-versions-on-other-architectures">CRC32C uses accelerated versions on other architectures</h2>
 
-<p>… than just Intel-based ones. There was a hardcoded check for the intel SSE
+<p>… than just Intel-based ones. There was a hard coded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
-architectuers. A brief check in <code class="highlighter-rouge">linux.git/arch/*/crypto</code> for files
-implementing the accelrated versions revealed that there’s a bunch of them:
+architectures. A brief check in <code class="highlighter-rouge">linux.git/arch/*/crypto</code> for files
+implementing the accelerated versions revealed that there’s a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
 the improvements, though.</p>
 
@@ -2180,7 +2182,7 @@ weak. BLAKE3 is yet another step trading off strength and speed.</p>
 
 <p>Regarding BTRFS, BLAKE2 is going to be the faster of strong hashes for now (the
 other one is SHA256). The argument I have for it now is proof of time. It’s
-been deployed in many projects (even cryptocurrencies!), there are optimized
+been deployed in many projects (even crypto currencies!), there are optimized
 implementations, various language ports.</p>
 
 <p>The look ahead regarding more checksums is to revisit them in about 5 years.
@@ -2277,20 +2279,20 @@ hash.</p>
 
 <ul>
   <li><a href="https://kdave.github.io/selecting-hash-for-BTRFS">new hash for BTRFS selection</a>, same testing box for the measurements</li>
-  <li>https://github.com/BLAKE3-team/BLAKE3 – top commit 02250a7b7c80ded, 2020-01-13, upsteam version 0.1.1</li>
+  <li>https://github.com/BLAKE3-team/BLAKE3 – top commit 02250a7b7c80ded, 2020-01-13, upstream version 0.1.1</li>
   <li><a href="https://bench.cr.yp.to/primitives-hash.html">DJB’s hash menu</a> and <a href="https://bench.cr.yp.to/results-hash.html">per-machine results</a> with numbers</li>
 </ul>
 
 <h2 id="personal-addendum">Personal addendum</h2>
 
-<p>During the evaulations now and in the past, I’ve found it convenient if there’s
+<p>During the evaluations now and in the past, I’ve found it convenient if there’s
 an offer of implementations in various languages. That eg. Keccak project pages
 does not point me directly to a C implementation slightly annoyed me, but the
-refernce implementation in C++ was worse than BLAKE2 I did not take the next
+reference implementation in C++ was worse than BLAKE2 I did not take the next
 step to compare the C version, wherever I would find it.</p>
 
 <p>BLAKE3 is fresh and Rust seems to be the only thing that has been improved
-since the initial release. A plain C implementaion without any
+since the initial release. A plain C implementation without any
 warning-not-optimized labels would be good. I think that C versions will appear
 eventually, besides that Rust is now the new language hotness, there are
 projects not yet <em>“let’s rewrite it in Rust”</em>. Please Bear with us.</p>
@@ -2358,7 +2360,7 @@ from the original set.</p>
 M). When the filesystem starts with 2 devices, equivalent to RAID1, adding a
 new one will have mixed redundancy guarantees after writing more data. Old data
 with RAID1, new with RAID1C3 – but all accounted under RAID1CN profile. A full
-rebalance would be required to make it a reliable 3-copy RAID1. Add another
+re-balance would be required to make it a reliable 3-copy RAID1. Add another
 device, going to RAID1C4, same problem with more data to shuffle around.</p>
 
 <p>The allocation policy would depend on number of devices, making it hard for the
@@ -2431,7 +2433,7 @@ Then scrub, overwrite some blocks and let the auto-repair do the work. No
 hiccups. The remaining and important part was the device replace, as the
 expected use case was to substitute RAID6, replacing a missing or damaged disk.
 I wrote the test script, replace 1 missing, replace 2 missing. And it did not
-work. While the filesystem was mounted, everything seemed ok. Unmount, check
+work. While the filesystem was mounted, everything seemed OK. Unmount, check
 again and the devices were still missing. Not cool, right.</p>
 
 <p>Due to lack of time before the upcoming merge window (a code freeze before next

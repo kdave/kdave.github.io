@@ -58,6 +58,8 @@
 		
 		
 		
+		
+		
 	</nav>
 	<hr>
 </header>
@@ -79,8 +81,8 @@ a 20 line perl script that basically filters out things that are not important
 or are likely to change in a slightly modified C source.</p>
 
 <p>The result is lossy, eg. there are no addresses and thus jumps can’t be
-followed, but having that would actually deserve the ‘intellingent’ title.
-My usecase is simpler, eg. doing small tweaks like reodering lines, adding
+followed, but having that would actually deserve the ‘intelligent’ title.
+My use case is simpler, eg. doing small tweaks like reordering lines, adding
 annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>Which takes eg.</p>
@@ -187,7 +189,7 @@ pop    %rbp
 <p>Use like:</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
-$ objdump -dr after/lockng.o &gt; after
+$ objdump -dr after/locking.o &gt; after
 $ vimdiff before after
 </code></pre></div></div>
 

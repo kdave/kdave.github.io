@@ -58,6 +58,8 @@
 		
 		
 		
+		
+		
 	</nav>
 	<hr>
 </header>
@@ -70,7 +72,7 @@
     [ date: <i>2018-06-08</i> || tags: <i>qemu</i> ]
   </header>
   <article class="post-content">
-    <p>Afterh update of qemu to version 2.12, my testing vms stopped to just warn
+    <p>After update of qemu to version 2.12, my testing vms stopped to just warn
 about the <code class="highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
 start.</p>
 
@@ -104,7 +106,7 @@ caching.</p>
 there’s no SCSI. Second line is to define the file backed drive and the third
 one puts that together.</p>
 
-<p>Usin SCSI might not be the best idea for a qemu VM as the emulated driver is
+<p>Using SCSI might not be the best idea for a qemu VM as the emulated driver is
 buggy and crashes, so I’d recommend to use virtio, but for a almost read-only
 root image it’s fine. Also the device names are predictable.</p>
 
