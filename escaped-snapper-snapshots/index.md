@@ -25,7 +25,7 @@ single | 395 |       | Mon 26 Sep 2016 10:30:01 PM CEST | root | timeline | time
 So what happened? I was removing some old kernels, manually by rpm. And it
 started to report write errors, no space. Indeed, df reported just 64K
 available. This is within the margin of accuracy that we're able to get from
-the statfs syscall.  Sidenote, getting this right is a lot of guesswork, so 64K
+the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
 is as good as it gets.
 
 ```
@@ -51,7 +51,7 @@ The theory is that I have once removed all snapshots so the numbering started
 from 1 again, as the current series is around ~390, while the number of stale
 snapshot is much higher.
 
-Take aways:
+Takeaways:
 
 * synthetic tools may not give our an accurate view: snapper requires some
   metadata describing its snapshot, which is obviously OK, given that the user

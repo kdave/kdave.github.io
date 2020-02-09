@@ -13,7 +13,7 @@ a positive number, linux kernel uses the negative values. Besides the sources
 (going through like 5 include hops from `/usr/include/errno.h` to
 `/usr/include/asm-generic/errno.h` and `/usr/include/asm-generic/errno-base.h`)
 there's no direct way to get the symbolic <-> numeric mapping. The hexa values
-commonly appear in the stacktrace dumps.
+commonly appear in the stack trace dumps.
 
 | symbolic | dec | hex | neg hex | comment |
 --- | ---: | ---: | ---: | --- |

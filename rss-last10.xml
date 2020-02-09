@@ -14,9 +14,9 @@ layout: none
 		<sy:updateFrequency>{{ site.feed_update_frequency | default: 1 | xml_escape }}</sy:updateFrequency>
 		<link>{{ site.url }}</link>
 		<atom:link href="{{ site.url }}/{{ page.path }}" rel="self" type="application/rss+xml" />
-		{% assign sortedPages = site.pages | where: "feed", "pko" | sort: "date" %}
+		{% assign sortedPages = site.pages | where: "layout", "page" | sort: "date" %}
 		<lastBuildDate>{{ sortedPages.last.date | date_to_rfc822 }}</lastBuildDate>
-		{% for post in sortedPages limit:20 %}
+		{% for post in sortedPages limit:10 %}
 			<item>
 				<title>{{ post.title | xml_escape }}</title>
 				<dc:creator>{{ site.rss_name | xml_escape }}</dc:creator>

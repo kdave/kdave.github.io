@@ -8,7 +8,7 @@ status: finished
 title: qemu 2.12 does not support if=scsi
 ---
 
-Afterh update of qemu to version 2.12, my testing vms stopped to just warn
+After update of qemu to version 2.12, my testing vms stopped to just warn
 about the `if=scsi` (with a bit more cryptic message), and did not want to
 start.
 
@@ -44,6 +44,6 @@ First you need to define the bus, otherwise the 3rd line will complain that
 there's no SCSI. Second line is to define the file backed drive and the third
 one puts that together.
 
-Usin SCSI might not be the best idea for a qemu VM as the emulated driver is
+Using SCSI might not be the best idea for a qemu VM as the emulated driver is
 buggy and crashes, so I'd recommend to use virtio, but for a almost read-only
 root image it's fine. Also the device names are predictable.

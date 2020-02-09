@@ -40,7 +40,7 @@ Compare that with a hypothetical RAID1CN, on a filesystem with M devices (N <=
 M). When the filesystem starts with 2 devices, equivalent to RAID1, adding a
 new one will have mixed redundancy guarantees after writing more data. Old data
 with RAID1, new with RAID1C3 -- but all accounted under RAID1CN profile. A full
-rebalance would be required to make it a reliable 3-copy RAID1. Add another
+re-balance would be required to make it a reliable 3-copy RAID1. Add another
 device, going to RAID1C4, same problem with more data to shuffle around.
 
 The allocation policy would depend on number of devices, making it hard for the
@@ -115,7 +115,7 @@ Then scrub, overwrite some blocks and let the auto-repair do the work. No
 hiccups. The remaining and important part was the device replace, as the
 expected use case was to substitute RAID6, replacing a missing or damaged disk.
 I wrote the test script, replace 1 missing, replace 2 missing. And it did not
-work. While the filesystem was mounted, everything seemed ok. Unmount, check
+work. While the filesystem was mounted, everything seemed OK. Unmount, check
 again and the devices were still missing. Not cool, right.
 
 Due to lack of time before the upcoming merge window (a code freeze before next

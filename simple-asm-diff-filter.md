@@ -16,8 +16,8 @@ a 20 line perl script that basically filters out things that are not important
 or are likely to change in a slightly modified C source.
 
 The result is lossy, eg. there are no addresses and thus jumps can't be
-followed, but having that would actually deserve the 'intellingent' title.
-My usecase is simpler, eg. doing small tweaks like reodering lines, adding
+followed, but having that would actually deserve the 'intelligent' title.
+My use case is simpler, eg. doing small tweaks like reordering lines, adding
 annotations (like READ\_ONCE/WRITE\_ONCE) or reducing argument counts.
 
 Which takes eg.
@@ -128,6 +128,6 @@ Use like:
 
 ```
 $ objdump -dr before/locking.o > before
-$ objdump -dr after/lockng.o > after
+$ objdump -dr after/locking.o > after
 $ vimdiff before after
 ```

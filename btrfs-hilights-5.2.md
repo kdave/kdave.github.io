@@ -37,7 +37,7 @@ another option and inevitable on some occasions.
 
 The write side check aims to catch silent errors that could make it to the
 permanent storage. The reasons why this happens are two fold, but the main idea
-is to catch memory bitflips. You'd be surprised how often this happens, that
+is to catch memory bit flips. You'd be surprised how often this happens, that
 would be for a separate article entirely.
 
 The new checks in 5.2 improve:
@@ -49,7 +49,7 @@ The new checks in 5.2 improve:
   `objectid` (that would be the inode number) is in the range, generation is
   consistent with the global one and the basic sanity of mode, flags/attributes
   and link count
-* block group profiles -- check that only a single type is set in the bitmask
+* block group profiles -- check that only a single type is set in the bit mask
   that represents block group profile type of a chunk (ie.
   single/dup/raid1/...)
 

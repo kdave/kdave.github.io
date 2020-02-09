@@ -14,20 +14,13 @@ layout: none
 		<sy:updateFrequency>{{ site.feed_update_frequency | default: 1 | xml_escape }}</sy:updateFrequency>
 		<link>{{ site.url }}</link>
 		<atom:link href="{{ site.url }}/{{ page.path }}" rel="self" type="application/rss+xml" />
-		{% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' %}
-		<lastBuildDate>{% for post in sortedPages limit:1 %}{{ post.date | date_to_rfc822 }}{% endfor %}</lastBuildDate>
-		{% assign feed_items = site.feed_items | default: 20 %}
-		{% for post in sortedPages limit:feed_items %}
+		{% assign sortedPages = site.pages | where: "layout", "page" | sort: "date" %}
+		<lastBuildDate>{{ sortedPages.last.date | date_to_rfc822 }}</lastBuildDate>
+		{% for post in sortedPages %}
 			<item>
 				<title>{{ post.title | xml_escape }}</title>
-				{% if site.github_username %} post.author.name %}
-					<dc:creator>{{ site.github_username | xml_escape }}</dc:creator>
-				{% endif %}
-				{% if post.excerpt %}
-					<description>{{ post.excerpt | xml_escape }}</description>
-				{% else %}
-					<description>{{ post.content | markdownify | xml_escape }}</description>
-				{% endif %}
+				<dc:creator>{{ site.rss_name | xml_escape }}</dc:creator>
+				<description>{{ post.content | markdownify | xml_escape }}</description>
 				<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
 				<link>{{ site.url }}{{ post.url }}</link>
 				<guid isPermaLink="true">{{ site.url }}{{ post.url }}</guid>

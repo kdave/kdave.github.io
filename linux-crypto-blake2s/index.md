@@ -10,13 +10,13 @@ title: "Linux crypto: testing blake2s"
 
 The BLAKE2 algorithm is out for some time, yet there's no port to linux crypto
 API. The recent push of WireGuard would add it to linux kernel, but using a
-diffent API (zinc) than the existing one. I haven't explored zinc, I assume
+different API (zinc) than the existing one. I haven't explored zinc, I assume
 there will be a way to use it from inside kernel, but this would need another
 layer to switch the APIs according to the algorithm.
 
 As btrfs is going to use more hashing algos, we are in the process of
 selection.  One of the contenders is BLAKE2, though everybody would have a
-different suggestion.  In order to test it, a port is needed. Which basicaly is
+different suggestion.  In order to test it, a port is needed. Which basically is
 a glue code between the linux crypto API and the BLAKE2 implementation.
 
 I'm not going to reimplement crypto or anything, so the the default
@@ -38,7 +38,7 @@ Standard C code, some definitions. Adapting for linux kernel would need to
 replace the `stdint.h` types (`uint8_t` etc) with the uXX (`u8` etc) and change
 path to includes. For simplicity, let's remove the ifdefs for C++ and MSVC too.
 
-## Add the new algorithm definiton (CRA)
+## Add the new algorithm definition (CRA)
 
 Though it's possible to prepare a module for an out-of-tree build (see below),
 let's do it inside the `linux.git/crypto/` path for now. There's also plenty of
@@ -47,7 +47,7 @@ useful.
 
 The crypto hash description is defined in `struct shash_alg`, contains the
 technical description like type of the algorithm, length of the context and
-callbacks for various phases of the hash calculation (init, update, fnial), and
+callbacks for various phases of the hash calculation (init, update, final), and
 identification of the algorithm and the implementation. The default
 implementations are C and use the string "-generic" in the name.
 
@@ -169,7 +169,7 @@ After running `make`, the kernel module is ready for use.
 
 ## What next?
 
-Send it upsteram. Well, after some work of course.
+Send it upstream. Well, after some work of course.
 
 * update the coding style of the blake2 sources
 * add Kconfig

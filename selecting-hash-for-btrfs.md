@@ -46,7 +46,7 @@ think and hope the solution will address that.
 The first hash type is to replace crc32c with focus on **speed** and not
 necessarily strength (ie. collision resistance).
 
-The second type focus is **strength**, in the cryptographical sense.
+The second type focus is **strength**, in the cryptographic sense.
 
 In addition to the technical aspects of the hashes, there are some requirements
 that would allow free distribution and use of the implementations:
@@ -85,7 +85,7 @@ For the fast hash the collisions could be generated but hopefully not that
 easily as for crc32c. For strong hash it's obvious that finding a collision
 would be jackpot.
 
-In case of the fast hash the quality can be evaluated using the SMHash suite.
+In case of the fast hash the quality can be evaluated using the SMHasher suite.
 
 
 ## The contenders
@@ -102,11 +102,11 @@ The following list of hashes has been mentioned and considered or evaluated:
 
 ### xxhash
 
-*criteria*: license ok, implementation ok, digest size ok, not standardized but
+*criteria*: license OK, implementation OK, digest size OK, not standardized but
 in wide use
 
 The hash is quite fast as it tries to exploit the CPU features that allow
-instruction parallelism. The SMhash score is 10, that's great. The linux kernel
+instruction parallelism. The SMHasher score is 10, that's great. The linux kernel
 implementation landed in 5.3.
 
 Candidate for *fast hash*.
@@ -130,7 +130,7 @@ microbenchmark.
 
 ### SHA256
 
-*criteria*: license ok, implementation ok, digest size ok, standardized in FIPS
+*criteria*: license OK, implementation OK, digest size OK, standardized in FIPS
 
 The SHA family of hashes is well known, has decent support in CPU and is
 standardized. Specifically, SHA256 is the strongest that still fits into the
@@ -140,7 +140,7 @@ Candidate for *strong hash*.
 
 ### SHA3
 
-*criteria*: license ok, implementation ok, digest size ok, standardized in FIPS
+*criteria*: license OK, implementation OK, digest size OK, standardized in FIPS
 
 Winner of the 2012 hash contest, we can't leave it out. From the practical
 perspective of checksum, the speed is bad even for the strong hash type. One of
@@ -151,7 +151,7 @@ Candidate for *strong hash*.
 
 ### BLAKE2
 
-*criteria*: license ok, implementation ok, digest size ok, not standardized
+*criteria*: license OK, implementation OK, digest size OK, not standardized
 
 From the family of BLAKE that participated in the 2012 SHA contest, the '2'
 provides a trade-off speed vs. strength. More and more projects adopt it.
@@ -233,7 +233,7 @@ SHA3 is indeed slow on a CPU.
 
 ### What isn't here
 
-There are non-cryptographical hashes like CityHash, FarmHash, Murmur3 and more,
+There are non-cryptographic hashes like CityHash, FarmHash, Murmur3 and more,
 that were found unsuitable or not meeting some of the basic criteria.  Others
 like FNV or Fletcher used in ZFS are of comparable strength of crc32c, so that
 won't be a progress.

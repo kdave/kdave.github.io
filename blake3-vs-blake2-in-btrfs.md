@@ -21,7 +21,7 @@ weak. BLAKE3 is yet another step trading off strength and speed.
 
 Regarding BTRFS, BLAKE2 is going to be the faster of strong hashes for now (the
 other one is SHA256). The argument I have for it now is proof of time. It's
-been deployed in many projects (even cryptocurrencies!), there are optimized
+been deployed in many projects (even crypto currencies!), there are optimized
 implementations, various language ports.
 
 The look ahead regarding more checksums is to revisit them in about 5 years.
@@ -80,19 +80,19 @@ hash.
 ## References
 
 * [new hash for BTRFS selection](https://kdave.github.io/selecting-hash-for-BTRFS), same testing box for the measurements
-* https://github.com/BLAKE3-team/BLAKE3 -- top commit 02250a7b7c80ded, 2020-01-13, upsteam version 0.1.1
+* https://github.com/BLAKE3-team/BLAKE3 -- top commit 02250a7b7c80ded, 2020-01-13, upstream version 0.1.1
 * [DJB's hash menu](https://bench.cr.yp.to/primitives-hash.html) and [per-machine results](https://bench.cr.yp.to/results-hash.html) with numbers
 
 ## Personal addendum
 
-During the evaulations now and in the past, I've found it convenient if there's
+During the evaluations now and in the past, I've found it convenient if there's
 an offer of implementations in various languages. That eg. Keccak project pages
 does not point me directly to a C implementation slightly annoyed me, but the
-refernce implementation in C++ was worse than BLAKE2 I did not take the next
+reference implementation in C++ was worse than BLAKE2 I did not take the next
 step to compare the C version, wherever I would find it.
 
 BLAKE3 is fresh and Rust seems to be the only thing that has been improved
-since the initial release. A plain C implementaion without any
+since the initial release. A plain C implementation without any
 warning-not-optimized labels would be good. I think that C versions will appear
 eventually, besides that Rust is now the new language hotness, there are
 projects not yet *"let's rewrite it in Rust"*. Please Bear with us.

@@ -9,6 +9,7 @@ github_username: "kdave"
 gitlab_username: "kdave"
 twitter_username: "kdaveh"
 feed_update_period: "weekly"
+rss_name: "kdave"
 
 # Build settings
 markdown: kramdown

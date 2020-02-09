@@ -14,10 +14,10 @@ for the rest.
 
 ## CRC32C uses accelerated versions on other architectures
 
-... than just Intel-based ones. There was a hardcoded check for the intel SSE
+... than just Intel-based ones. There was a hard coded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
-architectuers. A brief check in `linux.git/arch/*/crypto` for files
-implementing the accelrated versions revealed that there's a bunch of them:
+architectures. A brief check in `linux.git/arch/*/crypto` for files
+implementing the accelerated versions revealed that there's a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don't have enough hardware to show
 the improvements, though.
 
