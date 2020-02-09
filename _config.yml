@@ -2,12 +2,13 @@
 title: (void)0;
 email: dave@jikos.cz
 description: > # this means to ignore newlines until "baseurl:"
-  something
+  kdave writes aligned words
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "https://kdave.github.io"
-github_username: kdave
-gitlab_username: kdave
-twitter_username: kdaveh
+github_username: "kdave"
+gitlab_username: "kdave"
+twitter_username: "kdaveh"
+feed_update_period: "weekly"
 
 # Build settings
 markdown: kramdown

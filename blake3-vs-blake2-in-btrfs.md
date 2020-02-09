@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ blake2,blake3,BTRFS ]
+feed: pko
 date: 2020-01-21
 status: draft
 title: BLAKE3 vs BLAKE2 for BTRFS

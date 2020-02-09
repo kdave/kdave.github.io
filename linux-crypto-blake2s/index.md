@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ crypto, linux, blake2 ]
+feed: pko
 date: 2019-04-27
 status: finished
 title: "Linux crypto: testing blake2s"

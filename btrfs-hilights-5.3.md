@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ btrfs, kernel ]
+feed: pko
 date: 2019-12-11
 status: finished
 title: Btrfs hilights in 5.3
@@ -11,7 +12,7 @@ A bit more detailed overview of a btrfs update that I find interesting, see the
 [pull request](https://git.kernel.org/linus/a18f8775419d3df282dd83efdb51c5a64d092f31)
 for the rest.
 
-*CRC32C uses accelerated versions on other architectures*
+## CRC32C uses accelerated versions on other architectures
 
 ... than just Intel-based ones. There was a hardcoded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
@@ -20,7 +21,7 @@ implementing the accelrated versions revealed that there's a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don't have enough hardware to show
 the improvements, though.
 
-*Automatically remove incompat bit for RAID5/6*
+## Automatically remove incompat bit for RAID5/6
 
 While this is not the fix everybody is waiting on, it's demonstrating
 user-developer-user cycle how things can be improved. A filesystem created

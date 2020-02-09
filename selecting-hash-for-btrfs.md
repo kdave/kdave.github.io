@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ btrfs,blake2,kernel ]
+feed: pko
 date: 2019-10-08
 status: finished
 title: Selecting the next checksum for btrfs

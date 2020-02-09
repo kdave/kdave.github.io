@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ btrfs, kernel ]
+feed: pko
 date: 2020-02-02
 status: final
 title: "Btrfs hilights in 5.5: 3-copy and 4-copy block groups"

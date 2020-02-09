@@ -16,11 +16,9 @@ permalink: /
 
 <p>
 <ul>
-{% assign sortedPages = site.pages | sort: 'date' %}
+{% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' %}
 {% for page in sortedPages %}
-{% if page.layout != "navbar" %}
 <li>{{ page.date | date: "%Y-%m-%d" }} - <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a></li>
-{% endif %}
 {% endfor %}
 </ul>
 </p>

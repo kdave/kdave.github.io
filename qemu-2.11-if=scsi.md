@@ -2,6 +2,7 @@
 layout: page
 category: b
 tags: [ qemu ]
+feed: pko
 date: 2018-06-08
 status: finished
 title: qemu 2.12 does not support if=scsi
