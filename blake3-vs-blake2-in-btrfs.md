@@ -1,10 +1,10 @@
 ---
 layout: page
 category: b
-tags: [ blake2,blake3,BTRFS ]
+tags: [ blake2, blake3, btrfs ]
 feed: pko
 date: 2020-01-21
-status: draft
+status: finished
 title: BLAKE3 vs BLAKE2 for BTRFS
 ---
 

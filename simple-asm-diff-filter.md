@@ -1,9 +1,9 @@
 ---
 layout: page
 category: b
-tags: [ asm,perl,diff ]
+tags: [ asm, perl, diff ]
 date: 2019-10-12
-status: final
+status: finished
 title: Simple asm diff filter
 ---
 
