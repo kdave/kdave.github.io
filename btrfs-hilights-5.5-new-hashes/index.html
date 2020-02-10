@@ -3,12 +3,12 @@
   <head>
   <meta charset="utf-8">
 
-  <title>Escaped snapper snapshots</title>
+  <title>Btrfs hilights in 5.5: new hashes</title>
   <meta name="description" content="kdave writes aligned words
 ">
 
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="canonical" href="https://kdave.github.io/escaped-snapper-snapshots/">
+  <link rel="canonical" href="https://kdave.github.io/btrfs-hilights-5.5-new-hashes/">
   <link rel="alternate" type="application/rss+xml" title="(void)0;" href="https://kdave.github.io/feed.xml" />
 </head>
 
@@ -70,79 +70,165 @@
       <div class="wrapper">
         <div class="post">
   <header class="post-header">
-    <h1 class="post-title">Escaped snapper snapshots</h1>
+    <h1 class="post-title">Btrfs hilights in 5.5: new hashes</h1>
     [
-    
-    date: <i>2016-11-05</i> || updated: <i>2017-09-05</i>
+     DRAFT || 
+    date: <i>2020-02-10</i>
     ||
-    tags: <i>btrfs,snapper</i>
+    tags: <i>btrfs,kernel,blake2,xxhash,sha256</i>
     ]
   </header>
   <article class="post-content">
-    <p>Happened to me, that space on my root partition was going low, no matter what I
-removed. I have <code class="highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
-settings, so the usual problem of running out of space is prevented. Also
-before doing a big update of Tumbleweed (openSUSE rolling distro) I check the
-available space to roughly match what <code class="highlighter-rouge">zypper</code> says it’d need.</p>
+    <p>A bit more detailed overview of a btrfs update that I find interesting, see the
+<a href="https://git.kernel.org/linus/97d0bf96a0d0986f466c3ff59f2ace801e33dc69">pull request</a>
+for the rest.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
-Type   | #   | Pre # | Date                             | User | Cleanup  | Description  | Userdata
--------+-----+-------+----------------------------------+------+----------+--------------+--------------
-single | 0   |       |                                  | root |          | current      |
-single | 395 |       | Mon 26 Sep 2016 10:30:01 PM CEST | root | timeline | timeline     |
+<h2 id="more-checksum-algorithms">More checksum algorithms</h2>
+
+<p>The first request for more checksums is several years old (2014), <a href="https://lore.kernel.org/linux-btrfs/1416806586-18050-1-git-send-email-bo.li.liu@oracle.com">it was
+SHA256</a>.
+There was no followup of the patch but the discussion in the mail thread
+brought the topic into light. Questions about why SHA256 and why not something
+else (welcome to the zoo: SpookyHash, BLAKE2, CityHash, MurmurHash3, CRC64),
+preferences, use cases etc. Browsing the mail thread again, I don’t see anybody
+suggest SHA1 or MD5.  There were some open questions and suggestions and though
+it’s an old discussion, most of the points were valid at the time of pre-5.5
+evaluation and served as a checklist.  This is what I really like about the
+community projects and btrfs users in particular.  Getting useful feedback on
+topics out of scope of the filesystem itself.</p>
+
+<p>Fast forward to now, there are 3 new hashes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Name</th>
+      <th style="text-align: right">Digest size</th>
+      <th style="text-align: left">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">CRC32C</td>
+      <td style="text-align: right">32bit</td>
+      <td style="text-align: left">fast, weak, default, CPU support, backward compatible</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">XXHASH</td>
+      <td style="text-align: right">64bit</td>
+      <td style="text-align: left">fast, weak, good on modern CPUs</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SHA256</td>
+      <td style="text-align: right">256bit</td>
+      <td style="text-align: left">slow, strong, FIPS certified, CPU support</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">BLAKE2B</td>
+      <td style="text-align: right">256bit</td>
+      <td style="text-align: left">slow, strong, good on 64bit architectures</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>You can find more about the <a href="https://kdave.github.io/selecting-hash-for-btrfs/">selection process</a>
+in another post.</p>
+
+<h2 id="quick-start">Quick start</h2>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs --csum xxhash /dev/sda
 </code></pre></div></div>
 
-<p>So what happened? I was removing some old kernels, manually by rpm. And it
-started to report write errors, no space. Indeed, df reported just 64K
-available. This is within the margin of accuracy that we’re able to get from
-the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
-is as good as it gets.</p>
+<p>And the output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1        30G   30G   64K  86% /
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>btrfs-progs v5.4.1
+See http://btrfs.wiki.kernel.org for more information.
+
+Label:              (null)
+UUID:               9774b466-fa5d-4c2e-8b4f-479d0bb5873d
+Node size:          16384
+Sector size:        4096
+Filesystem size:    10.00GiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         DUP             256.00MiB
+  System:           DUP               8.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Checksum:           xxhash64
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    10.00GiB  /dev/sda
 </code></pre></div></div>
 
-<p>RPM continued to spew lots of errors, I removed rest of the snapper snapshots,
-no improvement. So then I resorted to the bare ‘btrfs’ command and found a stale
-snapper snapshot. The snapshot directory itself was there, but the metadata
-were lacking (a xml file). After deleting it manually, the free space jumped up
-by 6GB!</p>
+<p>For convenience, the hash names can be specified by aliases so both <em>xxhash</em>
+and <em>xxhash64</em> are accepted on command line, similarly for <em>blake2</em> it’s
+<em>blake2b</em>. This is based on a usability pattern, where humans don’t have to
+remember the exact specification and copy &amp; paste from the output works as
+well.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
-...
-... .snapshots/3721/snapshot
-...
-</code></pre></div></div>
+<h3 id="use-cases-and-outlook">Use cases and outlook</h3>
 
-<p>The theory is that I have once removed all snapshots so the numbering started
-from 1 again, as the current series is around ~390, while the number of stale
-snapshot is much higher.</p>
+<p>For ordinary checksumming, all the hashes are considered good enough. CRC32C is
+the weakest but it’s been with us since the beginning and has caught many
+random bit flips.</p>
 
-<p>Takeaways:</p>
+<p>XXHASH is supposed to add to the strength with a good performance. Increased
+digest size reduces collisions, but can’t compete with the crypto-strong
+hashes. That can still be of great help for deduplication.</p>
 
-<ul>
-  <li>synthetic tools may not give our an accurate view: snapper requires some
-metadata describing its snapshot, which is obviously OK, given that the user
-has the freedom to create snapshots anywhere</li>
-  <li>learn how to use the low-level tools to cross-verify the state of the system</li>
-</ul>
+<p>From my perspective, the number of hashes should stay limited as the support is
+needed not just in kernel but for other tooling. For <em>btrfs-progs</em> it’s
+mandatory to support them, but also bootloaders (*cough*in case they verify
+checksums*cough*). The kernel support requires the hash implementations and
+the modules become a dependency of <em>btrfs.ko</em>.  This can increase overall size
+and build time.</p>
 
-<p>Summary of used tools:</p>
+<p>One of the suggestions was to allow users to choose the hash out of all what
+linux crypto API offers, not just the fixed set of hashes selected by
+developers. I understand that from the point of view of users who can make the
+decisions about trade-offs for their use case this is better, but I argue that
+such users are not in majority. Satisfying the common case was the preferred
+option, hopefully providing good options also for the knowledgeable users.
+Providing and maintaining implementations of seven and one hashes would be
+a burden for several projects.</p>
 
-<ul>
-  <li><code class="highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
-  <li><code class="highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
-  <li><code class="highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
-  <li><code class="highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
-</ul>
+<p>Yes, I’m aware of <a href="https://github.com/BLAKE3-team/BLAKE3">BLAKE3</a>, but let’s
+<a href="https://kdave.github.io/blake3-vs-blake2-in-btrfs">wait before adding new hashes</a>. By
+the time we do another round there might be more contenders or improved
+versions.  There’s <a href="https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html">XXH3</a>
+from the author of XXHASH, producing 128bit digest and is slightly faster.
+However it is still not recommended for production use due to fine tuning and
+finalization.</p>
 
-<p><strong>Update 2017-09-05</strong></p>
+<p>The cryptographic hashes can be a building block for a keyed hash, ie.
+checksums that can’t be subverted. There’s a
+<a href="https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@suse.de/">patch implementing that</a>,
+currently in an RFC state. While the code is straightforward, adding a new
+interface could use a feedback round. Please contact us in case you have
+comments.</p>
 
-<p>Again. There were 2 stale snapper snapshots, age of like 8 months until
-discovered. The space got up by 12GiB after deletion. The root partition is
-50GiB, I think it survived pretty long given the frequent updates of the rolling
-distro. There’s an <a href="https://github.com/openSUSE/snapper/issues/98">open issue</a>.</p>
+<p>Last but not least, strong hashes are a building block for deduplication. At
+the moment btrfs supports only the out-of-band way, on demand by calling
+an ioctl.  There are tools utilizing that, eg. <a href="https://github.com/Zygo/bees">BEES</a>
+or <a href="https://github.com/markfasheh/duperemove">duperemove</a>,
+calculating the block checksums by themselves. Exporting the raw checksums
+would help to decrease CPU time and also external tracking of the checksums.</p>
+
+<h3 id="implementation-notes">Implementation notes</h3>
+
+<p>With the single checksum CRC32C, lots of code had hard coded size (4 bytes/32
+bits) or functions and identifiers contained ‘crc32c’. This could not remain
+once there are more hashes to be added, so a round of cleanups happened in
+advance in 5.4.  I’d call it great preparatory work that paid off, because
+adding new hashes was a matter of inserting new definition entries to a table.
+The rest was behind abstraction of btrfs functions that call to the linux
+crypto API.</p>
+
+<p>In parallel to the btrfs patches, the <em>BLAKE2B</em> linux implementation was merged,
+while <em>XXHASH</em> was merged in 5.3 and SHA256 was there forever.
+All in all, everything was ready in the same target release.</p>
 
   </article>
 </div>
