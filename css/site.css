@@ -1,4 +1,13 @@
-body { margin: 2em }
+body {
+	margin-left: auto;
+	margin-right: auto;
+	min-width: 400px;
+	max-width: 60%;
+	background: #FFF;
+	/* margin: 0 2em 1em 0; */
+	font: 1.0em Arial, sans-serif;
+	/* line-height: 1.5em; */
+}
 a { color: #46574D; background: inherit; }
 a:hover { color: #647B6D; background: inherit;}
 
@@ -11,27 +20,17 @@ h1 a:hover, h2 a:hover {
 
 p {
 	/* line-height: 1.1em; */
-	width: 70%;
-	/* font-size: 1.1em; */
+	font-size: 1.1em;
 }
 
 li {
 	line-height: 1.1em;
-	/* width: 70%; */
-	/* font-size: 1.1em; */
+	font-size: 1.1em;
 }
 
 .navlink {
 	text-decoration: none;
-	font: sans-serif;
-}
-
-.body {
-	background: #FFF;
-	margin: 0 2em 1em 0;
-	padding: 0 0 0 2em;
-	font: 1.5em Arial, sans-serif;
-	line-height: 1.5em;
+	font: 1.5em sans-serif;
 }
 
 pre {
@@ -41,7 +40,13 @@ pre {
 	background-color: #F9F9F9;
 	line-height: 1.1em;
 	padding: 5px 5px;
-	width: 70%;
+}
+
+.clickable {
+	border: 1px solid black;
+	padding: 2px 12px;
+	text-decoration: none;
+	font-size: 1.1em;
 }
 
 .precode {
@@ -50,7 +55,7 @@ pre {
 	margin-right: 1em;
 	margin-top: 0.5em;
 	margin-bottom: 0.5em;
-	line-height: 1.2em;
+	/* line-height: 1.2em; */
 	border: 1px dashed;
 	background-color: #eee;
 	font-family: monospace;

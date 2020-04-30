@@ -1,0 +1,17 @@
+diff --git a/_layouts/page.html b/_layouts/page.html
+index 5d0835bb9486..a8bbd2a1ea7f 100644
+--- a/_layouts/page.html
++++ b/_layouts/page.html
+@@ -3,6 +3,12 @@ layout: default
+ ---
+ <div class="post">
+   <header class="post-header">
++	  <a class="clickable" href="javascript:setJustifyLeft();" title="Align text to the left">|&lt;-</a>
++	  <a class="clickable" href="javascript:setJustifyCenter();" title="Center the text">&gt;|-|&lt;</a>
++	  <a class="clickable" href="javascript:setJustifyRight();" title="Align text to the right">-&gt;|</a>
++	  <a class="clickable" href="javascript:setFontSize(1);"><font size="smaller">size 1</font></a>
++	  <a class="clickable" href="javascript:setFontSize(2);"><font size="initial">size 2</font></a>
++	  <a class="clickable" href="javascript:setFontSize(3);"><font size="larger">size 3</font></a>
+     <h1 class="post-title">{{ page.title }}</h1>
+     [
+     {% if page.status == "draft" %} DRAFT || {% endif %}

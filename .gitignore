@@ -1,2 +1,4 @@
 /_site
 *.bak
+*.backup
+/.jekyll-cache
