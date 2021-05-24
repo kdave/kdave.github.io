@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -83,13 +85,13 @@
   </header>
   <article class="post-content">
     <p>After update of qemu to version 2.12, my testing vms stopped to just warn
-about the <code class="highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
+about the <code class="language-plaintext highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
 start.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
+<p>The <code class="language-plaintext highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
 take some time to comprehend but then you can do wonders.</p>
 
 <p>The <a href="https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features">release notes of version 2.12</a> do
@@ -102,12 +104,12 @@ a lot of time.</p>
 experiment a bit (this saved me documentation reading time).</p>
 
 <p>The setup I use is a file-backed root image for a virtual machine, nothing
-really fancy. The file name is <code class="highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
+really fancy. The file name is <code class="language-plaintext highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
 caching.</p>
 
 <p>Here you are:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
 -drive file=root,id=root-img,if=none,format=raw,cache=none
 -device scsi-hd,drive=root-img
 </code></pre></div></div>

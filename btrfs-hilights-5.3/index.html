@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -90,7 +92,7 @@ for the rest.</p>
 
 <p>… than just Intel-based ones. There was a hard coded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
-architectures. A brief check in <code class="highlighter-rouge">linux.git/arch/*/crypto</code> for files
+architectures. A brief check in <code class="language-plaintext highlighter-rouge">linux.git/arch/*/crypto</code> for files
 implementing the accelerated versions revealed that there’s a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
 the improvements, though.</p>
@@ -112,7 +114,7 @@ types. Example of the worst case would be dropping the incompat bit for LZO
 after there are no compressed files using that algorithm. You can easily see
 that this would require either enumerating all extent metadata (one time check)
 or keeping track of count since mkfs time. This is IMHO not a typical request
-and can be eventually done using the <code class="highlighter-rouge">btrfstune</code> tool on an unmounted
+and can be eventually done using the <code class="language-plaintext highlighter-rouge">btrfstune</code> tool on an unmounted
 filesystem.</p>
 
   </article>

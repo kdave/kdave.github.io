@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -83,12 +85,12 @@
   </header>
   <article class="post-content">
     <p>Happened to me, that space on my root partition was going low, no matter what I
-removed. I have <code class="highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
+removed. I have <code class="language-plaintext highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
 settings, so the usual problem of running out of space is prevented. Also
 before doing a big update of Tumbleweed (openSUSE rolling distro) I check the
-available space to roughly match what <code class="highlighter-rouge">zypper</code> says it’d need.</p>
+available space to roughly match what <code class="language-plaintext highlighter-rouge">zypper</code> says it’d need.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
 Type   | #   | Pre # | Date                             | User | Cleanup  | Description  | Userdata
 -------+-----+-------+----------------------------------+------+----------+--------------+--------------
 single | 0   |       |                                  | root |          | current      |
@@ -101,7 +103,7 @@ available. This is within the margin of accuracy that we’re able to get from
 the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
 is as good as it gets.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
 Filesystem      Size  Used Avail Use% Mounted on
 /dev/sda1        30G   30G   64K  86% /
 </code></pre></div></div>
@@ -112,7 +114,7 @@ snapper snapshot. The snapshot directory itself was there, but the metadata
 were lacking (a xml file). After deleting it manually, the free space jumped up
 by 6GB!</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
 ...
 ... .snapshots/3721/snapshot
 ...
@@ -134,10 +136,10 @@ has the freedom to create snapshots anywhere</li>
 <p>Summary of used tools:</p>
 
 <ul>
-  <li><code class="highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
-  <li><code class="highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
-  <li><code class="highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
-  <li><code class="highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
+  <li><code class="language-plaintext highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
+  <li><code class="language-plaintext highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
 </ul>
 
 <p><strong>Update 2017-09-05</strong></p>

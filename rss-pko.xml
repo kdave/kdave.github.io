@@ -13,19 +13,19 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-pko.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Sat, 15 Feb 2020 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Mon, 24 May 2021 00:00:00 +0200</lastBuildDate>
 		
 			<item>
 				<title>qemu 2.12 does not support if=scsi</title>
 				<dc:creator>kdave</dc:creator>
 				<description>&lt;p&gt;After update of qemu to version 2.12, my testing vms stopped to just warn
-about the &lt;code class=&quot;highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; (with a bit more cryptic message), and did not want to
+about the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; (with a bit more cryptic message), and did not want to
 start.&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; shortcut was handy, the maze of qemu command line options may
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if=scsi&lt;/code&gt; shortcut was handy, the maze of qemu command line options may
 take some time to comprehend but then you can do wonders.&lt;/p&gt;
 
 &lt;p&gt;The &lt;a href=&quot;https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features&quot;&gt;release notes of version 2.12&lt;/a&gt; do
@@ -38,12 +38,12 @@ a lot of time.&lt;/p&gt;
 experiment a bit (this saved me documentation reading time).&lt;/p&gt;
 
 &lt;p&gt;The setup I use is a file-backed root image for a virtual machine, nothing
-really fancy. The file name is &lt;code class=&quot;highlighter-rouge&quot;&gt;root&lt;/code&gt;, sparse file, raw ie. no qcow2, no
+really fancy. The file name is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;root&lt;/code&gt;, sparse file, raw ie. no qcow2, no
 caching.&lt;/p&gt;
 
 &lt;p&gt;Here you are:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-device virtio-scsi-pci,id=scsi
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-device virtio-scsi-pci,id=scsi
 -drive file=root,id=root-img,if=none,format=raw,cache=none
 -device scsi-hd,drive=root-img
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
@@ -93,29 +93,29 @@ blocks, the version is BLAKE2s.&lt;/em&gt;&lt;/p&gt;
 
 &lt;p&gt;Briefly skimming over the sources, there’s nothing that’ll cause trouble.
 Standard C code, some definitions. Adapting for linux kernel would need to
-replace the &lt;code class=&quot;highlighter-rouge&quot;&gt;stdint.h&lt;/code&gt; types (&lt;code class=&quot;highlighter-rouge&quot;&gt;uint8_t&lt;/code&gt; etc) with the uXX (&lt;code class=&quot;highlighter-rouge&quot;&gt;u8&lt;/code&gt; etc) and change
+replace the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;stdint.h&lt;/code&gt; types (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;uint8_t&lt;/code&gt; etc) with the uXX (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;u8&lt;/code&gt; etc) and change
 path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.&lt;/p&gt;
 
 &lt;h2 id=&quot;add-the-new-algorithm-definition-cra&quot;&gt;Add the new algorithm definition (CRA)&lt;/h2&gt;
 
 &lt;p&gt;Though it’s possible to prepare a module for an out-of-tree build (see below),
-let’s do it inside the &lt;code class=&quot;highlighter-rouge&quot;&gt;linux.git/crypto/&lt;/code&gt; path for now. There’s also plenty of
-sources to copy &amp;amp; paste. I’ve used &lt;code class=&quot;highlighter-rouge&quot;&gt;crc32c_generic.c&lt;/code&gt;, and it turned out to be
+let’s do it inside the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;linux.git/crypto/&lt;/code&gt; path for now. There’s also plenty of
+sources to copy &amp;amp; paste. I’ve used &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;crc32c_generic.c&lt;/code&gt;, and it turned out to be
 useful.&lt;/p&gt;
 
-&lt;p&gt;The crypto hash description is defined in &lt;code class=&quot;highlighter-rouge&quot;&gt;struct shash_alg&lt;/code&gt;, contains the
+&lt;p&gt;The crypto hash description is defined in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;struct shash_alg&lt;/code&gt;, contains the
 technical description like type of the algorithm, length of the context and
 callbacks for various phases of the hash calculation (init, update, final), and
 identification of the algorithm and the implementation. The default
 implementations are C and use the string “-generic” in the name.&lt;/p&gt;
 
-&lt;p&gt;The crc32c module came with a few stub callbacks (&lt;code class=&quot;highlighter-rouge&quot;&gt;checksum_init&lt;/code&gt; etc), that
+&lt;p&gt;The crc32c module came with a few stub callbacks (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;checksum_init&lt;/code&gt; etc), that
 will only call into the blake2 functions and the definition can stay. Simple
 search and replace from crc32c to blake2s will do most of the conversion.&lt;/p&gt;
 
 &lt;h2 id=&quot;add-the-glue-code-for-crypto-api&quot;&gt;Add the glue code for crypto API&lt;/h2&gt;
 
-&lt;p&gt;Now we have the &lt;code class=&quot;highlighter-rouge&quot;&gt;blake2s.c&lt;/code&gt; with the reference implementation, crypto algorithm
+&lt;p&gt;Now we have the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;blake2s.c&lt;/code&gt; with the reference implementation, crypto algorithm
 definition. The glue code connects the API with the implementation. We need 2
 helper structures that hold the context once the user starts digest calculation.
 The private blake2s context is embedded into one of them.  The intermediate
@@ -123,11 +123,11 @@ results will be stored there.&lt;/p&gt;
 
 &lt;p&gt;And the rest is quite easy, each callback will call into the respective blake2s
 function, passing the context, data and lengths. One thing that I copied from
-the examples is the key initialization that’s in &lt;code class=&quot;highlighter-rouge&quot;&gt;blake2s_cra_init&lt;/code&gt;, that
+the examples is the key initialization that’s in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;blake2s_cra_init&lt;/code&gt;, that
 appears to be global and copied to the context each time a new one is
 initialized.&lt;/p&gt;
 
-&lt;p&gt;Here the choice of using &lt;code class=&quot;highlighter-rouge&quot;&gt;crc32c.c&lt;/code&gt; helped as there were the stub callback with
+&lt;p&gt;Here the choice of using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;crc32c.c&lt;/code&gt; helped as there were the stub callback with
 the right parameters, calling the blake2s functions that can retain their
 original signature. This makes later updates easier.  All the functions are
 static so the compiler will most probably optimize the code that there will be
@@ -135,7 +135,7 @@ no unnecessary overhead.&lt;/p&gt;
 
 &lt;p&gt;Well and that’s it. Let’s try to compile it and insert the module:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ make crypto/blake2s.o
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ make crypto/blake2s.o
 ...
   CC [M]  crypto/blake2s.o
 linux.git$ make crypto/blake2s.ko
@@ -147,12 +147,12 @@ linux.git$ make crypto/blake2s.ko
 
 &lt;p&gt;Check that it’s been properly loaded&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git/crypto$ sudo insmod ./blake2s.ko
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git/crypto$ sudo insmod ./blake2s.ko
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;and registered&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ cat /proc/crypto
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;linux.git$ cat /proc/crypto
 name         : blake2s
 driver       : blake2s-generic
 module       : blake2s
@@ -172,18 +172,18 @@ otherwise it looks good.&lt;/p&gt;
 
 &lt;p&gt;To do actual test, we’d need something inside kernel to utilize the new hash.
 One option is to implement a module that will do that or use the userspace
-library &lt;code class=&quot;highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; that can forward the requests from userspace to the
+library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; that can forward the requests from userspace to the
 available kernel implementations.&lt;/p&gt;
 
 &lt;h2 id=&quot;test-it-with-libkcapi&quot;&gt;Test it with libkcapi&lt;/h2&gt;
 
-&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; project at
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkcapi&lt;/code&gt; project at
 &lt;a href=&quot;http://www.chronox.de/libkcapi.html&quot;&gt;http://www.chronox.de/libkcapi.html&lt;/a&gt;
-provides an API that uses the &lt;code class=&quot;highlighter-rouge&quot;&gt;AF_ALG&lt;/code&gt; socket type to exchange data with
+provides an API that uses the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AF_ALG&lt;/code&gt; socket type to exchange data with
 kernel. The library provides a command line tool that we can use right away and
 don’t need to code anything.&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ kcapi-dgst -c blake2s --hex &amp;lt; /dev/null
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ kcapi-dgst -c blake2s --hex &amp;lt; /dev/null
 48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
@@ -196,15 +196,15 @@ with the default key (0x000102..1f).&lt;/p&gt;
 unconditionally as a module. Proper submission to linux kernel would need the
 Kconfig option.&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;obj-m += blake2s.o
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;obj-m += blake2s.o
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;The standalone build needs a Makefile with a few targets that use the existing
 build of kernel. Note that you’d need a running kernel with the same built
-sources. This is usually provided by the &lt;code class=&quot;highlighter-rouge&quot;&gt;kernel-*-devel&lt;/code&gt; packages. Otherwise,
+sources. This is usually provided by the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kernel-*-devel&lt;/code&gt; packages. Otherwise,
 if you build kernels from git, you know what to do, right?&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;KDIR ?= /lib/modules/`uname -r`/build
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;KDIR ?= /lib/modules/`uname -r`/build
 obj-m := blake2s.o
 
 default:
@@ -217,7 +217,7 @@ modules_install:
         $(MAKE) -C $(KDIR) M=$$PWD modules_install
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;After running &lt;code class=&quot;highlighter-rouge&quot;&gt;make&lt;/code&gt;, the kernel module is ready for use.&lt;/p&gt;
+&lt;p&gt;After running &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;make&lt;/code&gt;, the kernel module is ready for use.&lt;/p&gt;
 
 &lt;h2 id=&quot;what-next&quot;&gt;What next?&lt;/h2&gt;
 
@@ -269,7 +269,7 @@ limited by the context and bits of information available at some point, but
 still there’s enough to get an additional value.&lt;/p&gt;
 
 &lt;p&gt;The context here means a b-tree leaf that packs several items into a block (ie.
-the &lt;code class=&quot;highlighter-rouge&quot;&gt;nodesize&lt;/code&gt;, 16KiB by default). The individual items’ members’ values can be
+the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nodesize&lt;/code&gt;, 16KiB by default). The individual items’ members’ values can be
 verified against allowed values, the order of the keys of all items listed in
 the leaf header can be checked etc. This is just for a rough idea what happens.&lt;/p&gt;
 
@@ -298,7 +298,7 @@ would be for a separate article entirely.&lt;/p&gt;
 check that items have the right key type, device id is within allowed range
 and that usage and total sizes are within limits of the physical device&lt;/li&gt;
   &lt;li&gt;inode item &lt;em&gt;(item for inodes, ie. files, directories or special files)&lt;/em&gt;– the
-&lt;code class=&quot;highlighter-rouge&quot;&gt;objectid&lt;/code&gt; (that would be the inode number) is in the range, generation is
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;objectid&lt;/code&gt; (that would be the inode number) is in the range, generation is
 consistent with the global one and the basic sanity of mode, flags/attributes
 and link count&lt;/li&gt;
   &lt;li&gt;block group profiles – check that only a single type is set in the bit mask
@@ -310,7 +310,7 @@ single/dup/raid1/…)&lt;/li&gt;
 represents the tree block and the check is really local to that. As an inode
 item can represent more than just files and directories, doing structural
 checks like where and how the inode item is linked to is not easy in this
-context. This is basically what would &lt;code class=&quot;highlighter-rouge&quot;&gt;btrfs check&lt;/code&gt; do.&lt;/p&gt;
+context. This is basically what would &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs check&lt;/code&gt; do.&lt;/p&gt;
 
 &lt;p&gt;The checks need to be fast because they happen on each metadata block, so no
 additional IO is allowed. This still brings some overhead but is (considered)
@@ -654,7 +654,7 @@ for the rest.&lt;/p&gt;
 
 &lt;p&gt;… than just Intel-based ones. There was a hard coded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
-architectures. A brief check in &lt;code class=&quot;highlighter-rouge&quot;&gt;linux.git/arch/*/crypto&lt;/code&gt; for files
+architectures. A brief check in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;linux.git/arch/*/crypto&lt;/code&gt; for files
 implementing the accelerated versions revealed that there’s a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
 the improvements, though.&lt;/p&gt;
@@ -676,7 +676,7 @@ types. Example of the worst case would be dropping the incompat bit for LZO
 after there are no compressed files using that algorithm. You can easily see
 that this would require either enumerating all extent metadata (one time check)
 or keeping track of count since mkfs time. This is IMHO not a typical request
-and can be eventually done using the &lt;code class=&quot;highlighter-rouge&quot;&gt;btrfstune&lt;/code&gt; tool on an unmounted
+and can be eventually done using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfstune&lt;/code&gt; tool on an unmounted
 filesystem.&lt;/p&gt;
 </description>
 				<pubDate>Wed, 11 Dec 2019 00:00:00 +0100</pubDate>
@@ -832,7 +832,7 @@ for the rest.&lt;/p&gt;
 
 &lt;p&gt;There are two new block group profiles enhancing capabilities of the RAID1
 types with more copies than 2. Brief overview of the profiles is in the table
-below, for table with all profiles see manual page of &lt;code class=&quot;highlighter-rouge&quot;&gt;mkfs.brtfs&lt;/code&gt;, also
+below, for table with all profiles see manual page of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mkfs.brtfs&lt;/code&gt;, also
 available &lt;a href=&quot;https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#PROFILES&quot;&gt;on
 wiki&lt;/a&gt;.&lt;/p&gt;
 
@@ -887,7 +887,7 @@ device, going to RAID1C4, same problem with more data to shuffle around.&lt;/p&g
 user to know the redundancy level. This is already the case for
 RAID0/RAID5/RAID6. For the striped profile RAID0 it’s not much of a problem,
 there’s no redundancy. For the parity profiles it’s been a known problem and
-new balance filter &lt;code class=&quot;highlighter-rouge&quot;&gt;stripe&lt;/code&gt; has been added to support fine grained selection of
+new balance filter &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;stripe&lt;/code&gt; has been added to support fine grained selection of
 block groups.&lt;/p&gt;
 
 &lt;p&gt;Speaking about RAID6, there’s the elephant in the room, trying to cover write
@@ -900,7 +900,7 @@ RAID1C3 profile is a reasonable substitute for RAID6.&lt;/p&gt;
 
 &lt;p&gt;On a freshly created filesystem it’s simple:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;The command combines both new profiles for sake of demonstration, you should
@@ -910,7 +910,7 @@ appropriate profiles.&lt;/p&gt;
 &lt;p&gt;Changing the profile later on an existing filesystem works as usual, you can
 use:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# btrfs balance start -mconvert=raid1c3 /mnt/path
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# btrfs balance start -mconvert=raid1c3 /mnt/path
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;Provided there are enough devices and enough space to do the conversion, this
@@ -921,10 +921,10 @@ will be of the of the desired type.&lt;/p&gt;
 
 &lt;p&gt;The new block groups are not understood by old kernels and can’t be mounted,
 not even in the read-only mode. To prevent that a new incompatibility bit is
-introduced, called &lt;code class=&quot;highlighter-rouge&quot;&gt;raid1c34&lt;/code&gt;. Its presence on a device can be checked by
-&lt;code class=&quot;highlighter-rouge&quot;&gt;btrfs inspect-internal dump-super&lt;/code&gt; in the &lt;code class=&quot;highlighter-rouge&quot;&gt;incompat_flags&lt;/code&gt;. On a running
+introduced, called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;raid1c34&lt;/code&gt;. Its presence on a device can be checked by
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs inspect-internal dump-super&lt;/code&gt; in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;incompat_flags&lt;/code&gt;. On a running
 system the incompat features are exported in sysfs,
-&lt;code class=&quot;highlighter-rouge&quot;&gt;/sys/fs/btrfs/UUID/features/raid1c34&lt;/code&gt;.&lt;/p&gt;
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/sys/fs/btrfs/UUID/features/raid1c34&lt;/code&gt;.&lt;/p&gt;
 
 &lt;h3 id=&quot;outlook&quot;&gt;Outlook&lt;/h3&gt;
 
@@ -1000,9 +1000,9 @@ for the rest.&lt;/p&gt;
 
 &lt;p&gt;The item represents root of a b-tree, of the internal or the subvolume trees.&lt;/p&gt;
 
-&lt;p&gt;Let’s take an example from &lt;code class=&quot;highlighter-rouge&quot;&gt;btrfs inspect dump-tree&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;Let’s take an example from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs inspect dump-tree&lt;/code&gt;:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
                 generation 5 root_dirid 0 bytenr 30523392 level 0 refs 1
                 lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x0(none)
                 uuid 00000000-0000-0000-0000-000000000000
@@ -1012,34 +1012,34 @@ for the rest.&lt;/p&gt;
 &lt;p&gt;Some of the metadata inside the item allow only simple checks, following &lt;a href=&quot;https://git.kernel.org/linus/259ee7754b6793af8bdd77f9ca818bc41cfe9541&quot;&gt;commit 259ee7754b6793&lt;/a&gt;:&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;key.objectid&lt;/code&gt; must match the tree that’s being read, though the code verifies only if the type is not 0&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;key.offset&lt;/code&gt; must be 0&lt;/li&gt;
-  &lt;li&gt;block offset &lt;code class=&quot;highlighter-rouge&quot;&gt;bytenr&lt;/code&gt; must be aligned to sector size (4KiB in this case)&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;itemsize&lt;/code&gt; depends on the item type, but for the root item it’s fixed value&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;level&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;drop_level&lt;/code&gt; is 0 to 7, but it’s not possible to cross check if the tree has really of that level&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;generation&lt;/code&gt; must be lower than the super block generation, same for &lt;code class=&quot;highlighter-rouge&quot;&gt;lastsnap&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;flags&lt;/code&gt; can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;key.objectid&lt;/code&gt; must match the tree that’s being read, though the code verifies only if the type is not 0&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;key.offset&lt;/code&gt; must be 0&lt;/li&gt;
+  &lt;li&gt;block offset &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytenr&lt;/code&gt; must be aligned to sector size (4KiB in this case)&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;itemsize&lt;/code&gt; depends on the item type, but for the root item it’s fixed value&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;level&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;drop_level&lt;/code&gt; is 0 to 7, but it’s not possible to cross check if the tree has really of that level&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generation&lt;/code&gt; must be lower than the super block generation, same for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lastsnap&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flags&lt;/code&gt; can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;refs&lt;/code&gt; is a reference counter and sanity check would require reading all the expected reference holders, &lt;code class=&quot;highlighter-rouge&quot;&gt;bytes_used&lt;/code&gt; would need to look up the block that it accounts, etc. The subvolume trees have more data like &lt;code class=&quot;highlighter-rouge&quot;&gt;ctime&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;otime&lt;/code&gt; and real &lt;code class=&quot;highlighter-rouge&quot;&gt;uuid&lt;/code&gt;s. If you wonder what’s &lt;code class=&quot;highlighter-rouge&quot;&gt;byte_limit&lt;/code&gt;, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;refs&lt;/code&gt; is a reference counter and sanity check would require reading all the expected reference holders, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytes_used&lt;/code&gt; would need to look up the block that it accounts, etc. The subvolume trees have more data like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ctime&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;otime&lt;/code&gt; and real &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;uuid&lt;/code&gt;s. If you wonder what’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;byte_limit&lt;/code&gt;, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.&lt;/p&gt;
 
 &lt;p&gt;Many of the tree-checker enhancements are follow ups to fuzz testing and reports, as it was in this case. The &lt;a href=&quot;https://bugzilla.kernel.org/show_bug.cgi?id=203261&quot;&gt;bug report&lt;/a&gt; shows that some of the incorrect data were detected and even triggered auto-repair (as this was on filesystem with DUP metadata) but there was too much damage and it crashed at some point. The crash was not random but a BUG_ON of an unexpected condition, that’s sanity check of last resort. Catching inconsistent data early with a graceful error handling is of course desired and ongoing work.&lt;/p&gt;
 
 &lt;h3 id=&quot;extent-metadata-item-checks&quot;&gt;Extent metadata item checks&lt;/h3&gt;
 
-&lt;p&gt;There are two item types that represent extents and information about sharing. &lt;code class=&quot;highlighter-rouge&quot;&gt;EXTENT_ITEM&lt;/code&gt; is older and bigger  while &lt;code class=&quot;highlighter-rouge&quot;&gt;METADATA_ITEM&lt;/code&gt; is the building block of &lt;code class=&quot;highlighter-rouge&quot;&gt;skinny-metadata&lt;/code&gt; feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The &lt;a href=&quot;https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75&quot;&gt;commit f82d1c7ca8ae1bf&lt;/a&gt; implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.&lt;/p&gt;
+&lt;p&gt;There are two item types that represent extents and information about sharing. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;EXTENT_ITEM&lt;/code&gt; is older and bigger  while &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;METADATA_ITEM&lt;/code&gt; is the building block of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;skinny-metadata&lt;/code&gt; feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The &lt;a href=&quot;https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75&quot;&gt;commit f82d1c7ca8ae1bf&lt;/a&gt; implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.&lt;/p&gt;
 
-&lt;p&gt;Example of &lt;code class=&quot;highlighter-rouge&quot;&gt;METADATA_ITEM&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;Example of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;METADATA_ITEM&lt;/code&gt;:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
                 refs 1 gen 27 flags TREE_BLOCK
                 tree block skinny level 0
                 tree block backref root FS_TREE
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;And &lt;code class=&quot;highlighter-rouge&quot;&gt;EXTENT_ITEM&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;And &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;EXTENT_ITEM&lt;/code&gt;:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
                 refs 1 gen 499706 flags DATA
                 extent data backref root FS_TREE objectid 8626071 offset 0 count 1
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
@@ -1051,6 +1051,79 @@ for the rest.&lt;/p&gt;
 				<pubDate>Sat, 15 Feb 2020 00:00:00 +0100</pubDate>
 				<link>https://kdave.github.io/btrfs-hilights-5.4/</link>
 				<guid isPermaLink="true">https://kdave.github.io/btrfs-hilights-5.4/</guid>
+			</item>
+		
+			<item>
+				<title>Authenticated hashes for btrfs (part 1)</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;There was a request to provide authenticated hashes in btrfs, natively as one of the btrfs checksum algorithms. Sounds fun but there’s always more to it, even if this sounds easy to implement.&lt;/p&gt;
+
+&lt;p&gt;Johaness T. at that time in SUSE sent the patchset adding the support for SHA256 &lt;a href=&quot;https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/&quot;&gt;[1]&lt;/a&gt; with a Labs conference paper, summarizing existing solutions and giving details about the proposed implementation and use cases.&lt;/p&gt;
+
+&lt;p&gt;The first version of the patchset posted got some feedback, issues were found and some ideas suggested. Things have stalled a bit, but the feature is still very interesting and really not hard to implement. The support for additional checksums has provided enough support code to just plug in the new algorithm and enhance the existing interfaces to provide the key bytes. So until now I’ve assumed you know what an authenticated hash means, but for clarity and in simple terms: a checksum that depends on a key. The main point is that it’s impossible to generate the same checksum for given data without knowing the key, where &lt;em&gt;impossible&lt;/em&gt; is used in the cryptographic-strength sense, there’s an almost zero probability doing that by chance and brute force attack is not practical.&lt;/p&gt;
+
+&lt;h2 id=&quot;auth-hash-fsverity&quot;&gt;Auth hash, fsverity&lt;/h2&gt;
+
+&lt;p&gt;Notable existing solution for that is &lt;em&gt;fsverity&lt;/em&gt; that works in read-only fashion, where the key is securely hidden and used only to verify that data that are read from media haven’t been tampered with. A typical use case is an OS image in your phone. But that’s not all. Images of OS appear in all sorts of boxed devices, IoT. Nowadays, with explosion of edge computing, assuring integrity of the end devices is a fundamental requirement.&lt;/p&gt;
+
+&lt;p&gt;Where btrfs can add some value is the read AND write support, with an authenticated hash. This brings questions around key handling, and not everybody is OK with a device that could potentially store malicious/invalid data with a proper authenticated checksum. So yeah, use something else, this is not your use case, or maybe there’s another way how to make sure the key won’t be compromised easily. This is beyond the scope of what filesystem can do, though.&lt;/p&gt;
+
+&lt;p&gt;As an example use case of writable filesystem with authenticated hash: detect outside tampering with on-disk data, eg. when the filesystem was unmounted. Filesystem metadata formats are public, interesting data can be located by patterns on the device, so changing a few bytes and updating the checksum(s) is not hard.&lt;/p&gt;
+
+&lt;p&gt;There’s one issue that was brought up and I think it’s not hard to observe anyway: there’s a total dependency on the key to verify a basic integrity of the data. Ie. without the key it’s not possible to say if the data are valid as if a basic checksum was used. This might be still useful for a read-only access to the filesystem, but absence of key makes this impossible.&lt;/p&gt;
+
+&lt;h2 id=&quot;existing-implementations&quot;&gt;Existing implementations&lt;/h2&gt;
+
+&lt;p&gt;As was noted in the LWN discussion &lt;a href=&quot;https://lwn.net/Articles/819143/&quot;&gt;[2]&lt;/a&gt;, what ZFS does, there are two checksums. One is the authenticated and one is not. I point you to the comment stating that, as I was not able to navigate far enough in the ZFS code to verify the claim, but the idea is clear. It’s said that the authenticated hash is eg. SHA512 and the plain hash is SHA256, split half/half in the bytes available for checksum. The way the hash is stored is a simple trim of the first 16 bytes of each checksum and store them consecutively. As both hashes are cryptographically strong, the first 16 bytes &lt;em&gt;should&lt;/em&gt; provide enough strength despite the truncation. Where 16 bytes is 128 bits.&lt;/p&gt;
+
+&lt;p&gt;When I was thinking about that, I had a different idea how to do that. Not that copying the scheme would not work for btrfs, anything that the linux kernel crypto API provides is usable, the same is achievable. I’m not judging the decisions what hashes to use or how to do the split, it works and I don’t see a problem in the strength. Where I see potential for an improvement is performance, without sacrificing strength &lt;em&gt;too much&lt;/em&gt;. Trade-offs.&lt;/p&gt;
+
+&lt;p&gt;The CPU or software implementation of SHA256 is comparably slower to checksums with hardware aids (like CRC32C instructions) or hashes designed to perform well on CPUs. That was the topic of the previous round of new hashes, so we now compete against BLAKE2b and XXHASH. There are CPUs with native instructions to calculate SHA256 and the performance improvement is noticeable, orders of magnitude better. But the support is not as widespread as eg. for CRC32C. Anyway, there’s always choice and hardware improves over time. The number of hashes may seem to explode but as long as it’s manageable inside the filesystem, we take it. And a coffee please.&lt;/p&gt;
+
+&lt;h2 id=&quot;secondary-hash&quot;&gt;Secondary hash&lt;/h2&gt;
+
+&lt;p&gt;The checksum scheme proposed is to use a cryptographic hash and a non-cryptographic one. Given the current support for SHA256 and BLAKE2b, the cryptographic hash is given. There are two of them and that’s fine. I’m not drawing an exact parallel with ZFS, the common point for the cryptographic hash is that there are limited options and the calculation is expensive by design. This is where the non-cryptographic hash can be debated. Also I want to call it &lt;em&gt;secondary&lt;/em&gt; hash, with obvious meaning that it’s not too important by default and comes second when the authenticated hash is available.&lt;/p&gt;
+
+&lt;p&gt;We have CRC32C and XXHASH to choose from. Note that there are already two hashes from the start so supporting both secondary hashes would double the number of final combinations. We’ve added XXHASH to enhance the checksum collision space from 32 bits to 64 bits. What I propose is to use just XXHASH as the secondary hash, resulting in two new hashes for the authenticated and secondary hash. I haven’t found a good reason to also include CRC32C.&lt;/p&gt;
+
+&lt;p&gt;Another design point was where to do the split and truncation. As the XXHASH has fixed length, this could be defined as 192 bits for the cryptographic hash and 64 bits for full XXHASH.&lt;/p&gt;
+
+&lt;p&gt;Here we are, we could have authenticated SHA256 accompanied by XXHASH, or the same with BLAKE2b. The checksum split also splits the decision tree what to do when the checksum partially matches. For a single checksum it’s a simple &lt;em&gt;yes/no&lt;/em&gt; decision. The partial match is the interesting case:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;primary (key available) hash matches, secondary does not – as the authenticated hash is hard to forge, it’s trusted (even if it’s not full length of the digest)&lt;/li&gt;
+  &lt;li&gt;primary (key available) does not match, secondary does not – checksum mismatch for the same reason as above&lt;/li&gt;
+  &lt;li&gt;primary (key not available) does not match, secondary does – this is the prime time for the secondary hash, the floor is yours&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This leads to 4 outcomes of the checksum verification, compared to 2. A boolean type can simply represent the yes/no outcome but for two hashes it’s not that easy. It depends on the context, though I think it still should be straightforward to decide what to do that in the code. Nevertheless, this has to be updated in all calls to checksum verification and has to reflect the key availability eg. in case where the data are auto-repaired during scrub or when there’s a copy.&lt;/p&gt;
+
+&lt;h2 id=&quot;performance-considerations&quot;&gt;Performance considerations&lt;/h2&gt;
+
+&lt;p&gt;The performance comparison should be now clear: we have the potentially slow SHA256 but fast XXHASH, for each metadata and data block, vs slow SHA512 and slow SHA256. As I reckon it’s possible to also select SHA256/SHA256 split in ZFS, but that can’t beat SHA256/XXHASH.&lt;/p&gt;
+
+&lt;p&gt;The key availability seems to be the key point in all that, puns notwithstanding. The initial implementation assumed for simplicity to provide the raw key bytes to kernel and to the userspace utilities. This is maybe OK for a prototype but under any circumstances can’t survive until a final release. There’s key management wired deep into linux kernel, there’s a library for the whole API and command line tools. We ought to use that. Pass the key by name, not the raw bytes.&lt;/p&gt;
+
+&lt;p&gt;Key management has it’s own culprits and surprises (key owned vs possessed), but let’s assume that there’s a standardized way how to obtain the key bytes from the key name. In kernel its “READ_USER_KEY_BYTES”, in userspace it’s either &lt;em&gt;keyctl_read&lt;/em&gt; from &lt;em&gt;libkeyutils&lt;/em&gt; or a raw syscall to &lt;em&gt;keyctl&lt;/em&gt;. Problem solved, on the low-level. But, well, don’t try that over &lt;em&gt;ssh&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Accessing a btrfs image for various reasons (check, image, restore) now needs the key to verify data or even the key itself to perform modifications (check + repair). The command line interface has to be extended for all commands that interact with the filesystem offline, ie. the image and not the mounted filesystem.&lt;/p&gt;
+
+&lt;p&gt;This results to a global option, like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs --auth-key 1234 ispect-internal dump-tree&lt;/code&gt;, compared to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs inspect-internal dump-tree --auth-key 1234&lt;/code&gt;. This is not finalized, but a global option is now the preferred choice.&lt;/p&gt;
+
+&lt;h2 id=&quot;final-words&quot;&gt;Final words&lt;/h2&gt;
+
+&lt;p&gt;I have a prototype, that does not work in all cases but at least passes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mkfs&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mount&lt;/code&gt;. The number of checksum verification cases got above what I was able to fix by the time of writing this. I think this has enough matter on itself so I’m pushing it out out as part 1. There are open questions regarding the command line interface and also a some kind of proof or discussion regarding attacks. Stay tuned.&lt;/p&gt;
+
+&lt;p&gt;References:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;[1] &lt;a href=&quot;https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/&quot;&gt;https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;[2] &lt;a href=&quot;https://lwn.net/Articles/819143/&quot;&gt;https://lwn.net/Articles/819143/&lt;/a&gt; LWN discussion under &lt;a href=&quot;https://lwn.net/Articles/818842/&quot;&gt;Authenticated Btrfs (2020)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+				<pubDate>Mon, 24 May 2021 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/authenticated-hashes-for-btrfs-part1/</link>
+				<guid isPermaLink="true">https://kdave.github.io/authenticated-hashes-for-btrfs-part1/</guid>
 			</item>
 		
 	</channel>

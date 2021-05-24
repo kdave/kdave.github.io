@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -111,29 +113,29 @@ blocks, the version is BLAKE2s.</em></p>
 
 <p>Briefly skimming over the sources, there’s nothing that’ll cause trouble.
 Standard C code, some definitions. Adapting for linux kernel would need to
-replace the <code class="highlighter-rouge">stdint.h</code> types (<code class="highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="highlighter-rouge">u8</code> etc) and change
+replace the <code class="language-plaintext highlighter-rouge">stdint.h</code> types (<code class="language-plaintext highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="language-plaintext highlighter-rouge">u8</code> etc) and change
 path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.</p>
 
 <h2 id="add-the-new-algorithm-definition-cra">Add the new algorithm definition (CRA)</h2>
 
 <p>Though it’s possible to prepare a module for an out-of-tree build (see below),
-let’s do it inside the <code class="highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
-sources to copy &amp; paste. I’ve used <code class="highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
+let’s do it inside the <code class="language-plaintext highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
+sources to copy &amp; paste. I’ve used <code class="language-plaintext highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
 useful.</p>
 
-<p>The crypto hash description is defined in <code class="highlighter-rouge">struct shash_alg</code>, contains the
+<p>The crypto hash description is defined in <code class="language-plaintext highlighter-rouge">struct shash_alg</code>, contains the
 technical description like type of the algorithm, length of the context and
 callbacks for various phases of the hash calculation (init, update, final), and
 identification of the algorithm and the implementation. The default
 implementations are C and use the string “-generic” in the name.</p>
 
-<p>The crc32c module came with a few stub callbacks (<code class="highlighter-rouge">checksum_init</code> etc), that
+<p>The crc32c module came with a few stub callbacks (<code class="language-plaintext highlighter-rouge">checksum_init</code> etc), that
 will only call into the blake2 functions and the definition can stay. Simple
 search and replace from crc32c to blake2s will do most of the conversion.</p>
 
 <h2 id="add-the-glue-code-for-crypto-api">Add the glue code for crypto API</h2>
 
-<p>Now we have the <code class="highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
+<p>Now we have the <code class="language-plaintext highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
 definition. The glue code connects the API with the implementation. We need 2
 helper structures that hold the context once the user starts digest calculation.
 The private blake2s context is embedded into one of them.  The intermediate
@@ -141,11 +143,11 @@ results will be stored there.</p>
 
 <p>And the rest is quite easy, each callback will call into the respective blake2s
 function, passing the context, data and lengths. One thing that I copied from
-the examples is the key initialization that’s in <code class="highlighter-rouge">blake2s_cra_init</code>, that
+the examples is the key initialization that’s in <code class="language-plaintext highlighter-rouge">blake2s_cra_init</code>, that
 appears to be global and copied to the context each time a new one is
 initialized.</p>
 
-<p>Here the choice of using <code class="highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
+<p>Here the choice of using <code class="language-plaintext highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
 the right parameters, calling the blake2s functions that can retain their
 original signature. This makes later updates easier.  All the functions are
 static so the compiler will most probably optimize the code that there will be
@@ -153,7 +155,7 @@ no unnecessary overhead.</p>
 
 <p>Well and that’s it. Let’s try to compile it and insert the module:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
 ...
   CC [M]  crypto/blake2s.o
 linux.git$ make crypto/blake2s.ko
@@ -165,12 +167,12 @@ linux.git$ make crypto/blake2s.ko
 
 <p>Check that it’s been properly loaded</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
 </code></pre></div></div>
 
 <p>and registered</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
 name         : blake2s
 driver       : blake2s-generic
 module       : blake2s
@@ -190,18 +192,18 @@ otherwise it looks good.</p>
 
 <p>To do actual test, we’d need something inside kernel to utilize the new hash.
 One option is to implement a module that will do that or use the userspace
-library <code class="highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
+library <code class="language-plaintext highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
 available kernel implementations.</p>
 
 <h2 id="test-it-with-libkcapi">Test it with libkcapi</h2>
 
-<p>The <code class="highlighter-rouge">libkcapi</code> project at
+<p>The <code class="language-plaintext highlighter-rouge">libkcapi</code> project at
 <a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a>
-provides an API that uses the <code class="highlighter-rouge">AF_ALG</code> socket type to exchange data with
+provides an API that uses the <code class="language-plaintext highlighter-rouge">AF_ALG</code> socket type to exchange data with
 kernel. The library provides a command line tool that we can use right away and
 don’t need to code anything.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
 48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
 </code></pre></div></div>
 
@@ -214,15 +216,15 @@ with the default key (0x000102..1f).</p>
 unconditionally as a module. Proper submission to linux kernel would need the
 Kconfig option.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
 </code></pre></div></div>
 
 <p>The standalone build needs a Makefile with a few targets that use the existing
 build of kernel. Note that you’d need a running kernel with the same built
-sources. This is usually provided by the <code class="highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
+sources. This is usually provided by the <code class="language-plaintext highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
 if you build kernels from git, you know what to do, right?</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
 obj-m := blake2s.o
 
 default:
@@ -235,7 +237,7 @@ modules_install:
         $(MAKE) -C $(KDIR) M=$$PWD modules_install
 </code></pre></div></div>
 
-<p>After running <code class="highlighter-rouge">make</code>, the kernel module is ready for use.</p>
+<p>After running <code class="language-plaintext highlighter-rouge">make</code>, the kernel module is ready for use.</p>
 
 <h2 id="what-next">What next?</h2>
 

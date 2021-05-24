@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -100,9 +102,9 @@ for the rest.</p>
 
 <p>The item represents root of a b-tree, of the internal or the subvolume trees.</p>
 
-<p>Let’s take an example from <code class="highlighter-rouge">btrfs inspect dump-tree</code>:</p>
+<p>Let’s take an example from <code class="language-plaintext highlighter-rouge">btrfs inspect dump-tree</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
                 generation 5 root_dirid 0 bytenr 30523392 level 0 refs 1
                 lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x0(none)
                 uuid 00000000-0000-0000-0000-000000000000
@@ -112,34 +114,34 @@ for the rest.</p>
 <p>Some of the metadata inside the item allow only simple checks, following <a href="https://git.kernel.org/linus/259ee7754b6793af8bdd77f9ca818bc41cfe9541">commit 259ee7754b6793</a>:</p>
 
 <ul>
-  <li><code class="highlighter-rouge">key.objectid</code> must match the tree that’s being read, though the code verifies only if the type is not 0</li>
-  <li><code class="highlighter-rouge">key.offset</code> must be 0</li>
-  <li>block offset <code class="highlighter-rouge">bytenr</code> must be aligned to sector size (4KiB in this case)</li>
-  <li><code class="highlighter-rouge">itemsize</code> depends on the item type, but for the root item it’s fixed value</li>
-  <li><code class="highlighter-rouge">level</code> and <code class="highlighter-rouge">drop_level</code> is 0 to 7, but it’s not possible to cross check if the tree has really of that level</li>
-  <li><code class="highlighter-rouge">generation</code> must be lower than the super block generation, same for <code class="highlighter-rouge">lastsnap</code></li>
-  <li><code class="highlighter-rouge">flags</code> can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned</li>
+  <li><code class="language-plaintext highlighter-rouge">key.objectid</code> must match the tree that’s being read, though the code verifies only if the type is not 0</li>
+  <li><code class="language-plaintext highlighter-rouge">key.offset</code> must be 0</li>
+  <li>block offset <code class="language-plaintext highlighter-rouge">bytenr</code> must be aligned to sector size (4KiB in this case)</li>
+  <li><code class="language-plaintext highlighter-rouge">itemsize</code> depends on the item type, but for the root item it’s fixed value</li>
+  <li><code class="language-plaintext highlighter-rouge">level</code> and <code class="language-plaintext highlighter-rouge">drop_level</code> is 0 to 7, but it’s not possible to cross check if the tree has really of that level</li>
+  <li><code class="language-plaintext highlighter-rouge">generation</code> must be lower than the super block generation, same for <code class="language-plaintext highlighter-rouge">lastsnap</code></li>
+  <li><code class="language-plaintext highlighter-rouge">flags</code> can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned</li>
 </ul>
 
-<p>The <code class="highlighter-rouge">refs</code> is a reference counter and sanity check would require reading all the expected reference holders, <code class="highlighter-rouge">bytes_used</code> would need to look up the block that it accounts, etc. The subvolume trees have more data like <code class="highlighter-rouge">ctime</code>, <code class="highlighter-rouge">otime</code> and real <code class="highlighter-rouge">uuid</code>s. If you wonder what’s <code class="highlighter-rouge">byte_limit</code>, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.</p>
+<p>The <code class="language-plaintext highlighter-rouge">refs</code> is a reference counter and sanity check would require reading all the expected reference holders, <code class="language-plaintext highlighter-rouge">bytes_used</code> would need to look up the block that it accounts, etc. The subvolume trees have more data like <code class="language-plaintext highlighter-rouge">ctime</code>, <code class="language-plaintext highlighter-rouge">otime</code> and real <code class="language-plaintext highlighter-rouge">uuid</code>s. If you wonder what’s <code class="language-plaintext highlighter-rouge">byte_limit</code>, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.</p>
 
 <p>Many of the tree-checker enhancements are follow ups to fuzz testing and reports, as it was in this case. The <a href="https://bugzilla.kernel.org/show_bug.cgi?id=203261">bug report</a> shows that some of the incorrect data were detected and even triggered auto-repair (as this was on filesystem with DUP metadata) but there was too much damage and it crashed at some point. The crash was not random but a BUG_ON of an unexpected condition, that’s sanity check of last resort. Catching inconsistent data early with a graceful error handling is of course desired and ongoing work.</p>
 
 <h3 id="extent-metadata-item-checks">Extent metadata item checks</h3>
 
-<p>There are two item types that represent extents and information about sharing. <code class="highlighter-rouge">EXTENT_ITEM</code> is older and bigger  while <code class="highlighter-rouge">METADATA_ITEM</code> is the building block of <code class="highlighter-rouge">skinny-metadata</code> feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The <a href="https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75">commit f82d1c7ca8ae1bf</a> implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.</p>
+<p>There are two item types that represent extents and information about sharing. <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code> is older and bigger  while <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code> is the building block of <code class="language-plaintext highlighter-rouge">skinny-metadata</code> feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The <a href="https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75">commit f82d1c7ca8ae1bf</a> implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.</p>
 
-<p>Example of <code class="highlighter-rouge">METADATA_ITEM</code>:</p>
+<p>Example of <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
                 refs 1 gen 27 flags TREE_BLOCK
                 tree block skinny level 0
                 tree block backref root FS_TREE
 </code></pre></div></div>
 
-<p>And <code class="highlighter-rouge">EXTENT_ITEM</code>:</p>
+<p>And <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
                 refs 1 gen 499706 flags DATA
                 extent data backref root FS_TREE objectid 8626071 offset 0 count 1
 </code></pre></div></div>

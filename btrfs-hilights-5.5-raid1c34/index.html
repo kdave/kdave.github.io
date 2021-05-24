@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -91,7 +93,7 @@ for the rest.</p>
 
 <p>There are two new block group profiles enhancing capabilities of the RAID1
 types with more copies than 2. Brief overview of the profiles is in the table
-below, for table with all profiles see manual page of <code class="highlighter-rouge">mkfs.brtfs</code>, also
+below, for table with all profiles see manual page of <code class="language-plaintext highlighter-rouge">mkfs.brtfs</code>, also
 available <a href="https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#PROFILES">on
 wiki</a>.</p>
 
@@ -146,7 +148,7 @@ device, going to RAID1C4, same problem with more data to shuffle around.</p>
 user to know the redundancy level. This is already the case for
 RAID0/RAID5/RAID6. For the striped profile RAID0 it’s not much of a problem,
 there’s no redundancy. For the parity profiles it’s been a known problem and
-new balance filter <code class="highlighter-rouge">stripe</code> has been added to support fine grained selection of
+new balance filter <code class="language-plaintext highlighter-rouge">stripe</code> has been added to support fine grained selection of
 block groups.</p>
 
 <p>Speaking about RAID6, there’s the elephant in the room, trying to cover write
@@ -159,7 +161,7 @@ RAID1C3 profile is a reasonable substitute for RAID6.</p>
 
 <p>On a freshly created filesystem it’s simple:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
 </code></pre></div></div>
 
 <p>The command combines both new profiles for sake of demonstration, you should
@@ -169,7 +171,7 @@ appropriate profiles.</p>
 <p>Changing the profile later on an existing filesystem works as usual, you can
 use:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
 </code></pre></div></div>
 
 <p>Provided there are enough devices and enough space to do the conversion, this
@@ -180,10 +182,10 @@ will be of the of the desired type.</p>
 
 <p>The new block groups are not understood by old kernels and can’t be mounted,
 not even in the read-only mode. To prevent that a new incompatibility bit is
-introduced, called <code class="highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
-<code class="highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="highlighter-rouge">incompat_flags</code>. On a running
+introduced, called <code class="language-plaintext highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
+<code class="language-plaintext highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="language-plaintext highlighter-rouge">incompat_flags</code>. On a running
 system the incompat features are exported in sysfs,
-<code class="highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
+<code class="language-plaintext highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
 
 <h3 id="outlook">Outlook</h3>
 

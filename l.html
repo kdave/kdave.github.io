@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -82,12 +84,12 @@
 <li>2016-11-05 - <a href="/escaped-snapper-snapshots/">Escaped snapper snapshots</a> <tt>[tags: btrfs, snapper]</tt></li>
 <p>
 <p>Happened to me, that space on my root partition was going low, no matter what I
-removed. I have <code class="highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
+removed. I have <code class="language-plaintext highlighter-rouge">snapper</code> hourly snapshots enabled, tuned the daily and weekly
 settings, so the usual problem of running out of space is prevented. Also
 before doing a big update of Tumbleweed (openSUSE rolling distro) I check the
-available space to roughly match what <code class="highlighter-rouge">zypper</code> says it’d need.</p>
+available space to roughly match what <code class="language-plaintext highlighter-rouge">zypper</code> says it’d need.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ snapper ls
 Type   | #   | Pre # | Date                             | User | Cleanup  | Description  | Userdata
 -------+-----+-------+----------------------------------+------+----------+--------------+--------------
 single | 0   |       |                                  | root |          | current      |
@@ -100,7 +102,7 @@ available. This is within the margin of accuracy that we’re able to get from
 the statfs syscall.  Side note, getting this right is a lot of guesswork, so 64K
 is as good as it gets.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ df -h /
 Filesystem      Size  Used Avail Use% Mounted on
 /dev/sda1        30G   30G   64K  86% /
 </code></pre></div></div>
@@ -111,7 +113,7 @@ snapper snapshot. The snapshot directory itself was there, but the metadata
 were lacking (a xml file). After deleting it manually, the free space jumped up
 by 6GB!</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs subvol list /
 ...
 ... .snapshots/3721/snapshot
 ...
@@ -133,10 +135,10 @@ has the freedom to create snapshots anywhere</li>
 <p>Summary of used tools:</p>
 
 <ul>
-  <li><code class="highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
-  <li><code class="highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
-  <li><code class="highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
-  <li><code class="highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
+  <li><code class="language-plaintext highlighter-rouge">snapper ls</code> – show all snapper snapshots (for the first config)</li>
+  <li><code class="language-plaintext highlighter-rouge">snapper delete</code> – delete snapshots by id or range</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume list</code> – list all subvolumes (snapshots included) on a given path</li>
+  <li><code class="language-plaintext highlighter-rouge">btrfs subvolume delete</code> – delete a subvolume/snapshot by path</li>
 </ul>
 
 <p><strong>Update {{ page.update1 }}</strong></p>
@@ -152,10 +154,10 @@ distro. There’s an <a href="https://github.com/openSUSE/snapper/issues/98">ope
 
 <li>2017-11-23 - <a href="/errno.h/">errno.h for the masses</a> <tt>[tags: debugging, errno]</tt></li>
 <p>
-<p>The <code class="highlighter-rouge">errno</code> values, in various formats you may encounter. The standard errno is
+<p>The <code class="language-plaintext highlighter-rouge">errno</code> values, in various formats you may encounter. The standard errno is
 a positive number, linux kernel uses the negative values. Besides the sources
-(going through like 5 include hops from <code class="highlighter-rouge">/usr/include/errno.h</code> to
-<code class="highlighter-rouge">/usr/include/asm-generic/errno.h</code> and <code class="highlighter-rouge">/usr/include/asm-generic/errno-base.h</code>)
+(going through like 5 include hops from <code class="language-plaintext highlighter-rouge">/usr/include/errno.h</code> to
+<code class="language-plaintext highlighter-rouge">/usr/include/asm-generic/errno.h</code> and <code class="language-plaintext highlighter-rouge">/usr/include/asm-generic/errno-base.h</code>)
 there’s no direct way to get the symbolic &lt;-&gt; numeric mapping. The hexa values
 commonly appear in the stack trace dumps.</p>
 
@@ -1224,13 +1226,13 @@ commonly appear in the stack trace dumps.</p>
 <li>2018-06-08 - <a href="/qemu-2.11-if=scsi/">qemu 2.12 does not support if=scsi</a> <tt>[tags: qemu]</tt></li>
 <p>
 <p>After update of qemu to version 2.12, my testing vms stopped to just warn
-about the <code class="highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
+about the <code class="language-plaintext highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
 start.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
+<p>The <code class="language-plaintext highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
 take some time to comprehend but then you can do wonders.</p>
 
 <p>The <a href="https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features">release notes of version 2.12</a> do
@@ -1243,12 +1245,12 @@ a lot of time.</p>
 experiment a bit (this saved me documentation reading time).</p>
 
 <p>The setup I use is a file-backed root image for a virtual machine, nothing
-really fancy. The file name is <code class="highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
+really fancy. The file name is <code class="language-plaintext highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
 caching.</p>
 
 <p>Here you are:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
 -drive file=root,id=root-img,if=none,format=raw,cache=none
 -device scsi-hd,drive=root-img
 </code></pre></div></div>
@@ -1380,29 +1382,29 @@ blocks, the version is BLAKE2s.</em></p>
 
 <p>Briefly skimming over the sources, there’s nothing that’ll cause trouble.
 Standard C code, some definitions. Adapting for linux kernel would need to
-replace the <code class="highlighter-rouge">stdint.h</code> types (<code class="highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="highlighter-rouge">u8</code> etc) and change
+replace the <code class="language-plaintext highlighter-rouge">stdint.h</code> types (<code class="language-plaintext highlighter-rouge">uint8_t</code> etc) with the uXX (<code class="language-plaintext highlighter-rouge">u8</code> etc) and change
 path to includes. For simplicity, let’s remove the ifdefs for C++ and MSVC too.</p>
 
 <h2 id="add-the-new-algorithm-definition-cra">Add the new algorithm definition (CRA)</h2>
 
 <p>Though it’s possible to prepare a module for an out-of-tree build (see below),
-let’s do it inside the <code class="highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
-sources to copy &amp; paste. I’ve used <code class="highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
+let’s do it inside the <code class="language-plaintext highlighter-rouge">linux.git/crypto/</code> path for now. There’s also plenty of
+sources to copy &amp; paste. I’ve used <code class="language-plaintext highlighter-rouge">crc32c_generic.c</code>, and it turned out to be
 useful.</p>
 
-<p>The crypto hash description is defined in <code class="highlighter-rouge">struct shash_alg</code>, contains the
+<p>The crypto hash description is defined in <code class="language-plaintext highlighter-rouge">struct shash_alg</code>, contains the
 technical description like type of the algorithm, length of the context and
 callbacks for various phases of the hash calculation (init, update, final), and
 identification of the algorithm and the implementation. The default
 implementations are C and use the string “-generic” in the name.</p>
 
-<p>The crc32c module came with a few stub callbacks (<code class="highlighter-rouge">checksum_init</code> etc), that
+<p>The crc32c module came with a few stub callbacks (<code class="language-plaintext highlighter-rouge">checksum_init</code> etc), that
 will only call into the blake2 functions and the definition can stay. Simple
 search and replace from crc32c to blake2s will do most of the conversion.</p>
 
 <h2 id="add-the-glue-code-for-crypto-api">Add the glue code for crypto API</h2>
 
-<p>Now we have the <code class="highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
+<p>Now we have the <code class="language-plaintext highlighter-rouge">blake2s.c</code> with the reference implementation, crypto algorithm
 definition. The glue code connects the API with the implementation. We need 2
 helper structures that hold the context once the user starts digest calculation.
 The private blake2s context is embedded into one of them.  The intermediate
@@ -1410,11 +1412,11 @@ results will be stored there.</p>
 
 <p>And the rest is quite easy, each callback will call into the respective blake2s
 function, passing the context, data and lengths. One thing that I copied from
-the examples is the key initialization that’s in <code class="highlighter-rouge">blake2s_cra_init</code>, that
+the examples is the key initialization that’s in <code class="language-plaintext highlighter-rouge">blake2s_cra_init</code>, that
 appears to be global and copied to the context each time a new one is
 initialized.</p>
 
-<p>Here the choice of using <code class="highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
+<p>Here the choice of using <code class="language-plaintext highlighter-rouge">crc32c.c</code> helped as there were the stub callback with
 the right parameters, calling the blake2s functions that can retain their
 original signature. This makes later updates easier.  All the functions are
 static so the compiler will most probably optimize the code that there will be
@@ -1422,7 +1424,7 @@ no unnecessary overhead.</p>
 
 <p>Well and that’s it. Let’s try to compile it and insert the module:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ make crypto/blake2s.o
 ...
   CC [M]  crypto/blake2s.o
 linux.git$ make crypto/blake2s.ko
@@ -1434,12 +1436,12 @@ linux.git$ make crypto/blake2s.ko
 
 <p>Check that it’s been properly loaded</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git/crypto$ sudo insmod ./blake2s.ko
 </code></pre></div></div>
 
 <p>and registered</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>linux.git$ cat /proc/crypto
 name         : blake2s
 driver       : blake2s-generic
 module       : blake2s
@@ -1459,18 +1461,18 @@ otherwise it looks good.</p>
 
 <p>To do actual test, we’d need something inside kernel to utilize the new hash.
 One option is to implement a module that will do that or use the userspace
-library <code class="highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
+library <code class="language-plaintext highlighter-rouge">libkcapi</code> that can forward the requests from userspace to the
 available kernel implementations.</p>
 
 <h2 id="test-it-with-libkcapi">Test it with libkcapi</h2>
 
-<p>The <code class="highlighter-rouge">libkcapi</code> project at
+<p>The <code class="language-plaintext highlighter-rouge">libkcapi</code> project at
 <a href="http://www.chronox.de/libkcapi.html">http://www.chronox.de/libkcapi.html</a>
-provides an API that uses the <code class="highlighter-rouge">AF_ALG</code> socket type to exchange data with
+provides an API that uses the <code class="language-plaintext highlighter-rouge">AF_ALG</code> socket type to exchange data with
 kernel. The library provides a command line tool that we can use right away and
 don’t need to code anything.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ kcapi-dgst -c blake2s --hex &lt; /dev/null
 48a8997da407876b3d79c0d92325ad3b89cbb754d86ab71aee047ad345fd2c49
 </code></pre></div></div>
 
@@ -1483,15 +1485,15 @@ with the default key (0x000102..1f).</p>
 unconditionally as a module. Proper submission to linux kernel would need the
 Kconfig option.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>obj-m += blake2s.o
 </code></pre></div></div>
 
 <p>The standalone build needs a Makefile with a few targets that use the existing
 build of kernel. Note that you’d need a running kernel with the same built
-sources. This is usually provided by the <code class="highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
+sources. This is usually provided by the <code class="language-plaintext highlighter-rouge">kernel-*-devel</code> packages. Otherwise,
 if you build kernels from git, you know what to do, right?</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KDIR ?= /lib/modules/`uname -r`/build
 obj-m := blake2s.o
 
 default:
@@ -1504,7 +1506,7 @@ modules_install:
         $(MAKE) -C $(KDIR) M=$$PWD modules_install
 </code></pre></div></div>
 
-<p>After running <code class="highlighter-rouge">make</code>, the kernel module is ready for use.</p>
+<p>After running <code class="language-plaintext highlighter-rouge">make</code>, the kernel module is ready for use.</p>
 
 <h2 id="what-next">What next?</h2>
 
@@ -1546,7 +1548,7 @@ modules_install:
 
 <p><em>Hash some bytes with changing digest length from 1 to 64.</em></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ 1]                                                                 3b
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ 1]                                                                 3b
 [ 2]                                                                cf5b
 [ 3]                                                               68a2fa
 [ 4]                                                              ac6de759
@@ -1635,7 +1637,7 @@ limited by the context and bits of information available at some point, but
 still there’s enough to get an additional value.</p>
 
 <p>The context here means a b-tree leaf that packs several items into a block (ie.
-the <code class="highlighter-rouge">nodesize</code>, 16KiB by default). The individual items’ members’ values can be
+the <code class="language-plaintext highlighter-rouge">nodesize</code>, 16KiB by default). The individual items’ members’ values can be
 verified against allowed values, the order of the keys of all items listed in
 the leaf header can be checked etc. This is just for a rough idea what happens.</p>
 
@@ -1664,7 +1666,7 @@ would be for a separate article entirely.</p>
 check that items have the right key type, device id is within allowed range
 and that usage and total sizes are within limits of the physical device</li>
   <li>inode item <em>(item for inodes, ie. files, directories or special files)</em>– the
-<code class="highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
+<code class="language-plaintext highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
 consistent with the global one and the basic sanity of mode, flags/attributes
 and link count</li>
   <li>block group profiles – check that only a single type is set in the bit mask
@@ -1676,7 +1678,7 @@ single/dup/raid1/…)</li>
 represents the tree block and the check is really local to that. As an inode
 item can represent more than just files and directories, doing structural
 checks like where and how the inode item is linked to is not easy in this
-context. This is basically what would <code class="highlighter-rouge">btrfs check</code> do.</p>
+context. This is basically what would <code class="language-plaintext highlighter-rouge">btrfs check</code> do.</p>
 
 <p>The checks need to be fast because they happen on each metadata block, so no
 additional IO is allowed. This still brings some overhead but is (considered)
@@ -2010,7 +2012,7 @@ Stay tuned.</p>
 <p>
 <p>One thing you windows guys have is a decent binary diff. I know there’s radare2
 on linux, but I’m a noob to set it up and I’d be fine with something less
-fancy. Something like 2 <code class="highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="highlighter-rouge">vimdiff</code>.</p>
+fancy. Something like 2 <code class="language-plaintext highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="language-plaintext highlighter-rouge">vimdiff</code>.</p>
 
 <p>The tricky part is the intelligent filter. I say <em>intelligent</em>, but in fact it’s
 a 20 line perl script that basically filters out things that are not important
@@ -2023,7 +2025,7 @@ annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>Which takes eg.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
        0:       e8 00 00 00 00          callq  5 &lt;btrfs_set_lock_blocking_read+0x5&gt;
                         1: R_X86_64_PLT32       __fentry__-0x4
        5:       55                      push   %rbp
@@ -2065,7 +2067,7 @@ annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>and produces</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
 callq  btrfs_set_lock_blocking_read
 TARGET __fentry__
 push   %rbp
@@ -2103,28 +2105,28 @@ pop    %rbp
 
 <p>So here’s the magic script (pardon my perl skills):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/perl</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/usr/bin/perl
 
-<span class="nv">@c</span><span class="o">=&lt;&gt;</span><span class="p">;</span>
-<span class="k">foreach</span><span class="p">(</span><span class="nv">@c</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nb">chomp</span><span class="p">;</span>
-        <span class="sr">s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/</span><span class="p">;</span>
-        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/R_X86_/</span><span class="p">);</span>
-        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/</span><span class="p">);</span>
-        <span class="sr">s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//</span><span class="p">;</span>
-        <span class="sr">s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/</span><span class="p">;</span>
-        <span class="sr">s/\s+#.*$//</span><span class="p">;</span>
-        <span class="sr">s/nopl.*/NOP/</span><span class="p">;</span>
-        <span class="sr">s/xchg.*ax.*ax/NOP/</span><span class="p">;</span>
-        <span class="sr">s/data16 nop/NOP/</span><span class="p">;</span>
-        <span class="sr">s/nop/NOP/</span><span class="p">;</span>
-        <span class="k">print</span><span class="p">("</span><span class="si">$_</span><span class="se">\n</span><span class="p">");</span>
-<span class="p">}</span>
+@c=&lt;&gt;;
+foreach(@c) {
+        chomp;
+        s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/;
+        next if(/R_X86_/);
+        next if(/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/);
+        s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//;
+        s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/;
+        s/\s+#.*$//;
+        s/nopl.*/NOP/;
+        s/xchg.*ax.*ax/NOP/;
+        s/data16 nop/NOP/;
+        s/nop/NOP/;
+        print("$_\n");
+}
 </code></pre></div></div>
 
 <p>Use like:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
 $ objdump -dr after/locking.o &gt; after
 $ vimdiff before after
 </code></pre></div></div>
@@ -2143,7 +2145,7 @@ for the rest.</p>
 
 <p>… than just Intel-based ones. There was a hard coded check for the intel SSE
 feature providing the accelerated instruction, but this totally skipped other
-architectures. A brief check in <code class="highlighter-rouge">linux.git/arch/*/crypto</code> for files
+architectures. A brief check in <code class="language-plaintext highlighter-rouge">linux.git/arch/*/crypto</code> for files
 implementing the accelerated versions revealed that there’s a bunch of them:
 ARM, ARM64, MIPS, PowerPC, s390 and SPARC. I don’t have enough hardware to show
 the improvements, though.</p>
@@ -2165,7 +2167,7 @@ types. Example of the worst case would be dropping the incompat bit for LZO
 after there are no compressed files using that algorithm. You can easily see
 that this would require either enumerating all extent metadata (one time check)
 or keeping track of count since mkfs time. This is IMHO not a typical request
-and can be eventually done using the <code class="highlighter-rouge">btrfstune</code> tool on an unmounted
+and can be eventually done using the <code class="language-plaintext highlighter-rouge">btrfstune</code> tool on an unmounted
 filesystem.</p>
 
 </p>
@@ -2317,7 +2319,7 @@ for the rest.</p>
 
 <p>There are two new block group profiles enhancing capabilities of the RAID1
 types with more copies than 2. Brief overview of the profiles is in the table
-below, for table with all profiles see manual page of <code class="highlighter-rouge">mkfs.brtfs</code>, also
+below, for table with all profiles see manual page of <code class="language-plaintext highlighter-rouge">mkfs.brtfs</code>, also
 available <a href="https://btrfs.wiki.kernel.org/index.php/Manpage/mkfs.btrfs#PROFILES">on
 wiki</a>.</p>
 
@@ -2372,7 +2374,7 @@ device, going to RAID1C4, same problem with more data to shuffle around.</p>
 user to know the redundancy level. This is already the case for
 RAID0/RAID5/RAID6. For the striped profile RAID0 it’s not much of a problem,
 there’s no redundancy. For the parity profiles it’s been a known problem and
-new balance filter <code class="highlighter-rouge">stripe</code> has been added to support fine grained selection of
+new balance filter <code class="language-plaintext highlighter-rouge">stripe</code> has been added to support fine grained selection of
 block groups.</p>
 
 <p>Speaking about RAID6, there’s the elephant in the room, trying to cover write
@@ -2385,7 +2387,7 @@ RAID1C3 profile is a reasonable substitute for RAID6.</p>
 
 <p>On a freshly created filesystem it’s simple:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs -d raid1c3 -m raid1c4 /dev/sd[abcd]
 </code></pre></div></div>
 
 <p>The command combines both new profiles for sake of demonstration, you should
@@ -2395,7 +2397,7 @@ appropriate profiles.</p>
 <p>Changing the profile later on an existing filesystem works as usual, you can
 use:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># btrfs balance start -mconvert=raid1c3 /mnt/path
 </code></pre></div></div>
 
 <p>Provided there are enough devices and enough space to do the conversion, this
@@ -2406,10 +2408,10 @@ will be of the of the desired type.</p>
 
 <p>The new block groups are not understood by old kernels and can’t be mounted,
 not even in the read-only mode. To prevent that a new incompatibility bit is
-introduced, called <code class="highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
-<code class="highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="highlighter-rouge">incompat_flags</code>. On a running
+introduced, called <code class="language-plaintext highlighter-rouge">raid1c34</code>. Its presence on a device can be checked by
+<code class="language-plaintext highlighter-rouge">btrfs inspect-internal dump-super</code> in the <code class="language-plaintext highlighter-rouge">incompat_flags</code>. On a running
 system the incompat features are exported in sysfs,
-<code class="highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
+<code class="language-plaintext highlighter-rouge">/sys/fs/btrfs/UUID/features/raid1c34</code>.</p>
 
 <h3 id="outlook">Outlook</h3>
 
@@ -2517,17 +2519,17 @@ topics out of scope of the filesystem itself.</p>
   </tbody>
 </table>
 
-<p>You can find more about the <a href="https://kdave.github.io/selecting-hash-for-btrfs/">selection process</a>
+<p>You can find more about the <a href="{{ site.url }}/selecting-hash-for-btrfs/">selection process</a>
 in another post.</p>
 
 <h2 id="quick-start">Quick start</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs --csum xxhash /dev/sda
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs --csum xxhash /dev/sda
 </code></pre></div></div>
 
 <p>And the output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>btrfs-progs v5.4.1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>btrfs-progs v5.4.1
 See http://btrfs.wiki.kernel.org for more information.
 
 Label:              (null)
@@ -2581,7 +2583,7 @@ Providing and maintaining implementations of seven and one hashes would be
 a burden for several projects.</p>
 
 <p>Yes, I’m aware of <a href="https://github.com/BLAKE3-team/BLAKE3">BLAKE3</a>, but let’s
-<a href="https://kdave.github.io/blake3-vs-blake2-in-btrfs">wait before adding new hashes</a>. By
+<a href="{{ site.url }}/blake3-vs-blake2-in-btrfs">wait before adding new hashes</a>. By
 the time we do another round there might be more contenders or improved
 versions.  There’s <a href="https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html">XXH3</a>
 from the author of XXHASH, producing 128bit digest and is slightly faster.
@@ -2640,9 +2642,9 @@ for the rest.</p>
 
 <p>The item represents root of a b-tree, of the internal or the subvolume trees.</p>
 
-<p>Let’s take an example from <code class="highlighter-rouge">btrfs inspect dump-tree</code>:</p>
+<p>Let’s take an example from <code class="language-plaintext highlighter-rouge">btrfs inspect dump-tree</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
                 generation 5 root_dirid 0 bytenr 30523392 level 0 refs 1
                 lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x0(none)
                 uuid 00000000-0000-0000-0000-000000000000
@@ -2652,34 +2654,34 @@ for the rest.</p>
 <p>Some of the metadata inside the item allow only simple checks, following <a href="https://git.kernel.org/linus/259ee7754b6793af8bdd77f9ca818bc41cfe9541">commit 259ee7754b6793</a>:</p>
 
 <ul>
-  <li><code class="highlighter-rouge">key.objectid</code> must match the tree that’s being read, though the code verifies only if the type is not 0</li>
-  <li><code class="highlighter-rouge">key.offset</code> must be 0</li>
-  <li>block offset <code class="highlighter-rouge">bytenr</code> must be aligned to sector size (4KiB in this case)</li>
-  <li><code class="highlighter-rouge">itemsize</code> depends on the item type, but for the root item it’s fixed value</li>
-  <li><code class="highlighter-rouge">level</code> and <code class="highlighter-rouge">drop_level</code> is 0 to 7, but it’s not possible to cross check if the tree has really of that level</li>
-  <li><code class="highlighter-rouge">generation</code> must be lower than the super block generation, same for <code class="highlighter-rouge">lastsnap</code></li>
-  <li><code class="highlighter-rouge">flags</code> can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned</li>
+  <li><code class="language-plaintext highlighter-rouge">key.objectid</code> must match the tree that’s being read, though the code verifies only if the type is not 0</li>
+  <li><code class="language-plaintext highlighter-rouge">key.offset</code> must be 0</li>
+  <li>block offset <code class="language-plaintext highlighter-rouge">bytenr</code> must be aligned to sector size (4KiB in this case)</li>
+  <li><code class="language-plaintext highlighter-rouge">itemsize</code> depends on the item type, but for the root item it’s fixed value</li>
+  <li><code class="language-plaintext highlighter-rouge">level</code> and <code class="language-plaintext highlighter-rouge">drop_level</code> is 0 to 7, but it’s not possible to cross check if the tree has really of that level</li>
+  <li><code class="language-plaintext highlighter-rouge">generation</code> must be lower than the super block generation, same for <code class="language-plaintext highlighter-rouge">lastsnap</code></li>
+  <li><code class="language-plaintext highlighter-rouge">flags</code> can be simply compared to the bit mask of allowed flags, right now there are two, one represents a read-only subvolume and another a subvolume that has been marked as deleted but its blocks not yet cleaned</li>
 </ul>
 
-<p>The <code class="highlighter-rouge">refs</code> is a reference counter and sanity check would require reading all the expected reference holders, <code class="highlighter-rouge">bytes_used</code> would need to look up the block that it accounts, etc. The subvolume trees have more data like <code class="highlighter-rouge">ctime</code>, <code class="highlighter-rouge">otime</code> and real <code class="highlighter-rouge">uuid</code>s. If you wonder what’s <code class="highlighter-rouge">byte_limit</code>, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.</p>
+<p>The <code class="language-plaintext highlighter-rouge">refs</code> is a reference counter and sanity check would require reading all the expected reference holders, <code class="language-plaintext highlighter-rouge">bytes_used</code> would need to look up the block that it accounts, etc. The subvolume trees have more data like <code class="language-plaintext highlighter-rouge">ctime</code>, <code class="language-plaintext highlighter-rouge">otime</code> and real <code class="language-plaintext highlighter-rouge">uuid</code>s. If you wonder what’s <code class="language-plaintext highlighter-rouge">byte_limit</code>, this used to be a mechanism to emulate quotas by setting the limit value, but it has been deprecated and unused for a long time. One day we might to find another purpose for the bytes.</p>
 
 <p>Many of the tree-checker enhancements are follow ups to fuzz testing and reports, as it was in this case. The <a href="https://bugzilla.kernel.org/show_bug.cgi?id=203261">bug report</a> shows that some of the incorrect data were detected and even triggered auto-repair (as this was on filesystem with DUP metadata) but there was too much damage and it crashed at some point. The crash was not random but a BUG_ON of an unexpected condition, that’s sanity check of last resort. Catching inconsistent data early with a graceful error handling is of course desired and ongoing work.</p>
 
 <h3 id="extent-metadata-item-checks">Extent metadata item checks</h3>
 
-<p>There are two item types that represent extents and information about sharing. <code class="highlighter-rouge">EXTENT_ITEM</code> is older and bigger  while <code class="highlighter-rouge">METADATA_ITEM</code> is the building block of <code class="highlighter-rouge">skinny-metadata</code> feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The <a href="https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75">commit f82d1c7ca8ae1bf</a> implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.</p>
+<p>There are two item types that represent extents and information about sharing. <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code> is older and bigger  while <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code> is the building block of <code class="language-plaintext highlighter-rouge">skinny-metadata</code> feature, smaller and more compact. Both items contain type of reference(s) and the owner (a tree id). Besides the generic checks that also the root item does (alignment, value ranges, generation), there’s a number of allowed combinations of the reference types and extent types. The <a href="https://git.kernel.orgl/linus/f82d1c7ca8ae1bf89e8d78c5ecb56b6b228c1a75">commit f82d1c7ca8ae1bf</a> implements that, however further explanation is out of scope of the overview as the sharing and references are the fundamental design of btrfs.</p>
 
-<p>Example of <code class="highlighter-rouge">METADATA_ITEM</code>:</p>
+<p>Example of <code class="language-plaintext highlighter-rouge">METADATA_ITEM</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 170 key (88145920 METADATA_ITEM 0) itemoff 10640 itemsize 33
                 refs 1 gen 27 flags TREE_BLOCK
                 tree block skinny level 0
                 tree block backref root FS_TREE
 </code></pre></div></div>
 
-<p>And <code class="highlighter-rouge">EXTENT_ITEM</code>:</p>
+<p>And <code class="language-plaintext highlighter-rouge">EXTENT_ITEM</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        item 27 key (20967424 EXTENT_ITEM 4096) itemoff 14895 itemsize 53
                 refs 1 gen 499706 flags DATA
                 extent data backref root FS_TREE objectid 8626071 offset 0 count 1
 </code></pre></div></div>
@@ -2687,6 +2689,77 @@ for the rest.</p>
 <p>This for a simple case with one reference, tree (for metadata) and ordinary data, so comparing the sizes shows 20 bytes saved. On my 20GiB root partition with about 70 snapshots there are XXX EXTENT and YYY METADATA items.</p>
 
 <p>Otherwise there can be more references inside one item (eg. many snapshots of a file that is randomly updated over time) so the overhead of the item itself is smaller</p>
+
+</p>
+<hr>
+</li>
+
+<li>2021-05-24 - <a href="/authenticated-hashes-for-btrfs-part1/">Authenticated hashes for btrfs (part 1)</a> <tt>[tags: blake2, btrfs, kernel, sha256, xxhash]</tt></li>
+<p>
+<p>There was a request to provide authenticated hashes in btrfs, natively as one of the btrfs checksum algorithms. Sounds fun but there’s always more to it, even if this sounds easy to implement.</p>
+
+<p>Johaness T. at that time in SUSE sent the patchset adding the support for SHA256 <a href="https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/">[1]</a> with a Labs conference paper, summarizing existing solutions and giving details about the proposed implementation and use cases.</p>
+
+<p>The first version of the patchset posted got some feedback, issues were found and some ideas suggested. Things have stalled a bit, but the feature is still very interesting and really not hard to implement. The support for additional checksums has provided enough support code to just plug in the new algorithm and enhance the existing interfaces to provide the key bytes. So until now I’ve assumed you know what an authenticated hash means, but for clarity and in simple terms: a checksum that depends on a key. The main point is that it’s impossible to generate the same checksum for given data without knowing the key, where <em>impossible</em> is used in the cryptographic-strength sense, there’s an almost zero probability doing that by chance and brute force attack is not practical.</p>
+
+<h2 id="auth-hash-fsverity">Auth hash, fsverity</h2>
+
+<p>Notable existing solution for that is <em>fsverity</em> that works in read-only fashion, where the key is securely hidden and used only to verify that data that are read from media haven’t been tampered with. A typical use case is an OS image in your phone. But that’s not all. Images of OS appear in all sorts of boxed devices, IoT. Nowadays, with explosion of edge computing, assuring integrity of the end devices is a fundamental requirement.</p>
+
+<p>Where btrfs can add some value is the read AND write support, with an authenticated hash. This brings questions around key handling, and not everybody is OK with a device that could potentially store malicious/invalid data with a proper authenticated checksum. So yeah, use something else, this is not your use case, or maybe there’s another way how to make sure the key won’t be compromised easily. This is beyond the scope of what filesystem can do, though.</p>
+
+<p>As an example use case of writable filesystem with authenticated hash: detect outside tampering with on-disk data, eg. when the filesystem was unmounted. Filesystem metadata formats are public, interesting data can be located by patterns on the device, so changing a few bytes and updating the checksum(s) is not hard.</p>
+
+<p>There’s one issue that was brought up and I think it’s not hard to observe anyway: there’s a total dependency on the key to verify a basic integrity of the data. Ie. without the key it’s not possible to say if the data are valid as if a basic checksum was used. This might be still useful for a read-only access to the filesystem, but absence of key makes this impossible.</p>
+
+<h2 id="existing-implementations">Existing implementations</h2>
+
+<p>As was noted in the LWN discussion <a href="https://lwn.net/Articles/819143/">[2]</a>, what ZFS does, there are two checksums. One is the authenticated and one is not. I point you to the comment stating that, as I was not able to navigate far enough in the ZFS code to verify the claim, but the idea is clear. It’s said that the authenticated hash is eg. SHA512 and the plain hash is SHA256, split half/half in the bytes available for checksum. The way the hash is stored is a simple trim of the first 16 bytes of each checksum and store them consecutively. As both hashes are cryptographically strong, the first 16 bytes <em>should</em> provide enough strength despite the truncation. Where 16 bytes is 128 bits.</p>
+
+<p>When I was thinking about that, I had a different idea how to do that. Not that copying the scheme would not work for btrfs, anything that the linux kernel crypto API provides is usable, the same is achievable. I’m not judging the decisions what hashes to use or how to do the split, it works and I don’t see a problem in the strength. Where I see potential for an improvement is performance, without sacrificing strength <em>too much</em>. Trade-offs.</p>
+
+<p>The CPU or software implementation of SHA256 is comparably slower to checksums with hardware aids (like CRC32C instructions) or hashes designed to perform well on CPUs. That was the topic of the previous round of new hashes, so we now compete against BLAKE2b and XXHASH. There are CPUs with native instructions to calculate SHA256 and the performance improvement is noticeable, orders of magnitude better. But the support is not as widespread as eg. for CRC32C. Anyway, there’s always choice and hardware improves over time. The number of hashes may seem to explode but as long as it’s manageable inside the filesystem, we take it. And a coffee please.</p>
+
+<h2 id="secondary-hash">Secondary hash</h2>
+
+<p>The checksum scheme proposed is to use a cryptographic hash and a non-cryptographic one. Given the current support for SHA256 and BLAKE2b, the cryptographic hash is given. There are two of them and that’s fine. I’m not drawing an exact parallel with ZFS, the common point for the cryptographic hash is that there are limited options and the calculation is expensive by design. This is where the non-cryptographic hash can be debated. Also I want to call it <em>secondary</em> hash, with obvious meaning that it’s not too important by default and comes second when the authenticated hash is available.</p>
+
+<p>We have CRC32C and XXHASH to choose from. Note that there are already two hashes from the start so supporting both secondary hashes would double the number of final combinations. We’ve added XXHASH to enhance the checksum collision space from 32 bits to 64 bits. What I propose is to use just XXHASH as the secondary hash, resulting in two new hashes for the authenticated and secondary hash. I haven’t found a good reason to also include CRC32C.</p>
+
+<p>Another design point was where to do the split and truncation. As the XXHASH has fixed length, this could be defined as 192 bits for the cryptographic hash and 64 bits for full XXHASH.</p>
+
+<p>Here we are, we could have authenticated SHA256 accompanied by XXHASH, or the same with BLAKE2b. The checksum split also splits the decision tree what to do when the checksum partially matches. For a single checksum it’s a simple <em>yes/no</em> decision. The partial match is the interesting case:</p>
+
+<ul>
+  <li>primary (key available) hash matches, secondary does not – as the authenticated hash is hard to forge, it’s trusted (even if it’s not full length of the digest)</li>
+  <li>primary (key available) does not match, secondary does not – checksum mismatch for the same reason as above</li>
+  <li>primary (key not available) does not match, secondary does – this is the prime time for the secondary hash, the floor is yours</li>
+</ul>
+
+<p>This leads to 4 outcomes of the checksum verification, compared to 2. A boolean type can simply represent the yes/no outcome but for two hashes it’s not that easy. It depends on the context, though I think it still should be straightforward to decide what to do that in the code. Nevertheless, this has to be updated in all calls to checksum verification and has to reflect the key availability eg. in case where the data are auto-repaired during scrub or when there’s a copy.</p>
+
+<h2 id="performance-considerations">Performance considerations</h2>
+
+<p>The performance comparison should be now clear: we have the potentially slow SHA256 but fast XXHASH, for each metadata and data block, vs slow SHA512 and slow SHA256. As I reckon it’s possible to also select SHA256/SHA256 split in ZFS, but that can’t beat SHA256/XXHASH.</p>
+
+<p>The key availability seems to be the key point in all that, puns notwithstanding. The initial implementation assumed for simplicity to provide the raw key bytes to kernel and to the userspace utilities. This is maybe OK for a prototype but under any circumstances can’t survive until a final release. There’s key management wired deep into linux kernel, there’s a library for the whole API and command line tools. We ought to use that. Pass the key by name, not the raw bytes.</p>
+
+<p>Key management has it’s own culprits and surprises (key owned vs possessed), but let’s assume that there’s a standardized way how to obtain the key bytes from the key name. In kernel its “READ_USER_KEY_BYTES”, in userspace it’s either <em>keyctl_read</em> from <em>libkeyutils</em> or a raw syscall to <em>keyctl</em>. Problem solved, on the low-level. But, well, don’t try that over <em>ssh</em>.</p>
+
+<p>Accessing a btrfs image for various reasons (check, image, restore) now needs the key to verify data or even the key itself to perform modifications (check + repair). The command line interface has to be extended for all commands that interact with the filesystem offline, ie. the image and not the mounted filesystem.</p>
+
+<p>This results to a global option, like <code class="language-plaintext highlighter-rouge">btrfs --auth-key 1234 ispect-internal dump-tree</code>, compared to <code class="language-plaintext highlighter-rouge">btrfs inspect-internal dump-tree --auth-key 1234</code>. This is not finalized, but a global option is now the preferred choice.</p>
+
+<h2 id="final-words">Final words</h2>
+
+<p>I have a prototype, that does not work in all cases but at least passes <code class="language-plaintext highlighter-rouge">mkfs</code> and <code class="language-plaintext highlighter-rouge">mount</code>. The number of checksum verification cases got above what I was able to fix by the time of writing this. I think this has enough matter on itself so I’m pushing it out out as part 1. There are open questions regarding the command line interface and also a some kind of proof or discussion regarding attacks. Stay tuned.</p>
+
+<p>References:</p>
+
+<ul>
+  <li>[1] <a href="https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/">https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/</a></li>
+  <li>[2] <a href="https://lwn.net/Articles/819143/">https://lwn.net/Articles/819143/</a> LWN discussion under <a href="https://lwn.net/Articles/818842/">Authenticated Btrfs (2020)</a></li>
+</ul>
 
 </p>
 <hr>

@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -94,7 +96,7 @@ limited by the context and bits of information available at some point, but
 still there’s enough to get an additional value.</p>
 
 <p>The context here means a b-tree leaf that packs several items into a block (ie.
-the <code class="highlighter-rouge">nodesize</code>, 16KiB by default). The individual items’ members’ values can be
+the <code class="language-plaintext highlighter-rouge">nodesize</code>, 16KiB by default). The individual items’ members’ values can be
 verified against allowed values, the order of the keys of all items listed in
 the leaf header can be checked etc. This is just for a rough idea what happens.</p>
 
@@ -123,7 +125,7 @@ would be for a separate article entirely.</p>
 check that items have the right key type, device id is within allowed range
 and that usage and total sizes are within limits of the physical device</li>
   <li>inode item <em>(item for inodes, ie. files, directories or special files)</em>– the
-<code class="highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
+<code class="language-plaintext highlighter-rouge">objectid</code> (that would be the inode number) is in the range, generation is
 consistent with the global one and the basic sanity of mode, flags/attributes
 and link count</li>
   <li>block group profiles – check that only a single type is set in the bit mask
@@ -135,7 +137,7 @@ single/dup/raid1/…)</li>
 represents the tree block and the check is really local to that. As an inode
 item can represent more than just files and directories, doing structural
 checks like where and how the inode item is linked to is not easy in this
-context. This is basically what would <code class="highlighter-rouge">btrfs check</code> do.</p>
+context. This is basically what would <code class="language-plaintext highlighter-rouge">btrfs check</code> do.</p>
 
 <p>The checks need to be fast because they happen on each metadata block, so no
 additional IO is allowed. This still brings some overhead but is (considered)

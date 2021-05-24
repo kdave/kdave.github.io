@@ -38,6 +38,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -84,7 +86,7 @@
   <article class="post-content">
     <p>One thing you windows guys have is a decent binary diff. I know there’s radare2
 on linux, but I’m a noob to set it up and I’d be fine with something less
-fancy. Something like 2 <code class="highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="highlighter-rouge">vimdiff</code>.</p>
+fancy. Something like 2 <code class="language-plaintext highlighter-rouge">objdump -dr</code> files, intelligent filter and <code class="language-plaintext highlighter-rouge">vimdiff</code>.</p>
 
 <p>The tricky part is the intelligent filter. I say <em>intelligent</em>, but in fact it’s
 a 20 line perl script that basically filters out things that are not important
@@ -97,7 +99,7 @@ annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>Which takes eg.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
        0:       e8 00 00 00 00          callq  5 &lt;btrfs_set_lock_blocking_read+0x5&gt;
                         1: R_X86_64_PLT32       __fentry__-0x4
        5:       55                      push   %rbp
@@ -139,7 +141,7 @@ annotations (like READ_ONCE/WRITE_ONCE) or reducing argument counts.</p>
 
 <p>and produces</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000000000000000 &lt;btrfs_set_lock_blocking_read&gt;:
 callq  btrfs_set_lock_blocking_read
 TARGET __fentry__
 push   %rbp
@@ -177,28 +179,28 @@ pop    %rbp
 
 <p>So here’s the magic script (pardon my perl skills):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/perl</span>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/usr/bin/perl
 
-<span class="nv">@c</span><span class="o">=&lt;&gt;</span><span class="p">;</span>
-<span class="k">foreach</span><span class="p">(</span><span class="nv">@c</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nb">chomp</span><span class="p">;</span>
-        <span class="sr">s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/</span><span class="p">;</span>
-        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/R_X86_/</span><span class="p">);</span>
-        <span class="k">next</span> <span class="k">if</span><span class="p">(</span><span class="sr">/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/</span><span class="p">);</span>
-        <span class="sr">s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//</span><span class="p">;</span>
-        <span class="sr">s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/</span><span class="p">;</span>
-        <span class="sr">s/\s+#.*$//</span><span class="p">;</span>
-        <span class="sr">s/nopl.*/NOP/</span><span class="p">;</span>
-        <span class="sr">s/xchg.*ax.*ax/NOP/</span><span class="p">;</span>
-        <span class="sr">s/data16 nop/NOP/</span><span class="p">;</span>
-        <span class="sr">s/nop/NOP/</span><span class="p">;</span>
-        <span class="k">print</span><span class="p">("</span><span class="si">$_</span><span class="se">\n</span><span class="p">");</span>
-<span class="p">}</span>
+@c=&lt;&gt;;
+foreach(@c) {
+        chomp;
+        s/.*R_X86_64_PLT32\s+([^+-]+)[+-].*/TARGET $1/;
+        next if(/R_X86_/);
+        next if(/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+$/);
+        s/^\s*[0-9a-f]+:\s*([0-9a-f][0-9a-f]\s)+\s*//;
+        s/[0-9a-f]+ &lt;([^+]+)\+.*&gt;$/$1/;
+        s/\s+#.*$//;
+        s/nopl.*/NOP/;
+        s/xchg.*ax.*ax/NOP/;
+        s/data16 nop/NOP/;
+        s/nop/NOP/;
+        print("$_\n");
+}
 </code></pre></div></div>
 
 <p>Use like:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ objdump -dr before/locking.o &gt; before
 $ objdump -dr after/locking.o &gt; after
 $ vimdiff before after
 </code></pre></div></div>
