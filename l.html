@@ -40,6 +40,8 @@
 		
 		
 		
+		
+		
 		<a class="navlink" href="/l">[index-long.html]</a>
 		
 		
@@ -2760,6 +2762,114 @@ for the rest.</p>
   <li>[1] <a href="https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/">https://lore.kernel.org/linux-fsdevel/20200428105859.4719-1-jth@kernel.org/</a></li>
   <li>[2] <a href="https://lwn.net/Articles/819143/">https://lwn.net/Articles/819143/</a> LWN discussion under <a href="https://lwn.net/Articles/818842/">Authenticated Btrfs (2020)</a></li>
 </ul>
+
+</p>
+<hr>
+</li>
+
+<li>2022-01-12 - <a href="/cuda-unknown-error/">CUDA not initialized after resume (unknown error)</a> <tt>[tags: cuda, linux, nvidia, resume]</tt></li>
+<p>
+<p><code class="language-plaintext highlighter-rouge">tl;dr</code> <em>CUDA returning an <strong>unknown error</strong> upon initialization after resume on
+linux can be solved by reloading kernel module nvidia_uvm.</em></p>
+
+<p>There are some problems reported where with CUDA returns an unknown error upon
+initialization, while there’s no clear cause nor a clear way how to fix it.
+I’ve found
+<a href="https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/">https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/</a>
+listing various solutions from rebooting to tweaking environment variables.</p>
+
+<p>I’ve hit another problem that does not seem to be explicitly mentioned as the
+cause or it could have been misdiagnosed. After switching the built in Intel
+graphic card to be primary and NVIDIA card only for computations, it was not
+possible to run any application using CUDA. All it reported back were <em>unknown
+error</em>s.</p>
+
+<p>The Leela chess <code class="language-plaintext highlighter-rouge">lc0</code> reported CUDA version 0.0.0 with message like:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   $ ./lc0
+      _
+   |   _ | |
+   |_ |_ |_| v0.28.2 built Dec 13 2021
+   ucinewgame
+   Found pb network file: ./192x15-2021_1212_2050_25_709.pb.gz
+   Creating backend [cuda-auto]...
+   Switching to [cuda]...
+   CUDA Runtime version: 0.0.0
+   WARNING: CUDA Runtime version mismatch, was compiled with version 11.4.0
+   Latest version of CUDA supported by the driver: 11.4.0
+   error CUDA error: unknown error (../../src/neural/cuda/network_cuda.cc:134)
+</code></pre></div></div>
+
+<p>The line in source file is simply reporting errors:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   134     ReportCUDAErrors(cudaGetDeviceCount(&amp;total_gpus));
+</code></pre></div></div>
+
+<p>This is the first place where the errors are checked, a quick trivial CUDA
+program fails on the first memory allocation, with the same unkown error.</p>
+
+<p>I guess this stresses out the importance of error checking, namely when some
+piece of hardware is involved. Though this fails on the first attempt to use the
+API, there are possibly more cases during a long computation and many tasks using
+the GPU in parallel.</p>
+
+<p>A reboot fixed the problem, until the next suspend, which is impractical and
+setting up the work environment gets annoying. I have tried to look for some
+utility/command that is supposed to be run after resume. There’s a script called
+<code class="language-plaintext highlighter-rouge">nvidia-sleep.sh</code> that is the callback script for suspend and resume. Running
+that with parameter <code class="language-plaintext highlighter-rouge">suspend</code> manually while the system was up was not a good
+idea as it switched me out of the graphical desktop to some virtual terminal
+without any way to undo that. Also running that with <code class="language-plaintext highlighter-rouge">resume</code> did not help
+eiter (and does not even make sense after the first proper resume).</p>
+
+<p>There are no obvious signs that something could be wrong after resume, nothing
+in the logs and running games utilizing acceleration works (judging by FPS).
+One advice recommends to run <code class="language-plaintext highlighter-rouge">nvidia-modprobe</code>, in case some of the 4 modules is
+not loaded (nvidia_uvm, nvidia_drm, nvidia_modeset, nvidia). Besides the UVM
+module, all are unused.</p>
+
+<p>Right after resume the modules look like this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia_uvm           2531328  0
+ nvidia              35373056  90 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
+
+<p>That there’s 0 (usage by other modules) brought some suspicion, because
+according to <code class="language-plaintext highlighter-rouge">nvidia-smi</code>, there’s a least Xorg keeping a few megabytes of
+allocated memory (which may or may not be related though).</p>
+
+<p>I’ve reloaded the nvidia_uvm module, because it was the only thing possible to
+do with the modules:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # modprobe -r nvidia_uvm
+ # modprobe nvidia_uvm
+</code></pre></div></div>
+
+<p>And it started to work. Then quick check, lc0, works again. Now the module list is:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_uvm           2531328  2
+ nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia              35373056  204 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
+
+<p>While this is still a workaround, it’s much better than rebooting and a
+post-resume hook should be able to make it work automatically.</p>
+
+<p>The suspend script is in <code class="language-plaintext highlighter-rouge">/usr/lib/systemd/system-sleep/</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> #!/bin/sh
+ case "$1" in
+ post)
+	     sleep 4
+	     modprobe -r nvidia_uvm
+	     sleep 1
+	     modprobe nvidia_uvm
+     ;;
+ esac
+</code></pre></div></div>
 
 </p>
 <hr>

@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Mon, 24 May 2021 00:00:00 +0200</lastBuildDate>
+		<lastBuildDate>Wed, 12 Jan 2022 00:00:00 +0100</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -2729,6 +2729,116 @@ for the rest.&lt;/p&gt;
 				<pubDate>Mon, 24 May 2021 00:00:00 +0200</pubDate>
 				<link>https://kdave.github.io/authenticated-hashes-for-btrfs-part1/</link>
 				<guid isPermaLink="true">https://kdave.github.io/authenticated-hashes-for-btrfs-part1/</guid>
+			</item>
+		
+			<item>
+				<title>CUDA not initialized after resume (unknown error)</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;tl;dr&lt;/code&gt; &lt;em&gt;CUDA returning an &lt;strong&gt;unknown error&lt;/strong&gt; upon initialization after resume on
+linux can be solved by reloading kernel module nvidia_uvm.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;There are some problems reported where with CUDA returns an unknown error upon
+initialization, while there’s no clear cause nor a clear way how to fix it.
+I’ve found
+&lt;a href=&quot;https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/&quot;&gt;https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/&lt;/a&gt;
+listing various solutions from rebooting to tweaking environment variables.&lt;/p&gt;
+
+&lt;p&gt;I’ve hit another problem that does not seem to be explicitly mentioned as the
+cause or it could have been misdiagnosed. After switching the built in Intel
+graphic card to be primary and NVIDIA card only for computations, it was not
+possible to run any application using CUDA. All it reported back were &lt;em&gt;unknown
+error&lt;/em&gt;s.&lt;/p&gt;
+
+&lt;p&gt;The Leela chess &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lc0&lt;/code&gt; reported CUDA version 0.0.0 with message like:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;   $ ./lc0
+      _
+   |   _ | |
+   |_ |_ |_| v0.28.2 built Dec 13 2021
+   ucinewgame
+   Found pb network file: ./192x15-2021_1212_2050_25_709.pb.gz
+   Creating backend [cuda-auto]...
+   Switching to [cuda]...
+   CUDA Runtime version: 0.0.0
+   WARNING: CUDA Runtime version mismatch, was compiled with version 11.4.0
+   Latest version of CUDA supported by the driver: 11.4.0
+   error CUDA error: unknown error (../../src/neural/cuda/network_cuda.cc:134)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The line in source file is simply reporting errors:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;   134     ReportCUDAErrors(cudaGetDeviceCount(&amp;amp;total_gpus));
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This is the first place where the errors are checked, a quick trivial CUDA
+program fails on the first memory allocation, with the same unkown error.&lt;/p&gt;
+
+&lt;p&gt;I guess this stresses out the importance of error checking, namely when some
+piece of hardware is involved. Though this fails on the first attempt to use the
+API, there are possibly more cases during a long computation and many tasks using
+the GPU in parallel.&lt;/p&gt;
+
+&lt;p&gt;A reboot fixed the problem, until the next suspend, which is impractical and
+setting up the work environment gets annoying. I have tried to look for some
+utility/command that is supposed to be run after resume. There’s a script called
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nvidia-sleep.sh&lt;/code&gt; that is the callback script for suspend and resume. Running
+that with parameter &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;suspend&lt;/code&gt; manually while the system was up was not a good
+idea as it switched me out of the graphical desktop to some virtual terminal
+without any way to undo that. Also running that with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;resume&lt;/code&gt; did not help
+eiter (and does not even make sense after the first proper resume).&lt;/p&gt;
+
+&lt;p&gt;There are no obvious signs that something could be wrong after resume, nothing
+in the logs and running games utilizing acceleration works (judging by FPS).
+One advice recommends to run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nvidia-modprobe&lt;/code&gt;, in case some of the 4 modules is
+not loaded (nvidia_uvm, nvidia_drm, nvidia_modeset, nvidia). Besides the UVM
+module, all are unused.&lt;/p&gt;
+
+&lt;p&gt;Right after resume the modules look like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia_uvm           2531328  0
+ nvidia              35373056  90 nvidia_uvm,nvidia_modeset
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;That there’s 0 (usage by other modules) brought some suspicion, because
+according to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nvidia-smi&lt;/code&gt;, there’s a least Xorg keeping a few megabytes of
+allocated memory (which may or may not be related though).&lt;/p&gt;
+
+&lt;p&gt;I’ve reloaded the nvidia_uvm module, because it was the only thing possible to
+do with the modules:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; # modprobe -r nvidia_uvm
+ # modprobe nvidia_uvm
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And it started to work. Then quick check, lc0, works again. Now the module list is:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; nvidia_uvm           2531328  2
+ nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia              35373056  204 nvidia_uvm,nvidia_modeset
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;While this is still a workaround, it’s much better than rebooting and a
+post-resume hook should be able to make it work automatically.&lt;/p&gt;
+
+&lt;p&gt;The suspend script is in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/lib/systemd/system-sleep/&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; #!/bin/sh
+ case &quot;$1&quot; in
+ post)
+	     sleep 4
+	     modprobe -r nvidia_uvm
+	     sleep 1
+	     modprobe nvidia_uvm
+     ;;
+ esac
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+				<pubDate>Wed, 12 Jan 2022 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/cuda-unknown-error/</link>
+				<guid isPermaLink="true">https://kdave.github.io/cuda-unknown-error/</guid>
 			</item>
 		
 	</channel>

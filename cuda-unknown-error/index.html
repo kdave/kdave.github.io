@@ -3,12 +3,12 @@
   <head>
   <meta charset="utf-8">
 
-  <title>Btrfs hilights in 5.5: new hashes</title>
+  <title>CUDA not initialized after resume (unknown error)</title>
   <meta name="description" content="aligned words
 ">
 
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="canonical" href="https://kdave.github.io/btrfs-hilights-5.5-new-hashes/">
+  <link rel="canonical" href="https://kdave.github.io/cuda-unknown-error/">
   <link rel="alternate" type="application/rss+xml" title="(void)0;" href="https://kdave.github.io/rss-all.xml" />
   <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
@@ -77,165 +77,116 @@
       <div class="wrapper">
         <div class="post">
   <header class="post-header">
-    <h1 class="post-title">Btrfs hilights in 5.5: new hashes</h1>
+    <h1 class="post-title">CUDA not initialized after resume (unknown error)</h1>
     [
-     DRAFT || 
-    date: <i>2020-02-10</i>
+    
+    date: <i>2022-01-12</i>
     ||
-    tags: <i>btrfs,kernel,blake2,xxhash,sha256</i>
+    tags: <i>cuda,nvidia,resume,linux</i>
     ]
   </header>
   <article class="post-content">
-    <p>A bit more detailed overview of a btrfs update that I find interesting, see the
-<a href="https://git.kernel.org/linus/97d0bf96a0d0986f466c3ff59f2ace801e33dc69">pull request</a>
-for the rest.</p>
+    <p><code class="language-plaintext highlighter-rouge">tl;dr</code> <em>CUDA returning an <strong>unknown error</strong> upon initialization after resume on
+linux can be solved by reloading kernel module nvidia_uvm.</em></p>
 
-<h2 id="more-checksum-algorithms">More checksum algorithms</h2>
+<p>There are some problems reported where with CUDA returns an unknown error upon
+initialization, while there’s no clear cause nor a clear way how to fix it.
+I’ve found
+<a href="https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/">https://victorwyee.com/engineering/failed-call-to-cuinit-cuda-error-unknown/</a>
+listing various solutions from rebooting to tweaking environment variables.</p>
 
-<p>The first request for more checksums is several years old (2014), <a href="https://lore.kernel.org/linux-btrfs/1416806586-18050-1-git-send-email-bo.li.liu@oracle.com">it was
-SHA256</a>.
-There was no followup of the patch but the discussion in the mail thread
-brought the topic into light. Questions about why SHA256 and why not something
-else (welcome to the zoo: SpookyHash, BLAKE2, CityHash, MurmurHash3, CRC64),
-preferences, use cases etc. Browsing the mail thread again, I don’t see anybody
-suggest SHA1 or MD5.  There were some open questions and suggestions and though
-it’s an old discussion, most of the points were valid at the time of pre-5.5
-evaluation and served as a checklist.  This is what I really like about the
-community projects and btrfs users in particular.  Getting useful feedback on
-topics out of scope of the filesystem itself.</p>
+<p>I’ve hit another problem that does not seem to be explicitly mentioned as the
+cause or it could have been misdiagnosed. After switching the built in Intel
+graphic card to be primary and NVIDIA card only for computations, it was not
+possible to run any application using CUDA. All it reported back were <em>unknown
+error</em>s.</p>
 
-<p>Fast forward to now, there are 3 new hashes:</p>
+<p>The Leela chess <code class="language-plaintext highlighter-rouge">lc0</code> reported CUDA version 0.0.0 with message like:</p>
 
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: left">Name</th>
-      <th style="text-align: right">Digest size</th>
-      <th style="text-align: left">Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left">CRC32C</td>
-      <td style="text-align: right">32bit</td>
-      <td style="text-align: left">fast, weak, default, CPU support, backward compatible</td>
-    </tr>
-    <tr>
-      <td style="text-align: left">XXHASH</td>
-      <td style="text-align: right">64bit</td>
-      <td style="text-align: left">fast, weak, good on modern CPUs</td>
-    </tr>
-    <tr>
-      <td style="text-align: left">SHA256</td>
-      <td style="text-align: right">256bit</td>
-      <td style="text-align: left">slow, strong, FIPS certified, CPU support</td>
-    </tr>
-    <tr>
-      <td style="text-align: left">BLAKE2B</td>
-      <td style="text-align: right">256bit</td>
-      <td style="text-align: left">slow, strong, good on 64bit architectures</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>You can find more about the <a href="https://kdave.github.io/selecting-hash-for-btrfs/">selection process</a>
-in another post.</p>
-
-<h2 id="quick-start">Quick start</h2>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkfs.btrfs --csum xxhash /dev/sda
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   $ ./lc0
+      _
+   |   _ | |
+   |_ |_ |_| v0.28.2 built Dec 13 2021
+   ucinewgame
+   Found pb network file: ./192x15-2021_1212_2050_25_709.pb.gz
+   Creating backend [cuda-auto]...
+   Switching to [cuda]...
+   CUDA Runtime version: 0.0.0
+   WARNING: CUDA Runtime version mismatch, was compiled with version 11.4.0
+   Latest version of CUDA supported by the driver: 11.4.0
+   error CUDA error: unknown error (../../src/neural/cuda/network_cuda.cc:134)
 </code></pre></div></div>
 
-<p>And the output:</p>
+<p>The line in source file is simply reporting errors:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>btrfs-progs v5.4.1
-See http://btrfs.wiki.kernel.org for more information.
-
-Label:              (null)
-UUID:               9774b466-fa5d-4c2e-8b4f-479d0bb5873d
-Node size:          16384
-Sector size:        4096
-Filesystem size:    10.00GiB
-Block group profiles:
-  Data:             single            8.00MiB
-  Metadata:         DUP             256.00MiB
-  System:           DUP               8.00MiB
-SSD detected:       no
-Incompat features:  extref, skinny-metadata
-Checksum:           xxhash64
-Number of devices:  1
-Devices:
-   ID        SIZE  PATH
-    1    10.00GiB  /dev/sda
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   134     ReportCUDAErrors(cudaGetDeviceCount(&amp;total_gpus));
 </code></pre></div></div>
 
-<p>For convenience, the hash names can be specified by aliases so both <em>xxhash</em>
-and <em>xxhash64</em> are accepted on command line, similarly for <em>blake2</em> it’s
-<em>blake2b</em>. This is based on a usability pattern, where humans don’t have to
-remember the exact specification and copy &amp; paste from the output works as
-well.</p>
+<p>This is the first place where the errors are checked, a quick trivial CUDA
+program fails on the first memory allocation, with the same unkown error.</p>
 
-<h3 id="use-cases-and-outlook">Use cases and outlook</h3>
+<p>I guess this stresses out the importance of error checking, namely when some
+piece of hardware is involved. Though this fails on the first attempt to use the
+API, there are possibly more cases during a long computation and many tasks using
+the GPU in parallel.</p>
 
-<p>For ordinary checksumming, all the hashes are considered good enough. CRC32C is
-the weakest but it’s been with us since the beginning and has caught many
-random bit flips.</p>
+<p>A reboot fixed the problem, until the next suspend, which is impractical and
+setting up the work environment gets annoying. I have tried to look for some
+utility/command that is supposed to be run after resume. There’s a script called
+<code class="language-plaintext highlighter-rouge">nvidia-sleep.sh</code> that is the callback script for suspend and resume. Running
+that with parameter <code class="language-plaintext highlighter-rouge">suspend</code> manually while the system was up was not a good
+idea as it switched me out of the graphical desktop to some virtual terminal
+without any way to undo that. Also running that with <code class="language-plaintext highlighter-rouge">resume</code> did not help
+eiter (and does not even make sense after the first proper resume).</p>
 
-<p>XXHASH is supposed to add to the strength with a good performance. Increased
-digest size reduces collisions, but can’t compete with the crypto-strong
-hashes. That can still be of great help for deduplication.</p>
+<p>There are no obvious signs that something could be wrong after resume, nothing
+in the logs and running games utilizing acceleration works (judging by FPS).
+One advice recommends to run <code class="language-plaintext highlighter-rouge">nvidia-modprobe</code>, in case some of the 4 modules is
+not loaded (nvidia_uvm, nvidia_drm, nvidia_modeset, nvidia). Besides the UVM
+module, all are unused.</p>
 
-<p>From my perspective, the number of hashes should stay limited as the support is
-needed not just in kernel but for other tooling. For <em>btrfs-progs</em> it’s
-mandatory to support them, but also bootloaders (*cough*in case they verify
-checksums*cough*). The kernel support requires the hash implementations and
-the modules become a dependency of <em>btrfs.ko</em>.  This can increase overall size
-and build time.</p>
+<p>Right after resume the modules look like this:</p>
 
-<p>One of the suggestions was to allow users to choose the hash out of all what
-linux crypto API offers, not just the fixed set of hashes selected by
-developers. I understand that from the point of view of users who can make the
-decisions about trade-offs for their use case this is better, but I argue that
-such users are not in majority. Satisfying the common case was the preferred
-option, hopefully providing good options also for the knowledgeable users.
-Providing and maintaining implementations of seven and one hashes would be
-a burden for several projects.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia_uvm           2531328  0
+ nvidia              35373056  90 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
 
-<p>Yes, I’m aware of <a href="https://github.com/BLAKE3-team/BLAKE3">BLAKE3</a>, but let’s
-<a href="https://kdave.github.io/blake3-vs-blake2-in-btrfs">wait before adding new hashes</a>. By
-the time we do another round there might be more contenders or improved
-versions.  There’s <a href="https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html">XXH3</a>
-from the author of XXHASH, producing 128bit digest and is slightly faster.
-However it is still not recommended for production use due to fine tuning and
-finalization.</p>
+<p>That there’s 0 (usage by other modules) brought some suspicion, because
+according to <code class="language-plaintext highlighter-rouge">nvidia-smi</code>, there’s a least Xorg keeping a few megabytes of
+allocated memory (which may or may not be related though).</p>
 
-<p>The cryptographic hashes can be a building block for a keyed hash, ie.
-checksums that can’t be subverted. There’s a
-<a href="https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@suse.de/">patch implementing that</a>,
-currently in an RFC state. While the code is straightforward, adding a new
-interface could use a feedback round. Please contact us in case you have
-comments.</p>
+<p>I’ve reloaded the nvidia_uvm module, because it was the only thing possible to
+do with the modules:</p>
 
-<p>Last but not least, strong hashes are a building block for deduplication. At
-the moment btrfs supports only the out-of-band way, on demand by calling
-an ioctl.  There are tools utilizing that, eg. <a href="https://github.com/Zygo/bees">BEES</a>
-or <a href="https://github.com/markfasheh/duperemove">duperemove</a>,
-calculating the block checksums by themselves. Exporting the raw checksums
-would help to decrease CPU time and also external tracking of the checksums.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # modprobe -r nvidia_uvm
+ # modprobe nvidia_uvm
+</code></pre></div></div>
 
-<h3 id="implementation-notes">Implementation notes</h3>
+<p>And it started to work. Then quick check, lc0, works again. Now the module list is:</p>
 
-<p>With the single checksum CRC32C, lots of code had hard coded size (4 bytes/32
-bits) or functions and identifiers contained ‘crc32c’. This could not remain
-once there are more hashes to be added, so a round of cleanups happened in
-advance in 5.4.  I’d call it great preparatory work that paid off, because
-adding new hashes was a matter of inserting new definition entries to a table.
-The rest was behind abstraction of btrfs functions that call to the linux
-crypto API.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> nvidia_uvm           2531328  2
+ nvidia_drm             69632  2
+ nvidia_modeset       1204224  3 nvidia_drm
+ nvidia              35373056  204 nvidia_uvm,nvidia_modeset
+</code></pre></div></div>
 
-<p>In parallel to the btrfs patches, the <em>BLAKE2B</em> linux implementation was merged,
-while <em>XXHASH</em> was merged in 5.3 and SHA256 was there forever.
-All in all, everything was ready in the same target release.</p>
+<p>While this is still a workaround, it’s much better than rebooting and a
+post-resume hook should be able to make it work automatically.</p>
+
+<p>The suspend script is in <code class="language-plaintext highlighter-rouge">/usr/lib/systemd/system-sleep/</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> #!/bin/sh
+ case "$1" in
+ post)
+	     sleep 4
+	     modprobe -r nvidia_uvm
+	     sleep 1
+	     modprobe nvidia_uvm
+     ;;
+ esac
+</code></pre></div></div>
 
   </article>
 </div>
