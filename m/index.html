@@ -3,12 +3,12 @@
   <head>
   <meta charset="utf-8">
 
-  <title>qemu 2.12 does not support if=scsi</title>
+  <title>more</title>
   <meta name="description" content="aligned words
 ">
 
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="canonical" href="https://kdave.github.io/qemu-2.11-if=scsi/">
+  <link rel="canonical" href="https://kdave.github.io/m/">
   <link rel="alternate" type="application/rss+xml" title="(void)0;" href="https://kdave.github.io/rss-all.xml" />
   <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
@@ -81,57 +81,24 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="post">
-  <header class="post-header">
-    <h1 class="post-title">qemu 2.12 does not support if=scsi</h1>
-    [
-    
-    date: <i>2018-06-08</i>
-    ||
-    tags: <i>qemu</i>
-    ]
-  </header>
-  <article class="post-content">
-    <p>After update of qemu to version 2.12, my testing vms stopped to just warn
-about the <code class="language-plaintext highlighter-rouge">if=scsi</code> (with a bit more cryptic message), and did not want to
-start.</p>
+        
+<h1>more</h1>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
-</code></pre></div></div>
 
-<p>The <code class="language-plaintext highlighter-rouge">if=scsi</code> shortcut was handy, the maze of qemu command line options may
-take some time to comprehend but then you can do wonders.</p>
+<p>More sources worth reading in no particular order:</p>
 
-<p>The <a href="https://wiki.qemu.org/ChangeLog/2.12#Deprecated_options_and_features">release notes of version 2.12</a> do
-mention that the support is gone and that other options should be used instead,
-also mentions which ones. But it does not tell how exactly. As this should be a
-simple syntax transformation from one option to another, an example would save
-a lot of time.</p>
+<ul>
+  <li><a href="https://gustedt.wordpress.com">https://gustedt.wordpress.com</a></li>
+  <li><a href="https://danluu.com">https://danluu.com</a></li>
+  <li><a href="https://rwmj.wordpress.com">https://rwmj.wordpress.com</a></li>
+  <li><a href="https://blog.trailofbits.com">https://blog.trailofbits.com</a></li>
+  <li><a href="https://lcamtuf.substack.com">https://lcamtuf.substack.com</a></li>
+  <li><a href="https://people.kernel.org">https://people.kernel.org</a></li>
+  <li><a href="https://outflux.net/blog">https://outflux.net/blog</a></li>
+  <li><a href="https://www.devever.net/~hl">https://www.devever.net/~hl</a></li>
+  <li><a href="https://utcc.utoronto.ca/~cks/space/blog">https://utcc.utoronto.ca/~cks/space/blog</a></li>
+</ul>
 
-<p>I was not able to find any ready-to-use example in a few minutes so had to
-experiment a bit (this saved me documentation reading time).</p>
-
-<p>The setup I use is a file-backed root image for a virtual machine, nothing
-really fancy. The file name is <code class="language-plaintext highlighter-rouge">root</code>, sparse file, raw ie. no qcow2, no
-caching.</p>
-
-<p>Here you are:</p>
-
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-device virtio-scsi-pci,id=scsi
--drive file=root,id=root-img,if=none,format=raw,cache=none
--device scsi-hd,drive=root-img
-</code></pre></div></div>
-
-<p>First you need to define the bus, otherwise the 3rd line will complain that
-there’s no SCSI. Second line is to define the file backed drive and the third
-one puts that together.</p>
-
-<p>Using SCSI might not be the best idea for a qemu VM as the emulated driver is
-buggy and crashes, so I’d recommend to use virtio, but for a almost read-only
-root image it’s fine. Also the device names are predictable.</p>
-
-  </article>
-</div>
 
       </div>
     </div>

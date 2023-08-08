@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Wed, 12 Jan 2022 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Wed, 09 Aug 2023 00:00:00 +0200</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -76,7 +76,7 @@ has the freedom to create snapshots anywhere&lt;/li&gt;
   &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs subvolume delete&lt;/code&gt; – delete a subvolume/snapshot by path&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;&lt;strong&gt;Update {{ page.update1 }}&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update 2017-09-05&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;Again. There were 2 stale snapper snapshots, age of like 8 months until
 discovered. The space got up by 12GiB after deletion. The root partition is
@@ -2480,7 +2480,7 @@ topics out of scope of the filesystem itself.&lt;/p&gt;
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;You can find more about the &lt;a href=&quot;{{ site.url }}/selecting-hash-for-btrfs/&quot;&gt;selection process&lt;/a&gt;
+&lt;p&gt;You can find more about the &lt;a href=&quot;https://kdave.github.io/selecting-hash-for-btrfs/&quot;&gt;selection process&lt;/a&gt;
 in another post.&lt;/p&gt;
 
 &lt;h2 id=&quot;quick-start&quot;&gt;Quick start&lt;/h2&gt;
@@ -2544,7 +2544,7 @@ Providing and maintaining implementations of seven and one hashes would be
 a burden for several projects.&lt;/p&gt;
 
 &lt;p&gt;Yes, I’m aware of &lt;a href=&quot;https://github.com/BLAKE3-team/BLAKE3&quot;&gt;BLAKE3&lt;/a&gt;, but let’s
-&lt;a href=&quot;{{ site.url }}/blake3-vs-blake2-in-btrfs&quot;&gt;wait before adding new hashes&lt;/a&gt;. By
+&lt;a href=&quot;https://kdave.github.io/blake3-vs-blake2-in-btrfs&quot;&gt;wait before adding new hashes&lt;/a&gt;. By
 the time we do another round there might be more contenders or improved
 versions.  There’s &lt;a href=&quot;https://fastcompression.blogspot.com/2019/03/presenting-xxh3.html&quot;&gt;XXH3&lt;/a&gt;
 from the author of XXHASH, producing 128bit digest and is slightly faster.
@@ -2839,6 +2839,163 @@ post-resume hook should be able to make it work automatically.&lt;/p&gt;
 				<pubDate>Wed, 12 Jan 2022 00:00:00 +0100</pubDate>
 				<link>https://kdave.github.io/cuda-unknown-error/</link>
 				<guid isPermaLink="true">https://kdave.github.io/cuda-unknown-error/</guid>
+			</item>
+		
+			<item>
+				<title>JSON format dumper (a C API)</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;We’ve had users asking for a machine readable output of btrfs-progs commands,
+suggesting to add an alternative way to dump the data in a structured format
+e.g.  json. And nowadays this is very common in many if not all commands
+provided by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;util-linux&lt;/code&gt;. Try &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lscpu --json&lt;/code&gt;, or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lsblk --json&lt;/code&gt;. Feeding such
+output to python or a shell-friendly json parser is going to make life easier.
+So that’s the background motivation.&lt;/p&gt;
+
+&lt;p&gt;Adding that to btrfs-progs is a task for long winter evenings, but the first
+step has been made. I wrote yet another json dumper. Of course this was
+preceded by a research about the state of existing libraries or files to copy.
+But why not have some fun writing one nevertheless.&lt;/p&gt;
+
+&lt;p&gt;The requirements:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;produce valid json (validators exist)&lt;/li&gt;
+  &lt;li&gt;allow nesting of compound structures&lt;/li&gt;
+  &lt;li&gt;hashes (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;{key=value}&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;arrays (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;[value, value, value]&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;simple values (integer, string, uuid, time, …)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The nesting was one of things I did not find in the existing libraries, or not
+implemented properly. The output must be a valid json and the single most
+difficult thing was the placement of continuation comma “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;,&lt;/code&gt;”. There must be none
+after the last object in the sequence. When the dump is done incrementally, the
+next object is often not known while printing the current one. So the comma
+cannot be printed after unconditionally and previous state needs to be stored
+until the last object is dumped.&lt;/p&gt;
+
+&lt;p&gt;But, it’s not sufficient to keep track of the last object only, simply nest
+some hashes and arrays. Like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; 1: {
+ 2:    &quot;first&quot; : {
+ 3:       &quot;nested&quot; : {
+ 4:          &quot;key&quot; : [
+ 5:             &quot;value&quot;,
+ 6:             &quot;value2&quot;
+ 7:          ]
+ 8:       }
+ 9:    },
+10:    &quot;last&quot; : null
+11: }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Last objects in sequences are on lines 6, 7, 8 and 10, so this needs a stack
+for tracking that. The main building blocks for correct syntax:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;track depth of structured types&lt;/li&gt;
+  &lt;li&gt;print delayed “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;,&lt;/code&gt;” when there’s next object in sequence&lt;/li&gt;
+  &lt;li&gt;quoting or escaping&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The rest is for readable output, indentation is simply derived from the nesting
+level.&lt;/p&gt;
+
+&lt;p&gt;The code representation of the json object should be straightforward, basically
+translating the objects into API calls, for compound object there’s the start
+and end element. Element nesting must be proper. On the lower level, there
+should be some nice specification of the key/value formatting.&lt;/p&gt;
+
+&lt;p&gt;I’ve ended up with a static declaration of the value formatting specifiers in a
+list, the actual structure of the json objects will be defined by API calls
+referring back to the spec structure.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;struct rowspec {
+    const char *key;
+    const char *fmt;
+    const char *out_text;
+    const char *out_json;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;key&lt;/code&gt; refers to the key (name), the rest of the structure is relevant for
+the value formatting. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;out_text&lt;/code&gt; can be ignored for now, it’s a
+generalization of the output formatting so the same code is used for plain text
+and json output, the switch is done from the outside (e.g. by a command line
+option).&lt;/p&gt;
+
+&lt;p&gt;Basic value types are a string and number. For the purposes of btrfs-progs
+there are more and so far built in the formatter, but it’s extensible (on the
+source-level, not dynamically). Additional custom types are UUID, qgroupid (a
+u64 split into u16 and 48 bits), size (human friendly formatting of byte suffix
+values), and time. Another example of customization is that there are actually
+two byte size formatters, one that prints “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-&lt;/code&gt;” instead of zero value.&lt;/p&gt;
+
+&lt;p&gt;The structural API is simple:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;start/end the whole json document &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_start&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_end&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;start/end optionally named group,
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_print_start_group&lt;/code&gt;/&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_print_end_group&lt;/code&gt;, when the name is defined it
+means it’s a map/hash &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&quot;key&quot;: &quot;value&quot;&lt;/code&gt;, or a plain array made of “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;[ value,
+... ]&lt;/code&gt;”&lt;/li&gt;
+  &lt;li&gt;for list values there’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_start_value&lt;/code&gt;/&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_end_value&lt;/code&gt; so there can be not
+just a simple value but also a compound one&lt;/li&gt;
+  &lt;li&gt;and remaining is a simple value &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_start_value&lt;/code&gt;/&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmt_end_value&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Most of them take a reference to the rowspec, this is convenient that at the
+time we’d like to print the value we summon it by its name, the rest is in the
+table. All the API calls take a context structure that stores the nesting level
+(for indentation and sanity checks) and some internal data.&lt;/p&gt;
+
+&lt;p&gt;Now the above example would not be a good one to demonstrate the API but let’s
+try:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;static const struct rowspec rows[] = {
+    { .key = &quot;first&quot;, .fmt = &quot;map&quot;, .out_json = &quot;first&quot; },
+    { .key = &quot;nested&quot;, .fmt = &quot;map&quot;, .out_json = &quot;nested&quot; },
+    { .key = &quot;key&quot;, .fmt = &quot;list&quot;, .out_json = &quot;key&quot; },
+    { .key = &quot;value&quot;, .fmt = &quot;str&quot;, .out_json = NULL },
+};
+struct format_ctx ctx;
+
+fmt_start(&amp;amp;ctx, rows, 64, 0);
+  fmt_print_start_group(&amp;amp;ctx, &quot;first&quot;, JSON_TYPE_MAP);
+    fmt_print_start_group(&amp;amp;ctx, &quot;nested&quot;, JSON_TYPE_MAP);
+      fmt_print_start_group(&amp;amp;ctx, &quot;key&quot;, JSON_TYPE_ARRAY);
+        fmt_print(&amp;amp;ctx, &quot;value&quot;, &quot;value&quot;);
+        fmt_print(&amp;amp;ctx, &quot;value&quot;, &quot;value2&quot;);
+      fmt_print_end_group(&amp;amp;ctx, NULL);
+    fmt_print_end_group(&amp;amp;ctx, NULL);
+  fmt_print_end_group(&amp;amp;ctx, NULL);
+  fmt_print_start_group(&amp;amp;ctx, &quot;last&quot;, JSON_TYPE_MAP);
+  fmt_print_end_group(&amp;amp;ctx, NULL);
+fmt_end(&amp;amp;ctx);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;That should demonstrate it. There might be some slight tweaks needed as I took
+it from a specialized use but would like to present it as a generic API. So far
+it’s not generic, it might become one. With sources available it’s available for
+further reuse, I don’t plan to make it a standalone library but if there’s
+interest the, well, why not.&lt;/p&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;p&gt;Source links point to the most recent release so there might be an update since
+the time I write this but I’m not expecting significant changes.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/kdave/btrfs-progs/blob/master/common/format-output.h&quot;&gt;https://github.com/kdave/btrfs-progs/blob/master/common/format-output.h&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/kdave/btrfs-progs/blob/master/common/format-output.c&quot;&gt;https://github.com/kdave/btrfs-progs/blob/master/common/format-output.c&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/kdave/btrfs-progs/blob/master/tests/json-formatter-test.c&quot;&gt;https://github.com/kdave/btrfs-progs/blob/master/tests/json-formatter-test.c&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/wireshark/wireshark/blob/master/wsutil/json_dumper.c&quot;&gt;https://github.com/wireshark/wireshark/blob/master/wsutil/json_dumper.c&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+				<pubDate>Wed, 09 Aug 2023 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/json-dumper/</link>
+				<guid isPermaLink="true">https://kdave.github.io/json-dumper/</guid>
 			</item>
 		
 	</channel>

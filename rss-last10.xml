@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-last10.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Wed, 12 Jan 2022 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Wed, 09 Aug 2023 00:00:00 +0200</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -76,7 +76,7 @@ has the freedom to create snapshots anywhere&lt;/li&gt;
   &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs subvolume delete&lt;/code&gt; – delete a subvolume/snapshot by path&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;&lt;strong&gt;Update {{ page.update1 }}&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update 2017-09-05&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;Again. There were 2 stale snapper snapshots, age of like 8 months until
 discovered. The space got up by 12GiB after deletion. The root partition is
