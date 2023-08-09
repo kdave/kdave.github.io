@@ -5,7 +5,7 @@ all: build
 aio: build commit push sync commitsync pushsync
 
 build:
-	jekyll b
+	jekyll build
 
 commit:
 	git add .

@@ -121,7 +121,7 @@ static const struct rowspec rows[] = {
 };
 struct format_ctx ctx;
 
-fmt_start(&ctx, rows, 64, 0);
+fmt_start(&ctx, rows, 0, 0);
   fmt_print_start_group(&ctx, "first", JSON_TYPE_MAP);
     fmt_print_start_group(&ctx, "nested", JSON_TYPE_MAP);
       fmt_print_start_group(&ctx, "key", JSON_TYPE_ARRAY);
@@ -140,6 +140,33 @@ it from a specialized use but would like to present it as a generic API. So far
 it's not generic, it might become one. With sources available it's available for
 further reuse, I don't plan to make it a standalone library but if there's
 interest the, well, why not.
+
+# Examples
+
+The simple values can be formatted in multiple ways, e.g. size values with
+suffixes or raw numbers, though it's defined as multiple keys:
+
+```
+    { .key = "size", .fmt = "%llu", .out_json = "size" },
+    { .key = "size-si", .fmt = "size", .out_json = "size" },
+    { .key = "size-si-not-zero", .fmt = "size-or-none", .out_json = "size" },
+```
+
+Raw formats starting with "`%`" are passed to printf, this lets it do all the
+heavy work. The special formatters may need additional parameters, in this case
+it's the pretty printer mode for size.
+
+```
+    if (mode == RAW)
+        fmt_print(&ctx, "size", value);
+    else if (mode == SI)
+        fmt_print(&ctx, "size-si", value, mode);
+    else if (mode == SI_NO_ZERO)
+        fmt_print(&ctx, "size-si-not-zero", value, mode);
+```
+
+Here the `size-or-none` format prints "`-`" instead of `0`. As can be seen here,
+not all the row specifiers need to be used at once.
 
 # References
 
