@@ -2961,7 +2961,7 @@ try:&lt;/p&gt;
 };
 struct format_ctx ctx;
 
-fmt_start(&amp;amp;ctx, rows, 64, 0);
+fmt_start(&amp;amp;ctx, rows, 0, 0);
   fmt_print_start_group(&amp;amp;ctx, &quot;first&quot;, JSON_TYPE_MAP);
     fmt_print_start_group(&amp;amp;ctx, &quot;nested&quot;, JSON_TYPE_MAP);
       fmt_print_start_group(&amp;amp;ctx, &quot;key&quot;, JSON_TYPE_ARRAY);
@@ -2980,6 +2980,31 @@ it from a specialized use but would like to present it as a generic API. So far
 it’s not generic, it might become one. With sources available it’s available for
 further reuse, I don’t plan to make it a standalone library but if there’s
 interest the, well, why not.&lt;/p&gt;
+
+&lt;h1 id=&quot;examples&quot;&gt;Examples&lt;/h1&gt;
+
+&lt;p&gt;The simple values can be formatted in multiple ways, e.g. size values with
+suffixes or raw numbers, though it’s defined as multiple keys:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    { .key = &quot;size&quot;, .fmt = &quot;%llu&quot;, .out_json = &quot;size&quot; },
+    { .key = &quot;size-si&quot;, .fmt = &quot;size&quot;, .out_json = &quot;size&quot; },
+    { .key = &quot;size-si-not-zero&quot;, .fmt = &quot;size-or-none&quot;, .out_json = &quot;size&quot; },
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Raw formats starting with “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%&lt;/code&gt;” are passed to printf, this lets it do all the
+heavy work. The special formatters may need additional parameters, in this case
+it’s the pretty printer mode for size.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    if (mode == RAW)
+        fmt_print(&amp;amp;ctx, &quot;size&quot;, value);
+    else if (mode == SI)
+        fmt_print(&amp;amp;ctx, &quot;size-si&quot;, value, mode);
+    else if (mode == SI_NO_ZERO)
+        fmt_print(&amp;amp;ctx, &quot;size-si-not-zero&quot;, value, mode);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Here the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;size-or-none&lt;/code&gt; format prints “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-&lt;/code&gt;” instead of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt;. As can be seen here,
+not all the row specifiers need to be used at once.&lt;/p&gt;
 
 &lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
 
