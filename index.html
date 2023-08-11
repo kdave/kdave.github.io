@@ -4,21 +4,27 @@ title: index.html
 permalink: /
 ---
 
-<!--
 <p>
 <ul>
-{% for post in site.posts %}
-<li>{{ post.date | date: "%Y-%m-%d" }} - <a href="{{ site.base_path}}{{ post.url }}">{{ post.title }}</a></li>
-{% endfor %}
-</ul>
-</p>
--->
+{% if site.host == "127.0.0.1" %}
+{% assign local = true %}
+{% endif %}
 
-<p>
-<ul>
+{% assign today = site.time | date: "%s" | plus: 0 %}
+{% assign last = today %}
+
 {% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' | reverse %}
 {% for page in sortedPages %}
-<li>{{ page.date | date: "%Y-%m-%d" }} - <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a></li>
+<li>
+  {% assign pagets = page.date | date: "%s" | plus: 0 %}
+  {% if pagets < today and today < last %} <hr/> {% endif %}
+  {% if today < pagets or local %}
+    {{ page.date | date: "%Y-%m-%d" }} -
+    {% if page.status == "draft" %} <sup>*</sup> {% endif %}
+    <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a>
+  {% endif %}
+  {% assign last = pagets %}
+</li>
 {% endfor %}
 </ul>
 </p>

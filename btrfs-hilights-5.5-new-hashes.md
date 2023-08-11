@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ btrfs, kernel, blake2, xxhash, sha256 ]
 date: 2020-02-10
-status: draft
+status: finished
 title: "Btrfs hilights in 5.5: new hashes"
 ---
 

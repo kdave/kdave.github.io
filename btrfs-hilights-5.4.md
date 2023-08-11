@@ -4,7 +4,7 @@ category: b
 tags: [ btrfs, kernel ]
 feed: pko
 date: 2020-02-15
-status: draft
+status: finished
 title: "Btrfs hilights in 5.4: tree checker updates"
 ---
 
