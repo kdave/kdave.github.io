@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ json, c ]
 date: 2023-08-09
-status: draft
+status: finished
 title: JSON format dumper (a C API)
 ---
 
@@ -27,12 +27,12 @@ The requirements:
 * arrays (`[value, value, value]`)
 * simple values (integer, string, uuid, time, ...)
 
-The nesting was one of things I did not find in the existing libraries, or not
+The nesting was one of the things I have not found in the existing libraries, or not
 implemented properly. The output must be a valid json and the single most
 difficult thing was the placement of continuation comma "`,`". There must be none
 after the last object in the sequence. When the dump is done incrementally, the
 next object is often not known while printing the current one. So the comma
-cannot be printed after unconditionally and previous state needs to be stored
+cannot be printed unconditionally and previous state needs to be stored
 until the last object is dumped.
 
 But, it's not sufficient to keep track of the last object only, simply nest
@@ -88,8 +88,8 @@ option).
 
 Basic value types are a string and number. For the purposes of btrfs-progs
 there are more and so far built in the formatter, but it's extensible (on the
-source-level, not dynamically). Additional custom types are UUID, qgroupid (a
-u64 split into u16 and 48 bits), size (human friendly formatting of byte suffix
+source level, not dynamically). Additional custom types are UUID, qgroupid (a
+u64 split into 16 and 48 bits), size (human friendly formatting of byte suffix
 values), and time. Another example of customization is that there are actually
 two byte size formatters, one that prints "`-`" instead of zero value.
 
@@ -109,8 +109,8 @@ time we'd like to print the value we summon it by its name, the rest is in the
 table. All the API calls take a context structure that stores the nesting level
 (for indentation and sanity checks) and some internal data.
 
-Now the above example would not be a good one to demonstrate the API but let's
-try:
+Now the above example would not be the best one to demonstrate the API but
+let's try:
 
 ```
 static const struct rowspec rows[] = {
@@ -139,7 +139,7 @@ That should demonstrate it. There might be some slight tweaks needed as I took
 it from a specialized use but would like to present it as a generic API. So far
 it's not generic, it might become one. With sources available it's available for
 further reuse, I don't plan to make it a standalone library but if there's
-interest the, well, why not.
+interest then, well, why not.
 
 # Examples
 
@@ -152,7 +152,7 @@ suffixes or raw numbers, though it's defined as multiple keys:
     { .key = "size-si-not-zero", .fmt = "size-or-none", .out_json = "size" },
 ```
 
-Raw formats starting with "`%`" are passed to printf, this lets it do all the
+Raw formats starting with "`%`" are passed to `printf`, this lets it do all the
 heavy work. The special formatters may need additional parameters, in this case
 it's the pretty printer mode for size.
 

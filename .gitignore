@@ -2,3 +2,4 @@
 *.bak
 *.backup
 /.jekyll-cache
+/.jekyll-metadata
