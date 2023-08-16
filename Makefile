@@ -10,7 +10,7 @@ build:
 commit:
 	git add .
 	git status
-	-git commit -ave
+	-git commit -ave -m'Updates'
 
 sync:
 	cd $(TOPUSH) && pwd
@@ -27,3 +27,6 @@ commitsync:
 pushsync:
 	cd $(TOPUSH) && pwd
 	cd $(TOPUSH) && git push -f gh master
+
+local:
+	jekyll serve --strict_front_matter --livereload

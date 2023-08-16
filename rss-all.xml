@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Wed, 09 Aug 2023 00:00:00 +0200</lastBuildDate>
+		<lastBuildDate>Wed, 16 Aug 2023 00:00:00 +0200</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -2866,12 +2866,12 @@ But why not have some fun writing one nevertheless.&lt;/p&gt;
   &lt;li&gt;simple values (integer, string, uuid, time, …)&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;The nesting was one of things I did not find in the existing libraries, or not
+&lt;p&gt;The nesting was one of the things I have not found in the existing libraries, or not
 implemented properly. The output must be a valid json and the single most
 difficult thing was the placement of continuation comma “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;,&lt;/code&gt;”. There must be none
 after the last object in the sequence. When the dump is done incrementally, the
 next object is often not known while printing the current one. So the comma
-cannot be printed after unconditionally and previous state needs to be stored
+cannot be printed unconditionally and previous state needs to be stored
 until the last object is dumped.&lt;/p&gt;
 
 &lt;p&gt;But, it’s not sufficient to keep track of the last object only, simply nest
@@ -2927,8 +2927,8 @@ option).&lt;/p&gt;
 
 &lt;p&gt;Basic value types are a string and number. For the purposes of btrfs-progs
 there are more and so far built in the formatter, but it’s extensible (on the
-source-level, not dynamically). Additional custom types are UUID, qgroupid (a
-u64 split into u16 and 48 bits), size (human friendly formatting of byte suffix
+source level, not dynamically). Additional custom types are UUID, qgroupid (a
+u64 split into 16 and 48 bits), size (human friendly formatting of byte suffix
 values), and time. Another example of customization is that there are actually
 two byte size formatters, one that prints “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-&lt;/code&gt;” instead of zero value.&lt;/p&gt;
 
@@ -2950,8 +2950,8 @@ time we’d like to print the value we summon it by its name, the rest is in the
 table. All the API calls take a context structure that stores the nesting level
 (for indentation and sanity checks) and some internal data.&lt;/p&gt;
 
-&lt;p&gt;Now the above example would not be a good one to demonstrate the API but let’s
-try:&lt;/p&gt;
+&lt;p&gt;Now the above example would not be the best one to demonstrate the API but
+let’s try:&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;static const struct rowspec rows[] = {
     { .key = &quot;first&quot;, .fmt = &quot;map&quot;, .out_json = &quot;first&quot; },
@@ -2979,7 +2979,7 @@ fmt_end(&amp;amp;ctx);
 it from a specialized use but would like to present it as a generic API. So far
 it’s not generic, it might become one. With sources available it’s available for
 further reuse, I don’t plan to make it a standalone library but if there’s
-interest the, well, why not.&lt;/p&gt;
+interest then, well, why not.&lt;/p&gt;
 
 &lt;h1 id=&quot;examples&quot;&gt;Examples&lt;/h1&gt;
 
@@ -2991,7 +2991,7 @@ suffixes or raw numbers, though it’s defined as multiple keys:&lt;/p&gt;
     { .key = &quot;size-si-not-zero&quot;, .fmt = &quot;size-or-none&quot;, .out_json = &quot;size&quot; },
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;Raw formats starting with “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%&lt;/code&gt;” are passed to printf, this lets it do all the
+&lt;p&gt;Raw formats starting with “&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%&lt;/code&gt;” are passed to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;printf&lt;/code&gt;, this lets it do all the
 heavy work. The special formatters may need additional parameters, in this case
 it’s the pretty printer mode for size.&lt;/p&gt;
 
@@ -3021,6 +3021,131 @@ the time I write this but I’m not expecting significant changes.&lt;/p&gt;
 				<pubDate>Wed, 09 Aug 2023 00:00:00 +0200</pubDate>
 				<link>https://kdave.github.io/json-dumper/</link>
 				<guid isPermaLink="true">https://kdave.github.io/json-dumper/</guid>
+			</item>
+		
+			<item>
+				<title>VIM tip: split file to 2 panes, lines continued</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;blockquote&gt;
+  &lt;p&gt;Vim has the excellent feature to split the window to multiple panes, but can it
+open one file in two vertical tabs and let the contents of left pane continue
+in the one next to it?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;From&lt;/p&gt;
+
+&lt;table&gt;
+&lt;tr&gt;&lt;td width=&quot;400px&quot;&gt;1 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;2 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;3 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;4 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;5 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;6 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;to&lt;/p&gt;
+
+&lt;table&gt;
+&lt;tr&gt;&lt;td width=&quot;195px&quot;&gt;1 ...&lt;/td&gt;&lt;td width=&quot;195px&quot;&gt;7 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;2 ...&lt;/td&gt;&lt;td&gt;8 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;3 ...&lt;/td&gt;&lt;td&gt;9 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;4 ...&lt;/td&gt;&lt;td&gt;10 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;5 ...&lt;/td&gt;&lt;td&gt;11 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;6 ...&lt;/td&gt;&lt;td&gt;12 ...&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Not by default, certainly with some scripting or by a set of a few commands
+entered manually. We also want to preserve the line continuation while
+scrolling. Maybe all of that is implemented somewhere for vim, I don’t know.
+First time I saw this was many years ago in computer lab, somebody using &lt;em&gt;emacs&lt;/em&gt;.
+What I’m going show dates back to 2011, it works and I think there must be an
+easier way or some vim fork can do it natively.&lt;/p&gt;
+
+&lt;p&gt;The idea is to split the panel, move the lines by the screen height and enable
+scrollbind.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;function SplitAndJoin()
+	:vsplit
+	:wincmd l
+	:normal L
+	:normal z+
+	:wincmd h
+	:windo set scrollbind
+	:wincmd h
+endfunction
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Moving the lines is really emulated by navigating to the bottom, resetting the
+position so the next line is the first one displayed. This is obviously not
+resistant to resizing the terminal, the line offset between the windows is
+fixed. This can be manually adjusted by disabling scrollbind, syncing the lines
+and enabling scrollbind again. I think I never needed that so urgently to
+implement it, reopening the buffer is faster.&lt;/p&gt;
+
+&lt;p&gt;The function can be invoked from command line mode by&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;:call SplitAndJoin()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;a href=&quot;splitandjoin2.png&quot;&gt;&lt;img src=&quot;splitandjoin2-small.png&quot; alt=&quot;linux Makefile split into 2 panes&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;-or-3-panes-lines-continued&quot;&gt;… or 3 panes, lines continued&lt;/h1&gt;
+
+&lt;p&gt;If we can do 2 panes by a few simple commands, we can do more, any number of
+splits that still fit the screen. This repeats the split and bind step from
+the last opened pane before moving back to the first one. The scrollbind is
+temporarily disabled when moving the lines for the split.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;function SplitAndJoin3()
+	:vsplit
+	:wincmd l
+	:normal L
+	:windo set noscrollbind
+	:normal z+
+	:wincmd h
+	:windo set scrollbind
+	:vsplit
+	:wincmd l
+	:normal L
+	:windo set noscrollbind
+	:normal z+
+	:wincmd h
+	:windo set scrollbind
+	:wincmd h
+	:wincmd h
+endfunction
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Which can look like this:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;splitandjoin3.png&quot;&gt;&lt;img src=&quot;splitandjoin3-small.png&quot; alt=&quot;linux Makefile split into 3 panes&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;problems&quot;&gt;Problems&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;resize - the line offsets are fixed from the time the window is split,
+resizing terminal window will get that out of sync&lt;/li&gt;
+  &lt;li&gt;randomly not refreshed - sometimes the right pane does not show the right
+lines, but Ctrl-L fixes that, so it’s just a visual glitch&lt;/li&gt;
+  &lt;li&gt;unsynced text during and after typing - when writing new lines to the left
+pane, the right pane shifts only the line numbers, not the text itself, ESC
+and Ctrl-L does not fix it, only scrolling gets it back in sync with visual
+appearance&lt;/li&gt;
+  &lt;li&gt;wrap - with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;set wrap on&lt;/code&gt; and some lines actually wrapped in the left pane,
+the line offset is derived from that and once the wrapped line(s) scroll away
+from the screen the lines and text get out of sync&lt;/li&gt;
+  &lt;li&gt;switching files in the right pane will inherit the scrollbind, so movement
+will also apply to the left window (not desired e.g. when using tags/cscope/…)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;That’s not a short list, might be a bug somewhere like a missing refresh
+after an action or it’s working as expected individually but not when
+combined like that. A native support in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vim&lt;/code&gt; is needed. But, it is still
+usable to some extent.&lt;/p&gt;
+</description>
+				<pubDate>Wed, 16 Aug 2023 00:00:00 +0200</pubDate>
+				<link>https://kdave.github.io/vim-tip-split-file-lines-cont/</link>
+				<guid isPermaLink="true">https://kdave.github.io/vim-tip-split-file-lines-cont/</guid>
 			</item>
 		
 	</channel>
