@@ -3,12 +3,12 @@
   <head>
   <meta charset="utf-8">
 
-  <title>more</title>
+  <title>Interactive sleep</title>
   <meta name="description" content="aligned words
 ">
 
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="canonical" href="https://kdave.github.io/m/">
+  <link rel="canonical" href="https://kdave.github.io/interactive-sleep/">
   <link rel="alternate" type="application/rss+xml" title="(void)0;" href="https://kdave.github.io/rss-all.xml" />
   <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
@@ -85,29 +85,96 @@
 
     <div class="page-content">
       <div class="wrapper">
-        
-<h1>more</h1>
+        <script src="http://localhost:35729/livereload.js"></script>
+<div class="post">
+  <header class="post-header">
+    <h1 class="post-title">Interactive sleep</h1>
+    [
+     DRAFT || 
+    date: <i>2023-08-24</i>
+    ||
+    tags: <i>shell,sleep</i>
+    ]
+  </header>
+  <article class="post-content">
+    <p>The <code class="language-plaintext highlighter-rouge">sleep</code> utility is something I’d hardly consider worth enhancing by
+features, the task is simple to sleep for a given time. Nothing else is needed
+when it’s used from scripts. However, it can be also used from manually typed
+command line, e.g. to let some command start later to offset initial IO load or
+not to overload network.</p>
 
+<p>Let’s say for example that we’d like to download a big data set, but rather let
+it start in 20 minutes.</p>
 
-<p>More sources worth reading in no particular order:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sleep 20m &amp;&amp; wget https://URL
+</code></pre></div></div>
+
+<p>Once this command starts we don’t know how much time is remaining and
+interrupting it by <code class="language-plaintext highlighter-rouge">Ctrl-C</code> would not start the download. Additionally, what if
+the time is too short and we’d like to increase it. So let’s implement it. For
+more compatibility it’s done in shell and using only widely available utilities
+(<code class="language-plaintext highlighter-rouge">date</code>). And btw, it does not even use <code class="language-plaintext highlighter-rouge">sleep</code> for the sleeping but the builtin
+<code class="language-plaintext highlighter-rouge">read</code> with the timeout option as it allows to read input while waiting.</p>
+
+<details open="true">
+<summary>sleepy the shell script</summary>
+<pre>
+#!/bin/sh
+
+t=${1:-1}
+ts="$t"
+
+case "$t" in
+	*s) tm=${t%*s} t=$(($tm)) ;;
+	*m) tm=${t%*m} t=$(($tm * 60)) ;;
+	*h) tm=${t%*h} t=$(($tm * 60 * 60)) ;;
+	*d) tm=${t%*d} t=$(($tm * 60 * 60 * 24)) ;;
+	*[0-9]) : ;;
+	*) echo "ERROR: unknown timestamp"; exit 1;;
+esac
+
+while :; do
+	[ "$t" -le 0 ] &amp;&amp; break
+	read -n 1 -t 1 ch
+	ret=$?
+	if [ $ret = 142 ]; then
+		# timeout
+		:
+	elif [ $ret = 0 ]; then
+		# keypress
+		echo "sleep for $ts, remaining" `TZ=utc date --date=@$t +%H:%M:%S` "($t)"
+		if [ "$ch" = 'q' ]; then
+			echo "quit"
+			exit 0
+		elif [ "$ch" = '+' ]; then
+			echo "increase by 10s"
+			t=$(($t + 10 - 1))
+		elif [ "$ch" = '-' ]; then
+			echo "decrease by 10s"
+			t=$(($t - 10 - 1))
+		fi
+		t=$(($t + 1))
+	fi
+	t=$(($t - 1))
+done
+</pre>
+</details>
+
+<p>The time passed on command line needs to be parsed and it does not support
+fractional times, otherwise it’s straightforward. The interesting part is
+that it reacts to key presses:</p>
 
 <ul>
-  <li><a href="https://gustedt.wordpress.com">https://gustedt.wordpress.com</a></li>
-  <li><a href="https://www.devever.net/~hl">https://www.devever.net/~hl</a></li>
-  <li><a href="https://blog.trailofbits.com">https://blog.trailofbits.com</a></li>
-  <li><a href="https://outflux.net/blog">https://outflux.net/blog</a></li>
-  <li><a href="https://nullprogram.com">https://nullprogram.com</a></li>
-  <li><a href="https://people.kernel.org">https://people.kernel.org</a></li>
-  <li><a href="https://utcc.utoronto.ca/~cks/space/blog">https://utcc.utoronto.ca/~cks/space/blog</a></li>
-  <li><a href="https://lcamtuf.substack.com">https://lcamtuf.substack.com</a></li>
-  <li><a href="https://fabiensanglard.net">https://fabiensanglard.net</a></li>
-  <li><a href="http://www-cs-students.stanford.edu/~blynn">http://www-cs-students.stanford.edu/~blynn</a></li>
-  <li><a href="https://rwmj.wordpress.com">https://rwmj.wordpress.com</a></li>
-  <li><a href="https://danluu.com">https://danluu.com</a></li>
-  <li><a href="https://leandromoreira.com.br">https://leandromoreira.com.br</a></li>
-  <li><a href="https://https://blog.demofox.org">https://blog.demofox.org</a></li>
+  <li><code class="language-plaintext highlighter-rouge">q</code> stop waiting, with exit code 0 so the next command could continue,
+otherwise <code class="language-plaintext highlighter-rouge">Ctrl-C</code></li>
+  <li><code class="language-plaintext highlighter-rouge">+</code> increase waiting time by 10 seconds and print it</li>
+  <li><code class="language-plaintext highlighter-rouge">-</code> decrease waiting time by 10 seconds and print it</li>
+  <li>anything else prints remaining time (and slightly increases the
+waiting time due to processing)</li>
 </ul>
 
+  </article>
+</div>
 
       </div>
     </div>
