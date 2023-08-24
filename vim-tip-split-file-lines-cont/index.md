@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ vim, usability ]
 date: 2023-08-16
-status: draft
+status: finished
 title: "VIM tip: split file to 2 panes, lines continued"
 ---
 

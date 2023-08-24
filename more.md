@@ -14,8 +14,9 @@ More sources worth reading in no particular order:
 * <a href="https://people.kernel.org">https://people.kernel.org</a>
 * <a href="https://utcc.utoronto.ca/~cks/space/blog">https://utcc.utoronto.ca/~cks/space/blog</a>
 * <a href="https://lcamtuf.substack.com">https://lcamtuf.substack.com</a>
-* <a href="https://fabiensanglard.net/">https://fabiensanglard.net</a>
-* <a href="http://www-cs-students.stanford.edu/~blynn/">http://www-cs-students.stanford.edu/~blynn</a>
+* <a href="https://fabiensanglard.net">https://fabiensanglard.net</a>
+* <a href="http://www-cs-students.stanford.edu/~blynn">http://www-cs-students.stanford.edu/~blynn</a>
 * <a href="https://rwmj.wordpress.com">https://rwmj.wordpress.com</a>
 * <a href="https://danluu.com">https://danluu.com</a>
-* <a href="https://leandromoreira.com.br/">https://leandromoreira.com.br</a>
+* <a href="https://leandromoreira.com.br">https://leandromoreira.com.br</a>
+* <a href="https://https://blog.demofox.org">https://blog.demofox.org</a>
