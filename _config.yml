@@ -15,3 +15,5 @@ rss_name: "kdave"
 markdown: kramdown
 
 permalink: pretty
+
+exclude: ["trash/" ]

@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ shell, sleep ]
 date: 2023-08-24
-status: draft
+status: finished
 title: Interactive sleep
 ---
 
