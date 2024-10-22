@@ -7,7 +7,6 @@ baseurl: "" # the subpath of your site, e.g. /blog/
 url: "https://kdave.github.io"
 github_username: "kdave"
 gitlab_username: "kdave"
-twitter_username: "kdaveh"
 feed_update_period: "weekly"
 rss_name: "kdave"
 
