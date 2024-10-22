@@ -29,4 +29,4 @@ pushsync:
 	cd $(TOPUSH) && git push -f gh master
 
 local:
-	jekyll serve --strict_front_matter --livereload
+	jekyll serve --strict_front_matter --livereload --drafts
