@@ -38,7 +38,7 @@ until the last object is dumped.
 But, it's not sufficient to keep track of the last object only, simply nest
 some hashes and arrays. Like this:
 
-```
+```json
  1: {
  2:    "first" : {
  3:       "nested" : {
@@ -71,7 +71,7 @@ I've ended up with a static declaration of the value formatting specifiers in a
 list, the actual structure of the json objects will be defined by API calls
 referring back to the spec structure.
 
-```
+```c
 struct rowspec {
     const char *key;
     const char *fmt;
@@ -112,7 +112,7 @@ table. All the API calls take a context structure that stores the nesting level
 Now the above example would not be the best one to demonstrate the API but
 let's try:
 
-```
+```c
 static const struct rowspec rows[] = {
     { .key = "first", .fmt = "map", .out_json = "first" },
     { .key = "nested", .fmt = "map", .out_json = "nested" },
@@ -146,7 +146,7 @@ interest then, well, why not.
 The simple values can be formatted in multiple ways, e.g. size values with
 suffixes or raw numbers, though it's defined as multiple keys:
 
-```
+```c
     { .key = "size", .fmt = "%llu", .out_json = "size" },
     { .key = "size-si", .fmt = "size", .out_json = "size" },
     { .key = "size-si-not-zero", .fmt = "size-or-none", .out_json = "size" },
@@ -156,7 +156,7 @@ Raw formats starting with "`%`" are passed to `printf`, this lets it do all the
 heavy work. The special formatters may need additional parameters, in this case
 it's the pretty printer mode for size.
 
-```
+```c
     if (mode == RAW)
         fmt_print(&ctx, "size", value);
     else if (mode == SI)

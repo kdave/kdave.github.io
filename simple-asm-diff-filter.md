@@ -104,7 +104,7 @@ This looks quite simple and when lined together, the diff is readable.
 
 So here's the magic script (pardon my perl skills):
 
-```
+```perl
 #!/usr/bin/perl
 
 @c=<>;
@@ -126,7 +126,7 @@ foreach(@c) {
 
 Use like:
 
-```
+```sh
 $ objdump -dr before/locking.o > before
 $ objdump -dr after/locking.o > after
 $ vimdiff before after

@@ -16,7 +16,7 @@ not to overload network.
 Let's say for example that we'd like to download a big data set, but rather let
 it start in 20 minutes.
 
-```
+```sh
 sleep 20m && wget https://URL
 ```
 
@@ -27,9 +27,7 @@ more compatibility it's done in shell and using only widely available utilities
 (`date`). And btw, it does not even use `sleep` for the sleeping but the builtin
 `read` with the timeout option as it allows to read input while waiting.
 
-<details open="true">
-<summary>sleepy the shell script</summary>
-<pre>
+```sh
 #!/bin/sh
 
 t=${1:-1}
@@ -68,8 +66,7 @@ while :; do
 	fi
 	t=$(($t - 1))
 done
-</pre>
-</details>
+```
 
 The time passed on command line needs to be parsed and it does not support
 fractional times, otherwise it's straightforward. The interesting part is

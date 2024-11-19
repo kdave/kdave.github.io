@@ -12,7 +12,7 @@ After update of qemu to version 2.12, my testing vms stopped to just warn
 about the `if=scsi` (with a bit more cryptic message), and did not want to
 start.
 
-```
+```sh
 qemu-system-x86_64: -drive file=root,if=scsi,media=disk,cache=none,index=0,format=raw: machine type does not support if=scsi,bus=0,unit=0
 ```
 

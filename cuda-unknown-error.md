@@ -93,6 +93,7 @@ post-resume hook should be able to make it work automatically.
 
 The suspend script is in `/usr/lib/systemd/system-sleep/`:
 
+```sh
      #!/bin/sh
      case "$1" in
 	 post)
@@ -102,3 +103,4 @@ The suspend script is in `/usr/lib/systemd/system-sleep/`:
 		     modprobe nvidia_uvm
 	     ;;
      esac
+```

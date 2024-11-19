@@ -1,5 +1,3 @@
-@import url("base16.monokai.dark.css");
-
 /* General body setup */
 body {
     font-family: 'Courier New', Courier, monospace; /* Monospaced font similar to terminals */
@@ -61,10 +59,7 @@ a:hover {
 
 /* Code blocks, simulating source code */
 code {
-    /* Darker background for the code block */
-    /* background-color: #222; */
-    /* Match monokai */
-    background-color: #272822;
+    background-color: #222; /* Darker background for the code block */
     /* Orange color to represent typical code comments or keywords */
     /* color: #FFA500; */
     padding: 2px;
@@ -73,8 +68,7 @@ code {
 pre {
 	display: block;
 	max-width: 100%;
-	/* background: #222; */
-	background: #f8f8f2;
+	background: #222;
 	border: 1px dashed #666;
 	padding: 0.5em;
 	font-family: monospace;
@@ -84,12 +78,3 @@ pre {
 	page-break-inside: avoid;
 	overflow: auto;
 }
-
-table, th, td {
-	border: 1px solid white;
-	padding: 5px;
-	margin: 5px;
-	border-spacing: 0;
-	border-collapse: collapse;
-}
-

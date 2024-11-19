@@ -39,7 +39,7 @@ in another post.
 
 ## Quick start
 
-```
+```sh
 # mkfs.btrfs --csum xxhash /dev/sda
 ```
 

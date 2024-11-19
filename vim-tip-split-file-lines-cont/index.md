@@ -43,7 +43,7 @@ easier way or some vim fork can do it natively.
 The idea is to split the panel, move the lines by the screen height and enable
 scrollbind.
 
-```
+```vim
 function SplitAndJoin()
 	:vsplit
 	:wincmd l
@@ -64,7 +64,7 @@ implement it, reopening the buffer is faster.
 
 The function can be invoked from command line mode by
 
-```
+```vim
 :call SplitAndJoin()
 ```
 
@@ -77,7 +77,7 @@ splits that still fit the screen. This repeats the split and bind step from
 the last opened pane before moving back to the first one. The scrollbind is
 temporarily disabled when moving the lines for the split.
 
-```
+```vim
 function SplitAndJoin3()
 	:vsplit
 	:wincmd l

@@ -21,7 +21,7 @@ permalink: /
   {% if pagets < today and today < last %} <hr/> {% endif %}
   {% if today < pagets or local %}
     {{ page.date | date: "%Y-%m-%d" }} -
-    {% if page.status == "draft" %} <sup>*</sup> {% endif %}
+    {% if page.status == "draft" %} <sup>(draft)</sup> {% endif %}
     <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a>
   {% endif %}
   {% assign last = pagets %}

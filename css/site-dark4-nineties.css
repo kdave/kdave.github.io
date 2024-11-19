@@ -1,0 +1,59 @@
+body {
+  font-family: 'Arial', sans-serif; /* The classic 90s font */
+  background-color: #f0f8ff; /* Light blue background - think Geocities! */
+  color: #000080; /* Navy blue text for contrast */
+  margin: 0;
+}
+
+a {
+  color: #0066cc; /* Deep blue links */
+  text-decoration: underline;
+}
+a:hover {
+  text-decoration: none; /* Links lose underlines on hover */
+  background-color: #ffff99; /* Yellow highlight on hover */
+}
+
+h1, h2, h3 {
+  font-size: 1.5em; /* Slightly larger headings */
+  color: #ff0000; /* Bright red heading color! */
+  margin: 1rem 0;
+}
+
+blockquote {
+  background-color: #ffffcc; /* Pale yellow quote background */
+  border-left: 5px solid #006699; /* Navy blue border for quotes */
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+ul, ol {
+  list-style: disc;
+  margin-left: 2em;
+}
+
+pre {
+  background-color: #f5f5dc; /* Off-white code background */
+  border: 1px solid #999999; /* Grey border */
+  padding: 1rem;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace; /* Monospace for code */
+  color: #006600; /* Dark green code color */
+}
+
+img {
+  border: 2px solid #ccc; /* Light grey border for images */
+  margin: 1rem 0;
+}
+
+table {
+  width: 80%;
+  margin: 1rem auto;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.5em;
+}
