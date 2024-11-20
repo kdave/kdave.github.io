@@ -2,9 +2,9 @@
 layout: page
 category: b
 tags: [ linux, c ]
-date: 2024-11-15
-status: draft
-title: Linux kernel trivia - build with custom CFLAGS
+date: 2024-11-20
+status: final
+title: "Linux kernel tip: build with custom CFLAGS"
 ---
 
 Build linux kernel, either whole or a selected directory with compiler flags,

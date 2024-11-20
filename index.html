@@ -6,7 +6,7 @@ permalink: /
 ---
 
 <p>
-<ul>
+<ul class="main-list">
 {% if site.host == "127.0.0.1" %}
 {% assign local = true %}
 {% endif %}
@@ -20,7 +20,7 @@ permalink: /
   {% assign pagets = page.date | date: "%s" | plus: 0 %}
   {% if pagets < today and today < last %} <hr/> {% endif %}
   {% if today < pagets or local %}
-    {{ page.date | date: "%Y-%m-%d" }} -
+  <span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span> -
     {% if page.status == "draft" %} <sup>(draft)</sup> {% endif %}
     <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a>
   {% endif %}

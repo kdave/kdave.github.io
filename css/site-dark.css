@@ -93,3 +93,10 @@ table, th, td {
 	border-collapse: collapse;
 }
 
+.list-date {
+	color: yellow;
+}
+
+ul.main-list {
+	list-style-type: square;
+}
