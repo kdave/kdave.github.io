@@ -1,5 +1,5 @@
 # Site settings
-title: (void)0;
+title: (void)VOID_MAX;
 email: dave@jikos.cz
 description: > # this means to ignore newlines until "baseurl:"
   aligned words

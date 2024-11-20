@@ -17,14 +17,17 @@ without editing any Makefiles or such.
 
 Any change to flags will be detected and leads to full rebuild of all affected files.
 Building whole directory must have the trailing `/`. Whole modules can be built
-with `M=fs/btrfs`.
+with `M=fs/btrfs`, where `M=` does not require the trailing `/`.
 
 **What to use it for**
 
 *Build test the code with different warnings* that are not on by default.
-Inspiration is in manual page of `gcc`.  Linux provides sets of predefined
-warning level with increasing verbosity and decreasing usefulness, see file
-`scripts/Makefile.extrawarn`. The levels can be enabled on command line like
+Inspiration is in [gcc(1) manual page](https://www.man7.org/linux/man-pages/man1/gcc.1.html)
+or in the
+[GCC Option Summary](https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html). 
+Linux provides sets of predefined warning level with increasing verbosity and
+decreasing usefulness, see file [scripts/Makefile.extrawarn](https://elixir.bootlin.com/linux/latest/source/scripts/Makefile.extrawarn).
+The levels can be enabled on command line like
 
 ```sh
     make W=1 kernel/
