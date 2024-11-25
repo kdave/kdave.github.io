@@ -18,7 +18,9 @@ permalink: /
 {% for page in sortedPages %}
 <li>
   {% assign pagets = page.date | date: "%s" | plus: 0 %}
+  <!--
   {% if pagets < today and today < last %} <hr/> {% endif %}
+  -->
   {% if today < pagets or local %}
   <span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span> -
     {% if page.status == "draft" %} <sup>(draft)</sup> {% endif %}
@@ -30,6 +32,7 @@ permalink: /
 </ul>
 </p>
 
+<!--
 <hr />
 
 <p>
@@ -38,3 +41,5 @@ permalink: /
   <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a> (continued) last update: {{ page.date }}
 {% endfor %}
 </p>
+
+-->
