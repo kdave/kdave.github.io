@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ mv, util-linux ]
 date: 2024-11-27
-status: draft
+status: final
 title: Atomic cross-rename of two paths
 ---
 
@@ -33,7 +33,7 @@ stripped down example:
 #include <fcntl.h>
 #include <stdio.h>
 
-int main()
+int main(int argc, char **argv)
 {
         return renameat2(AT_FDCWD, argv[1], ATD_FDCWD, argv[2], RENAME_EXCHANGE);
 }
