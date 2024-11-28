@@ -76,7 +76,7 @@ stripped down example:</p>
 #include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
 #include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
 </span>
-<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
 <span class="p">{</span>
         <span class="k">return</span> <span class="n">renameat2</span><span class="p">(</span><span class="n">AT_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ATD_FDCWD</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">RENAME_EXCHANGE</span><span class="p">);</span>
 <span class="p">}</span>
