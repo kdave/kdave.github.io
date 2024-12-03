@@ -3,8 +3,7 @@ layout: page
 category: b
 tags: [ c, make, fun ]
 date: 2024-12-04
-status: draft
-published: false
+status: final
 title: Self Makefile and C source
 ---
 
