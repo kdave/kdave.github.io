@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Wed, 27 Nov 2024 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Wed, 04 Dec 2024 00:00:00 +0100</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -3435,6 +3435,86 @@ Otherwise you can use this:&lt;/p&gt;
 				<pubDate>Wed, 27 Nov 2024 00:00:00 +0100</pubDate>
 				<link>https://kdave.github.io/atomic-cross-rename/</link>
 				<guid isPermaLink="true">https://kdave.github.io/atomic-cross-rename/</guid>
+			</item>
+		
+			<item>
+				<title>Self Makefile and C source</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;I’ve seen this trick long time ago, one file that’s a C source and also usable as
+it’s own &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Makefile&lt;/code&gt;, also known as
+&lt;a href=&quot;https://en.wikipedia.org/wiki/Polyglot_%28computing%29&quot;&gt;polyglot code&lt;/a&gt;.
+While the polyglot has probably little use in practice, the combination with
+build system can be handy, to distribute a single file. Build instructions can
+be of course in a comment in the file.&lt;/p&gt;
+
+&lt;p&gt;Let’s see a minimal example:&lt;/p&gt;
+
+&lt;p&gt;Source:&lt;/p&gt;
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello world!&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Makefile:&lt;/p&gt;
+&lt;div class=&quot;language-make highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;CFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-Wall&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;hello.c&lt;/span&gt;
+	gcc &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$@&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$&amp;lt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;$(&lt;/span&gt;CFLAGS&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Combined (syntax highlighting for C):&lt;/p&gt;
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#if 0
+CFLAGS=-Wall
+hello: hello.c
+	gcc -o $@ $&amp;lt; $(CFLAGS)
+ifdef false
+#else&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello world!&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#endif
+&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;#if 0
+endif
+#endif
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Combined (syntax highlighting for Makefile):&lt;/p&gt;
+&lt;div class=&quot;language-make highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#if 0
+&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-Wall&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;hello.c&lt;/span&gt;
+	gcc &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$@&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$&amp;lt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;$(&lt;/span&gt;CFLAGS&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ifdef&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;false&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#else
+#include &amp;lt;stdio.h&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;main()&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;err&quot;&gt;printf(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Hello world!\n&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;err&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;0;&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#endif
+#if 0
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;endif&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#endif
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;There’s still a problem that the embedded C code in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ifdef false&lt;/code&gt;/&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;endif&lt;/code&gt; is
+parsed by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;make&lt;/code&gt;, a standalone &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ifdef&lt;/code&gt; in the middle of the C code will
+terminate the supposedly skipped part. I’ve tried to confuse make more but it
+seems to be quite tolerant to various syntax hacks, like defining a C function
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$&lt;/code&gt; and emulating some built-in function calls.&lt;/p&gt;
+
+&lt;p&gt;How it all works is straightforward and depends on source level compatibility
+of comments and code. The C preprocessor directives are comments for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;make&lt;/code&gt; so
+they hide the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;make&lt;/code&gt; directives from compiler.&lt;/p&gt;
+</description>
+				<pubDate>Wed, 04 Dec 2024 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/self-makefile/</link>
+				<guid isPermaLink="true">https://kdave.github.io/self-makefile/</guid>
 			</item>
 		
 	</channel>
