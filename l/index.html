@@ -49,6 +49,158 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
 <ul>
 
 
+<li>2024-12-10 - <a href="/python-auto-increment/">Python auto increment variables</a> <tt>[tags: heresy, python]</tt></li>
+<p>
+<p>Although everybody knows the python language does not provide the unary
+increment/decrement operators, I’d still like to use that for some specific
+cases. Let’s explore an unconventional way how to do that.</p>
+
+<p><a href="https://docs.python.org/3/library/operator.html">Python operator overview</a></p>
+
+<p>The <a href="https://stackoverflow.com/questions/1485841/behaviour-of-increment-and-decrement-operators-in-python">Stackoverflow <em>Increment and decrement operator question</em></a>
+provides some insights why <code class="language-plaintext highlighter-rouge">++x</code> works but does not do what one expects.
+This is parsed as <code class="language-plaintext highlighter-rouge">+(+(x))</code>. The question is now 15 years old and everybody
+moved on. The unary <code class="language-plaintext highlighter-rouge">+</code> operator is an identity.</p>
+
+<blockquote>
+  <p>Side quest: what does unary <code class="language-plaintext highlighter-rouge">+</code> do in C?</p>
+</blockquote>
+
+<p>Let’s start with a quiz: <em>what could be the following class useful for?</em></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">X</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nf">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">x</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__int__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">int</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nf">str</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__pos__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">def</span> <span class="nf">__neg__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+</code></pre></div></div>
+
+<p>Auto sequence is sometimes useful. Why? I’ve used this in GUI programming, when
+dumping tabular data with custom formatting. If you write your software
+correctly on the first time, congratulations. I may not and resort to
+incremental development that requires lots of editing. An example in pseudo
+code for Tcl/Tk application that fills rows of a grid layout in a sequence.</p>
+
+<div class="language-tcl highlighter-rouge"><div class="highlight"><pre class="highlight"><code>widget1.grid<span class="p">(</span>row=0, column=0<span class="p">)</span>
+widget2.grid<span class="p">(</span>row=1, column=0<span class="p">)</span>
+widget3.grid<span class="p">(</span>row=2, column=0<span class="p">)</span>
+widget4.grid<span class="p">(</span>row=3, column=0<span class="p">)</span>
+widget5.grid<span class="p">(</span>row=4, column=0<span class="p">)</span>
+</code></pre></div></div>
+
+<p>The layout many need to be tuned so lines are swapped, reordered, then save,
+run, check and repeat until satisfied. In C++ and using e.g. Qt I’d do
+something like:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">row</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">widget3</span><span class="o">-&gt;</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">++</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">widget2</span><span class="o">-&gt;</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">++</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">widget5</span><span class="o">-&gt;</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">++</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">widget1</span><span class="o">-&gt;</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">++</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">widget4</span><span class="o">-&gt;</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">++</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>In any way I swap the lines, they’ll be always in the order as they’re in the
+source file and I don’t have to renumber the rows each time I need to save and
+run it. I could turn it to a fixed number sequence once I’m done with the
+tuning. Expecting future changes I would leave it as is, extending that in the
+future would be much easier.</p>
+
+<p>But python religiously does not offer the <code class="language-plaintext highlighter-rouge">++</code> operators, neither pre-increment
+nor post-increment. OTOH python offers other tuning methods that could be
+hidden on the class level and <del>abused</del>utilized as pure syntax repurposing.</p>
+
+<p>Using the class from above, the python version can be rewritten like this, with
+the reordered lines:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">row</span> <span class="o">=</span> <span class="nc">X</span><span class="p">()</span>
+<span class="n">widget3</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="o">+</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">widget2</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="o">+</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">widget5</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="o">+</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">widget1</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="o">+</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">widget4</span><span class="p">.</span><span class="nf">grid</span><span class="p">(</span><span class="o">+</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">+</code> operator <code class="language-plaintext highlighter-rouge">pos</code>, unary and returning the positive size of the value.
+Overloading that to increment the value is at least a bit intuitive even for a
+casual reader not familiar with the class <code class="language-plaintext highlighter-rouge">X</code>.</p>
+
+<p>As a discouragement the following works (python code):</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">++</span><span class="n">x</span>
+</code></pre></div></div>
+
+<p>and (as implemented) increments <code class="language-plaintext highlighter-rouge">x</code> by <code class="language-plaintext highlighter-rouge">1</code>, just once. But no surprise or magic
+here, standard python accepts this for any integer value. This will be first
+evaluated as <code class="language-plaintext highlighter-rouge">+x</code> and then the unary <code class="language-plaintext highlighter-rouge">+</code> applied on the result, as said before
+<code class="language-plaintext highlighter-rouge">+(+x)</code> so the leading <code class="language-plaintext highlighter-rouge">+</code> does not involve <code class="language-plaintext highlighter-rouge">x</code>. We can go crazy:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">+</span><span class="n">x</span>
+<span class="o">++</span><span class="n">x</span>
+<span class="o">+++</span><span class="n">x</span>
+<span class="o">++++</span><span class="p">(</span><span class="o">++++</span><span class="n">x</span><span class="p">)</span>
+<span class="o">+++++++++++++++</span><span class="n">x</span>
+</code></pre></div></div>
+
+<p>All of them do single post-increment. In standard python this works for
+integer-like objects too:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">+</span><span class="mi">1</span>
+<span class="o">++</span><span class="mi">1</span>
+<span class="o">+++</span><span class="mi">1</span>
+<span class="o">++++</span><span class="mi">1</span>
+</code></pre></div></div>
+
+<p>This is evaluated as 1. Actually we can go crazy even more, because the unary
+<code class="language-plaintext highlighter-rouge">-</code> and <code class="language-plaintext highlighter-rouge">+</code> can be mixed freely:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">+</span><span class="mi">1</span>
+<span class="o">-</span><span class="mi">1</span>
+<span class="o">-+</span><span class="mi">1</span>
+<span class="o">+-</span><span class="mi">1</span>
+<span class="o">-+-</span><span class="mi">1</span>
+<span class="o">+-+</span><span class="mi">1</span>
+<span class="o">-+-+</span><span class="mi">1</span>
+<span class="o">+-+-</span><span class="mi">1</span>
+</code></pre></div></div>
+
+<p>And so on. I’ll leave that as an exercise what the final value of each line
+is.  This also works in C, but I digress.</p>
+
+<p>What I find really bad is that <code class="language-plaintext highlighter-rouge">++x</code> does not match the pre-increment semantics
+but given the limitations of the operator overloading we can’t do anything
+about that.</p>
+
+<p>With a minor update the class <code class="language-plaintext highlighter-rouge">X</code>, the bare value of such object instance
+can be used in expressions like <code class="language-plaintext highlighter-rouge">x+1</code> or <code class="language-plaintext highlighter-rouge">x-1</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">value</span>
+</code></pre></div></div>
+
+<p>and similar for the remaining integer operators. This is non-standard
+extension best to be used within limited scope.</p>
+
+<p>Heresy.</p>
+
+</p>
+<hr>
+</li>
+
 <li>2024-12-04 - <a href="/self-makefile/">Self Makefile and C source</a> <tt>[tags: c, fun, make]</tt></li>
 <p>
 <p>I’ve seen this trick long time ago, one file that’s a C source and also usable as
