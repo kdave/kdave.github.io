@@ -100,3 +100,20 @@ table, th, td {
 ul.main-list {
 	list-style-type: square;
 }
+
+#markdown-toc::before {
+	content: "Contents";
+	font-style: italic;
+}
+
+#markdown-toc li {
+	font-style: italic;
+}
+
+#markdown-toc {
+	border-width: 1px;
+	border-left-style: solid;
+	border-color: #aaa;
+	list-style: decimal;
+	display: inline-block;
+}
