@@ -49,6 +49,178 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
 <ul>
 
 
+<li>2024-12-18 - <a href="/ntfs-btrfs-progs-link-integration/">Case study: link C++ standalone executable to another C executable (ntfs2btrfs to btrfs-convert)</a> <tt>[tags: btrfs, ntfs]</tt></li>
+<p>
+<p><em>Problem statement</em>: there’s a tool written in C, <code class="language-plaintext highlighter-rouge">btrfs-convert</code>, that
+implements conversion from one filesystem to btrfs. For ext2/3/4 and reiserfs
+this is done using existing C libraries. There’s a standalone project
+<code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> written in C++, not providing a library interface at all, but the
+equivalent functionality.</p>
+
+<p><em>The question</em>: can the functionality of <code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> be provided by
+<code class="language-plaintext highlighter-rouge">btrfs-convert</code> while minimizing the difficulty of the integration? Ideally
+automated with only a few necessary fix-ups.</p>
+
+<ul id="markdown-toc">
+  <li><a href="#inputs" id="markdown-toc-inputs">Inputs</a></li>
+  <li><a href="#initial-problems" id="markdown-toc-initial-problems">Initial problems</a></li>
+  <li><a href="#solution-outline" id="markdown-toc-solution-outline">Solution outline</a></li>
+  <li><a href="#create-the-entry-point" id="markdown-toc-create-the-entry-point">Create the entry point</a></li>
+  <li><a href="#what-about-the-two-mains" id="markdown-toc-what-about-the-two-mains">What about the two main()s</a></li>
+  <li><a href="#final-link" id="markdown-toc-final-link">Final link</a></li>
+</ul>
+
+<h1 id="inputs">Inputs</h1>
+
+<p><a href="https://github.com/kdave/btrfs-progs.git"><strong>btrfs-progs.git</strong></a></p>
+
+<ul>
+  <li>primary build system and target</li>
+  <li>C sources</li>
+  <li>autoconf, make</li>
+</ul>
+
+<p><a href="https://github.com/maharmstone/ntfs2btrfs"><strong>ntfs2btrfs.git</strong></a></p>
+<ul>
+  <li>C++ sources</li>
+  <li>cmake</li>
+</ul>
+
+<p>What can certainly be done is to <code class="language-plaintext highlighter-rouge">git clone</code> the sources, run their respective
+configure and build steps and get lots of <code class="language-plaintext highlighter-rouge">.o</code> files.</p>
+
+<h1 id="initial-problems">Initial problems</h1>
+
+<p>The <code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> conversion tool is in a different repository, git submodules
+are not an option so this needs to be cloned and pulled at the time
+<code class="language-plaintext highlighter-rouge">btrfs-convert</code> is built.</p>
+
+<p>The other build system should be ideally run without any additional hurdles,
+so we can assume it’s in a known separate directory and produces the object files
+we’ll use later. But this also builds a standalone executable, so there’s
+a symbol <code class="language-plaintext highlighter-rouge">main</code> defined, which will collide with the one defined by the
+<code class="language-plaintext highlighter-rouge">btrfs-convert</code> sources.</p>
+
+<p>The language difference is not that significant but in the glue interface
+we need to handle potential name mangling or other symbol duplication.</p>
+
+<p>There are duplicate implementations of low-level functions like checksumming.
+The estimated size is tens of kilobytes, so we won’t mind that as long as
+the linker is able to resolve everything.</p>
+
+<h1 id="solution-outline">Solution outline</h1>
+
+<p>To integrate the projects the steps will be in a script that will basically:</p>
+
+<ul>
+  <li>clone the <code class="language-plaintext highlighter-rouge">ntfs2btrfs.git</code> repository</li>
+  <li>configure it and build with some sane options (preferring maximum compatibility)</li>
+  <li>grab the resulting <code class="language-plaintext highlighter-rouge">.o</code> files</li>
+  <li>link <code class="language-plaintext highlighter-rouge">btrfs-convert</code> and the <code class="language-plaintext highlighter-rouge">.o</code> files</li>
+</ul>
+
+<p>The last point can be tricky and the missing part is how to hand over
+the functionality.</p>
+
+<h1 id="create-the-entry-point">Create the entry point</h1>
+
+<p>The entry point of the standalone <code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> utility is <code class="language-plaintext highlighter-rouge">main</code> so we need
+to inject a public function that will not be a mangled as symbol, export
+it in a header and use it from <code class="language-plaintext highlighter-rouge">btrfs-convert</code>.</p>
+
+<p>Also we may need to translate the user options set as command line options.
+They’ll be parsed in the <code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> project and passed as parameters to the
+glue function and mapped to the conversion options if possible. There’s some
+feature mismatch so this is not 1:1.</p>
+
+<p>Minimal glue function (:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">extern</span> <span class="s">"C"</span> <span class="p">{</span>
+        <span class="kt">void</span> <span class="n">convert_entry</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">fn_c</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">enum</span> <span class="n">btrfs_compression</span> <span class="n">compression</span><span class="p">;</span>
+                <span class="k">enum</span> <span class="n">btrfs_csum_type</span> <span class="n">csum_type</span><span class="p">;</span>
+                <span class="kt">bool</span> <span class="n">nocsum</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+
+                <span class="n">csum_type</span> <span class="o">=</span> <span class="n">btrfs_csum_type</span><span class="o">::</span><span class="n">crc32c</span><span class="p">;</span>
+                <span class="n">compression</span> <span class="o">=</span> <span class="n">btrfs_compression</span><span class="o">::</span><span class="n">none</span><span class="p">;</span>
+
+                <span class="n">string</span> <span class="n">fn</span><span class="p">(</span><span class="n">fn_c</span><span class="p">);</span>
+                <span class="n">ntfs</span> <span class="n">dev</span><span class="p">(</span><span class="n">fn</span><span class="p">);</span>
+
+                <span class="n">convert</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">compression</span><span class="p">,</span> <span class="n">csum_type</span><span class="p">,</span> <span class="n">nocsum</span><span class="p">);</span>
+        <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This can be appended/included to the main file so it lives in the scope of the
+<code class="language-plaintext highlighter-rouge">ntfs2btrfs</code> where its <code class="language-plaintext highlighter-rouge">main()</code> is, so we have access to the translation unit
+static and global variables (that can store the representation of the command
+line options).</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'#include "convert-entry.c"'</span> <span class="o">&gt;&gt;</span> <span class="s2">"ntfs2btrfs.git/src/ntfs2btrfs.cpp"</span>
+</code></pre></div></div>
+
+<p>Symbol name mangling is avoided by <code class="language-plaintext highlighter-rouge">extern "C"</code>, otherwise the parameters are
+set to defaults for simplicity. The path of the file/device must be translated
+to a C++ <code class="language-plaintext highlighter-rouge">string</code> but this happens inside the glue function, no
+interoperability problems. After creation of the filesystem object <code class="language-plaintext highlighter-rouge">ntfs</code> we
+can finally hand control to <code class="language-plaintext highlighter-rouge">convert()</code>.</p>
+
+<p>There are some assumptions. The conversion detects the NTFS signature and does
+other validation of the image as we’ll call that from <code class="language-plaintext highlighter-rouge">btrfs-convert</code>
+unconditionally.</p>
+
+<h1 id="what-about-the-two-mains">What about the two main()s</h1>
+
+<p>Actually this is not hard at all. Linkage is done by comparing plain string
+representations, so we’ll just edit it as needed. The colliding symbol name is
+<code class="language-plaintext highlighter-rouge">main</code> so let’s rename it to <code class="language-plaintext highlighter-rouge">MAIN</code>. This is a standard symbol in C++ that’s not
+mangled so we can simply find in the right <code class="language-plaintext highlighter-rouge">.o</code> file and change it. We can
+use <code class="language-plaintext highlighter-rouge">sed</code>.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nm build/.../ntfs2btrfs.o | <span class="nb">grep </span>main
+00000000000140ed T main
+...
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s1">'s/main/MAIN/'</span> build/.../ntfs2btrfs.o
+<span class="nv">$ </span>nm build/.../ntfs2btrfs.o | <span class="nb">grep </span>MAIN
+00000000000140ed T MAIN
+...
+</code></pre></div></div>
+
+<p>This is crude and renames several other symbols like lambdas and templates of
+<code class="language-plaintext highlighter-rouge">std::basic_string</code> (<code class="language-plaintext highlighter-rouge">00000000000174c9 t
+std::__cxx11::basic_string&lt;MAIN::{lambda()#1}::operator()()
+const::FMT_COMPILE_STRING::char_type, ...</code>). I haven’t found a standard utility
+to that so <code class="language-plaintext highlighter-rouge">sed</code> it is, fortunately there’s no other string <code class="language-plaintext highlighter-rouge">main</code> in the
+binary e.g. in an error message.</p>
+
+<h1 id="final-link">Final link</h1>
+
+<p>No remaining problems, we have a bunch of <code class="language-plaintext highlighter-rouge">.o</code> files, no conflicting symbol
+names, one executable entry point <code class="language-plaintext highlighter-rouge">main</code> and one final binary. So we now can
+link <code class="language-plaintext highlighter-rouge">btrfs-convert</code> with all the other objects. This is basic makefile
+integration, not that interesting, also some conditional build support in the
+<code class="language-plaintext highlighter-rouge">btrfs-convert</code> sources. With everything in place</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>./btrfs-convert <span class="nt">--help</span>
+...
+    Supported filesystems:
+        ext2/3/4: <span class="nb">yes
+        </span>reiserfs: no
+        ntfs: <span class="nb">yes</span>
+<span class="nv">$ </span>mkfs.ntfs /dev/sdx
+<span class="nv">$ </span>./btrfs-convert /dev/sdx
+btrfs-convert from btrfs-progs v6.12
+...
+Using CRC32C <span class="k">for </span>checksums.
+</code></pre></div></div>
+
+<p>And the last question: <em>does anybody what that?</em></p>
+
+</p>
+<hr>
+</li>
+
 <li>2024-12-10 - <a href="/python-auto-increment/">Python auto increment variables</a> <tt>[tags: heresy, python]</tt></li>
 <p>
 <p>Although everybody knows the python language does not provide the unary

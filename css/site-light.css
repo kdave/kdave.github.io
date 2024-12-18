@@ -184,3 +184,20 @@ blockquote {
 .highlight .vg { color: #d07000; font-weight: bold } /* Name.Variable.Global */
 .highlight .vi { color: #3030B0 } /* Name.Variable.Instance */
 .highlight .il { color: #0000D0; font-weight: bold } /* Literal.Number.Integer.Long */
+
+#markdown-toc::before {
+	content: "Contents";
+	font-style: italic;
+}
+
+#markdown-toc li {
+	font-style: italic;
+}
+
+#markdown-toc {
+	border-width: 1px;
+	border-left-style: solid;
+	border-color: #aaa;
+	list-style: decimal;
+	display: inline-block;
+}

@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Tue, 10 Dec 2024 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Wed, 18 Dec 2024 00:00:00 +0100</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -3669,6 +3669,180 @@ extension best to be used within limited scope.&lt;/p&gt;
 				<pubDate>Tue, 10 Dec 2024 00:00:00 +0100</pubDate>
 				<link>https://kdave.github.io/python-auto-increment/</link>
 				<guid isPermaLink="true">https://kdave.github.io/python-auto-increment/</guid>
+			</item>
+		
+			<item>
+				<title>Case study: link C++ standalone executable to another C executable (ntfs2btrfs to btrfs-convert)</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;&lt;em&gt;Problem statement&lt;/em&gt;: there’s a tool written in C, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt;, that
+implements conversion from one filesystem to btrfs. For ext2/3/4 and reiserfs
+this is done using existing C libraries. There’s a standalone project
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; written in C++, not providing a library interface at all, but the
+equivalent functionality.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;The question&lt;/em&gt;: can the functionality of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; be provided by
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; while minimizing the difficulty of the integration? Ideally
+automated with only a few necessary fix-ups.&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#inputs&quot; id=&quot;markdown-toc-inputs&quot;&gt;Inputs&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#initial-problems&quot; id=&quot;markdown-toc-initial-problems&quot;&gt;Initial problems&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#solution-outline&quot; id=&quot;markdown-toc-solution-outline&quot;&gt;Solution outline&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#create-the-entry-point&quot; id=&quot;markdown-toc-create-the-entry-point&quot;&gt;Create the entry point&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#what-about-the-two-mains&quot; id=&quot;markdown-toc-what-about-the-two-mains&quot;&gt;What about the two main()s&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#final-link&quot; id=&quot;markdown-toc-final-link&quot;&gt;Final link&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;inputs&quot;&gt;Inputs&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/kdave/btrfs-progs.git&quot;&gt;&lt;strong&gt;btrfs-progs.git&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;primary build system and target&lt;/li&gt;
+  &lt;li&gt;C sources&lt;/li&gt;
+  &lt;li&gt;autoconf, make&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/maharmstone/ntfs2btrfs&quot;&gt;&lt;strong&gt;ntfs2btrfs.git&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;C++ sources&lt;/li&gt;
+  &lt;li&gt;cmake&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;What can certainly be done is to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;git clone&lt;/code&gt; the sources, run their respective
+configure and build steps and get lots of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt; files.&lt;/p&gt;
+
+&lt;h1 id=&quot;initial-problems&quot;&gt;Initial problems&lt;/h1&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; conversion tool is in a different repository, git submodules
+are not an option so this needs to be cloned and pulled at the time
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; is built.&lt;/p&gt;
+
+&lt;p&gt;The other build system should be ideally run without any additional hurdles,
+so we can assume it’s in a known separate directory and produces the object files
+we’ll use later. But this also builds a standalone executable, so there’s
+a symbol &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main&lt;/code&gt; defined, which will collide with the one defined by the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; sources.&lt;/p&gt;
+
+&lt;p&gt;The language difference is not that significant but in the glue interface
+we need to handle potential name mangling or other symbol duplication.&lt;/p&gt;
+
+&lt;p&gt;There are duplicate implementations of low-level functions like checksumming.
+The estimated size is tens of kilobytes, so we won’t mind that as long as
+the linker is able to resolve everything.&lt;/p&gt;
+
+&lt;h1 id=&quot;solution-outline&quot;&gt;Solution outline&lt;/h1&gt;
+
+&lt;p&gt;To integrate the projects the steps will be in a script that will basically:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;clone the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs.git&lt;/code&gt; repository&lt;/li&gt;
+  &lt;li&gt;configure it and build with some sane options (preferring maximum compatibility)&lt;/li&gt;
+  &lt;li&gt;grab the resulting &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt; files&lt;/li&gt;
+  &lt;li&gt;link &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; and the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt; files&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The last point can be tricky and the missing part is how to hand over
+the functionality.&lt;/p&gt;
+
+&lt;h1 id=&quot;create-the-entry-point&quot;&gt;Create the entry point&lt;/h1&gt;
+
+&lt;p&gt;The entry point of the standalone &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; utility is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main&lt;/code&gt; so we need
+to inject a public function that will not be a mangled as symbol, export
+it in a header and use it from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Also we may need to translate the user options set as command line options.
+They’ll be parsed in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; project and passed as parameters to the
+glue function and mapped to the conversion options if possible. There’s some
+feature mismatch so this is not 1:1.&lt;/p&gt;
+
+&lt;p&gt;Minimal glue function (:&lt;/p&gt;
+
+&lt;div class=&quot;language-cpp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;extern&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;C&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;convert_entry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fn_c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;btrfs_compression&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;compression&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                &lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;btrfs_csum_type&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;csum_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nocsum&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+                &lt;span class=&quot;n&quot;&gt;csum_type&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;btrfs_csum_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;crc32c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;compression&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;btrfs_compression&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;none&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+                &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fn_c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;ntfs&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+                &lt;span class=&quot;n&quot;&gt;convert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;compression&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;csum_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nocsum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This can be appended/included to the main file so it lives in the scope of the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs2btrfs&lt;/code&gt; where its &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main()&lt;/code&gt; is, so we have access to the translation unit
+static and global variables (that can store the representation of the command
+line options).&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;#include &quot;convert-entry.c&quot;&apos;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;ntfs2btrfs.git/src/ntfs2btrfs.cpp&quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Symbol name mangling is avoided by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;extern &quot;C&quot;&lt;/code&gt;, otherwise the parameters are
+set to defaults for simplicity. The path of the file/device must be translated
+to a C++ &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;string&lt;/code&gt; but this happens inside the glue function, no
+interoperability problems. After creation of the filesystem object &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ntfs&lt;/code&gt; we
+can finally hand control to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;convert()&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;There are some assumptions. The conversion detects the NTFS signature and does
+other validation of the image as we’ll call that from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt;
+unconditionally.&lt;/p&gt;
+
+&lt;h1 id=&quot;what-about-the-two-mains&quot;&gt;What about the two main()s&lt;/h1&gt;
+
+&lt;p&gt;Actually this is not hard at all. Linkage is done by comparing plain string
+representations, so we’ll just edit it as needed. The colliding symbol name is
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main&lt;/code&gt; so let’s rename it to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MAIN&lt;/code&gt;. This is a standard symbol in C++ that’s not
+mangled so we can simply find in the right &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt; file and change it. We can
+use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sed&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;nm build/.../ntfs2btrfs.o | &lt;span class=&quot;nb&quot;&gt;grep &lt;/span&gt;main
+00000000000140ed T main
+...
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;s/main/MAIN/&apos;&lt;/span&gt; build/.../ntfs2btrfs.o
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;nm build/.../ntfs2btrfs.o | &lt;span class=&quot;nb&quot;&gt;grep &lt;/span&gt;MAIN
+00000000000140ed T MAIN
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This is crude and renames several other symbols like lambdas and templates of
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::basic_string&lt;/code&gt; (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;00000000000174c9 t
+std::__cxx11::basic_string&amp;lt;MAIN::{lambda()#1}::operator()()
+const::FMT_COMPILE_STRING::char_type, ...&lt;/code&gt;). I haven’t found a standard utility
+to that so &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sed&lt;/code&gt; it is, fortunately there’s no other string &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main&lt;/code&gt; in the
+binary e.g. in an error message.&lt;/p&gt;
+
+&lt;h1 id=&quot;final-link&quot;&gt;Final link&lt;/h1&gt;
+
+&lt;p&gt;No remaining problems, we have a bunch of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt; files, no conflicting symbol
+names, one executable entry point &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main&lt;/code&gt; and one final binary. So we now can
+link &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; with all the other objects. This is basic makefile
+integration, not that interesting, also some conditional build support in the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;btrfs-convert&lt;/code&gt; sources. With everything in place&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;./btrfs-convert &lt;span class=&quot;nt&quot;&gt;--help&lt;/span&gt;
+...
+    Supported filesystems:
+        ext2/3/4: &lt;span class=&quot;nb&quot;&gt;yes
+        &lt;/span&gt;reiserfs: no
+        ntfs: &lt;span class=&quot;nb&quot;&gt;yes&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;mkfs.ntfs /dev/sdx
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;./btrfs-convert /dev/sdx
+btrfs-convert from btrfs-progs v6.12
+...
+Using CRC32C &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;checksums.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And the last question: &lt;em&gt;does anybody what that?&lt;/em&gt;&lt;/p&gt;
+</description>
+				<pubDate>Wed, 18 Dec 2024 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/ntfs-btrfs-progs-link-integration/</link>
+				<guid isPermaLink="true">https://kdave.github.io/ntfs-btrfs-progs-link-integration/</guid>
 			</item>
 		
 	</channel>
