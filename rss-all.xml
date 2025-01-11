@@ -13,7 +13,7 @@
 		<link>https://kdave.github.io</link>
 		<atom:link href="https://kdave.github.io/rss-all.xml" rel="self" type="application/rss+xml" />
 		
-		<lastBuildDate>Wed, 18 Dec 2024 00:00:00 +0100</lastBuildDate>
+		<lastBuildDate>Sat, 11 Jan 2025 00:00:00 +0100</lastBuildDate>
 		
 			<item>
 				<title>Escaped snapper snapshots</title>
@@ -3843,6 +3843,44 @@ Using CRC32C &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;checksums.
 				<pubDate>Wed, 18 Dec 2024 00:00:00 +0100</pubDate>
 				<link>https://kdave.github.io/ntfs-btrfs-progs-link-integration/</link>
 				<guid isPermaLink="true">https://kdave.github.io/ntfs-btrfs-progs-link-integration/</guid>
+			</item>
+		
+			<item>
+				<title>Update: Atomic cross-rename of two paths (mv --exchange, exch)</title>
+				<dc:creator>kdave</dc:creator>
+				<description>&lt;p&gt;I did not notice that the cross rename already existed &lt;a href=&quot;/atomic-cross-rename/&quot;&gt;when I was writing about
+it&lt;/a&gt; but it’s been there since &lt;a href=&quot;https://lists.gnu.org/archive/html/info-gnu/2024-03/msg00006.html&quot;&gt;coreutils v9.5&lt;/a&gt;
+released in Mar 2024.&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;mv&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--exchange&lt;/span&gt; file1 file2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And it also landed in &lt;a href=&quot;https://github.com/util-linux/util-linux/blob/master/Documentation/releases/v2.40-ReleaseNotes&quot;&gt;util-linux v2.40&lt;/a&gt;
+at about the same time as utility &lt;a href=&quot;https://www.man7.org/linux/man-pages/man1/exch.1.html&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;exch&lt;/code&gt;&lt;/a&gt;
+(added in &lt;a href=&quot;https://github.com/util-linux/util-linux/commit/cd094a05880cf1132762c5f9724c0945557c7638&quot;&gt;commit cd094a05880c&lt;/a&gt;):&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;exch file1 file2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The two projects have an overlap in what they provide so the journey of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mv
+--exchange&lt;/code&gt; took a few turns:&lt;/p&gt;
+
+&lt;p&gt;From &lt;a href=&quot;https://github.com/coreutils/coreutils&quot;&gt;coreutils git&lt;/a&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;2024-02-29 &lt;a href=&quot;https://github.com/coreutils/coreutils/commit/6cd2d5e5335b5c286ff39e154e9dd38ba6923775&quot;&gt;6cd2d5e5335b &lt;em&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mv: add --swap (-x) option to atomically swap 2 paths&lt;/code&gt;&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;2024-03-05 &lt;a href=&quot;https://github.com/coreutils/coreutils/commit/9d8890d87231d477ca78269a4fce9242ec0624f1&quot;&gt;9d8890d87231 &lt;em&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mv: revert add --swap (-x) option&lt;/code&gt;&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;2024-03-20 &lt;a href=&quot;https://github.com/coreutils/coreutils/commit/5d3fd24f4286d422482dd1697c9fe1bfa30f608e&quot;&gt;5d3fd24f4286 &lt;em&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mv: new option --exchange&lt;/code&gt;&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Good that the feature is provided in standard tools but unfortunately none of
+them comes with a decent description of the capabilities and limitations.  All
+types of files, directories (including subvolumes) could be exchanged but only
+on the same filesystem, otherwise it returns the error &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;EXDEV&lt;/code&gt; &lt;em&gt;Invalid cross-device link&lt;/em&gt;.&lt;/p&gt;
+</description>
+				<pubDate>Sat, 11 Jan 2025 00:00:00 +0100</pubDate>
+				<link>https://kdave.github.io/atomic-cross-rename-update/</link>
+				<guid isPermaLink="true">https://kdave.github.io/atomic-cross-rename-update/</guid>
 			</item>
 		
 	</channel>

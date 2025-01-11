@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>index.html</title>
+  <title>Update: Atomic cross-rename of two paths (mv --exchange, exch)</title>
   <meta name="description" content="aligned words
 ">
 
   <link rel="stylesheet" href="/css/site-dark.css" id="theme-style">
-  <link rel="canonical" href="https://kdave.github.io/">
+  <link rel="canonical" href="https://kdave.github.io/atomic-cross-rename-update/">
   <link rel="alternate" type="application/rss+xml" title="(void)VOID_MAX;" href="https://kdave.github.io/rss-all.xml" />
   <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
@@ -41,370 +41,50 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
 
     <div class="page-content">
       <div class="wrapper">
-        
-<h1>index.html</h1>
-
-
-<p>
-<ul class="main-list">
-
-
-
-
-
-
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2025-01-11</span> -
+        <script src="http://localhost:35729/livereload.js"></script>
+<div class="post">
+  <header class="post-header">
+    <h1 class="post-title">Update: Atomic cross-rename of two paths (mv --exchange, exch)</h1>
+    [
     
-    <a href="/atomic-cross-rename-update/">Update: Atomic cross-rename of two paths (mv --exchange, exch)</a>
-  
-  
-</li>
+    date: <i>2025-01-11</i>
+    ||
+    tags: <i>mv,coreutils,util-linux</i>
+    ]
+  </header>
+  <article class="post-content">
+    <p>I did not notice that the cross rename already existed <a href="/atomic-cross-rename/">when I was writing about
+it</a> but it’s been there since <a href="https://lists.gnu.org/archive/html/info-gnu/2024-03/msg00006.html">coreutils v9.5</a>
+released in Mar 2024.</p>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2024-12-18</span> -
-    
-    <a href="/ntfs-btrfs-progs-link-integration/">Case study: link C++ standalone executable to another C executable (ntfs2btrfs to btrfs-convert)</a>
-  
-  
-</li>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mv</span> <span class="nt">--exchange</span> file1 file2
+</code></pre></div></div>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2024-12-10</span> -
-    
-    <a href="/python-auto-increment/">Python auto increment variables</a>
-  
-  
-</li>
+<p>And it also landed in <a href="https://github.com/util-linux/util-linux/blob/master/Documentation/releases/v2.40-ReleaseNotes">util-linux v2.40</a>
+at about the same time as utility <a href="https://www.man7.org/linux/man-pages/man1/exch.1.html"><code class="language-plaintext highlighter-rouge">exch</code></a>
+(added in <a href="https://github.com/util-linux/util-linux/commit/cd094a05880cf1132762c5f9724c0945557c7638">commit cd094a05880c</a>):</p>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2024-12-04</span> -
-    
-    <a href="/self-makefile/">Self Makefile and C source</a>
-  
-  
-</li>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>exch file1 file2
+</code></pre></div></div>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2024-11-27</span> -
-    
-    <a href="/atomic-cross-rename/">Atomic cross-rename of two paths</a>
-  
-  
-</li>
+<p>The two projects have an overlap in what they provide so the journey of <code class="language-plaintext highlighter-rouge">mv
+--exchange</code> took a few turns:</p>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2024-11-20</span> -
-    
-    <a href="/lkt-build-with-flags/">Linux kernel tip: build with custom CFLAGS</a>
-  
-  
-</li>
+<p>From <a href="https://github.com/coreutils/coreutils">coreutils git</a>:</p>
 
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2023-08-24</span> -
-    
-    <a href="/interactive-sleep/">Interactive sleep</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2023-08-16</span> -
-    
-    <a href="/vim-tip-split-file-lines-cont/">VIM tip: split file to 2 panes, lines continued</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2023-08-09</span> -
-    
-    <a href="/json-dumper/">JSON format dumper (a C API)</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2022-01-12</span> -
-    
-    <a href="/cuda-unknown-error/">CUDA not initialized after resume (unknown error)</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2021-05-24</span> -
-    
-    <a href="/authenticated-hashes-for-btrfs-part1/">Authenticated hashes for btrfs (part 1)</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2020-02-15</span> -
-    
-    <a href="/btrfs-hilights-5.4/">Btrfs hilights in 5.4: tree checker updates</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2020-02-10</span> -
-    
-    <a href="/btrfs-hilights-5.5-new-hashes/">Btrfs hilights in 5.5: new hashes</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2020-02-02</span> -
-    
-    <a href="/btrfs-hilights-5.5-raid1c34/">Btrfs hilights in 5.5: 3-copy and 4-copy block groups</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2020-01-21</span> -
-    
-    <a href="/blake3-vs-blake2-in-btrfs/">BLAKE3 vs BLAKE2 for BTRFS</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-12-11</span> -
-    
-    <a href="/btrfs-hilights-5.3/">Btrfs hilights in 5.3</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-10-12</span> -
-    
-    <a href="/simple-asm-diff-filter/">Simple asm diff filter</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-10-08</span> -
-    
-    <a href="/selecting-hash-for-btrfs/">Selecting the next checksum for btrfs</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-07-25</span> -
-    
-    <a href="/btrfs-hilights-5.2/">Btrfs hilights in 5.2</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-06-12</span> -
-    
-    <a href="/blake2-pyramid/blake2b-pyramid/">Here, have a pyramid made of BLAKE2 hashes</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2019-04-27</span> -
-    
-    <a href="/linux-crypto-blake2s/">Linux crypto: testing blake2s</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2018-10-18</span> -
-    
-    <a href="/bench-4.20/">Some btrfs benchmarks of changes pending for 4.20</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2018-06-08</span> -
-    
-    <a href="/qemu-2.11-if=scsi/">qemu 2.12 does not support if=scsi</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2017-12-06</span> -
-    
-    <a href="/gitstats-btrfs-progs-v4.14/">gitstats: btrfs-progs for v4.14</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2017-11-23</span> -
-    
-    <a href="/errno.h/">errno.h for the masses</a>
-  
-  
-</li>
-
-<li>
-  
-  <!--
-  
-  -->
-  
-  <span class="list-date">2016-11-05</span> -
-    
-    <a href="/escaped-snapper-snapshots/">Escaped snapper snapshots</a>
-  
-  
-</li>
-
+<ul>
+  <li>2024-02-29 <a href="https://github.com/coreutils/coreutils/commit/6cd2d5e5335b5c286ff39e154e9dd38ba6923775">6cd2d5e5335b <em><code class="language-plaintext highlighter-rouge">mv: add --swap (-x) option to atomically swap 2 paths</code></em></a></li>
+  <li>2024-03-05 <a href="https://github.com/coreutils/coreutils/commit/9d8890d87231d477ca78269a4fce9242ec0624f1">9d8890d87231 <em><code class="language-plaintext highlighter-rouge">mv: revert add --swap (-x) option</code></em></a></li>
+  <li>2024-03-20 <a href="https://github.com/coreutils/coreutils/commit/5d3fd24f4286d422482dd1697c9fe1bfa30f608e">5d3fd24f4286 <em><code class="language-plaintext highlighter-rouge">mv: new option --exchange</code></em></a></li>
 </ul>
-</p>
 
-<!--
-<hr />
+<p>Good that the feature is provided in standard tools but unfortunately none of
+them comes with a decent description of the capabilities and limitations.  All
+types of files, directories (including subvolumes) could be exchanged but only
+on the same filesystem, otherwise it returns the error <code class="language-plaintext highlighter-rouge">EXDEV</code> <em>Invalid cross-device link</em>.</p>
 
-<p>
-
-
-</p>
-
--->
-
+  </article>
+</div>
 
       </div>
     </div>

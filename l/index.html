@@ -49,6 +49,42 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
 <ul>
 
 
+<li>2025-01-11 - <a href="/atomic-cross-rename-update/">Update: Atomic cross-rename of two paths (mv --exchange, exch)</a> <tt>[tags: coreutils, mv, util-linux]</tt></li>
+<p>
+<p>I did not notice that the cross rename already existed <a href="/atomic-cross-rename/">when I was writing about
+it</a> but it’s been there since <a href="https://lists.gnu.org/archive/html/info-gnu/2024-03/msg00006.html">coreutils v9.5</a>
+released in Mar 2024.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">mv</span> <span class="nt">--exchange</span> file1 file2
+</code></pre></div></div>
+
+<p>And it also landed in <a href="https://github.com/util-linux/util-linux/blob/master/Documentation/releases/v2.40-ReleaseNotes">util-linux v2.40</a>
+at about the same time as utility <a href="https://www.man7.org/linux/man-pages/man1/exch.1.html"><code class="language-plaintext highlighter-rouge">exch</code></a>
+(added in <a href="https://github.com/util-linux/util-linux/commit/cd094a05880cf1132762c5f9724c0945557c7638">commit cd094a05880c</a>):</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>exch file1 file2
+</code></pre></div></div>
+
+<p>The two projects have an overlap in what they provide so the journey of <code class="language-plaintext highlighter-rouge">mv
+--exchange</code> took a few turns:</p>
+
+<p>From <a href="https://github.com/coreutils/coreutils">coreutils git</a>:</p>
+
+<ul>
+  <li>2024-02-29 <a href="https://github.com/coreutils/coreutils/commit/6cd2d5e5335b5c286ff39e154e9dd38ba6923775">6cd2d5e5335b <em><code class="language-plaintext highlighter-rouge">mv: add --swap (-x) option to atomically swap 2 paths</code></em></a></li>
+  <li>2024-03-05 <a href="https://github.com/coreutils/coreutils/commit/9d8890d87231d477ca78269a4fce9242ec0624f1">9d8890d87231 <em><code class="language-plaintext highlighter-rouge">mv: revert add --swap (-x) option</code></em></a></li>
+  <li>2024-03-20 <a href="https://github.com/coreutils/coreutils/commit/5d3fd24f4286d422482dd1697c9fe1bfa30f608e">5d3fd24f4286 <em><code class="language-plaintext highlighter-rouge">mv: new option --exchange</code></em></a></li>
+</ul>
+
+<p>Good that the feature is provided in standard tools but unfortunately none of
+them comes with a decent description of the capabilities and limitations.  All
+types of files, directories (including subvolumes) could be exchanged but only
+on the same filesystem, otherwise it returns the error <code class="language-plaintext highlighter-rouge">EXDEV</code> <em>Invalid cross-device link</em>.</p>
+
+</p>
+<hr>
+</li>
+
 <li>2024-12-18 - <a href="/ntfs-btrfs-progs-link-integration/">Case study: link C++ standalone executable to another C executable (ntfs2btrfs to btrfs-convert)</a> <tt>[tags: btrfs, ntfs]</tt></li>
 <p>
 <p><em>Problem statement</em>: there’s a tool written in C, <code class="language-plaintext highlighter-rouge">btrfs-convert</code>, that
