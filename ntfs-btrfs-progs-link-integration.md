@@ -3,7 +3,7 @@ layout: page
 category: b
 tags: [ ntfs, btrfs ]
 date: 2024-12-18
-status: draft
+status: final
 title: "Case study: link C++ standalone executable to another C executable (ntfs2btrfs to btrfs-convert)"
 ---
 
