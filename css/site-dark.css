@@ -53,6 +53,11 @@ a:hover {
     color: #FFF; /* White or another light color on hover for visibility */
 }
 
+a.link-other {
+	color: white;
+	text-decoration: underline dotted;
+}
+
 /* Custom container for better layout control */
 .container {
     width: 80%; /* Fixed width similar to terminals, adjust as needed */
@@ -101,6 +106,14 @@ ul.main-list {
 	list-style-type: square;
 }
 
+ul.short-list {
+	list-style-type: "@ ";
+}
+
+li.short-item {
+	margin-bottom: 2em;
+}
+
 #markdown-toc::before {
 	content: "Contents";
 	font-style: italic;
@@ -116,4 +129,8 @@ ul.main-list {
 	border-color: #aaa;
 	list-style: decimal;
 	display: inline-block;
+}
+
+hr.hr-eol {
+	border-top: 1px dotted;
 }

@@ -1,0 +1,19 @@
+---
+layout: navbar
+navorder: 3
+title: short.html
+permalink: /short
+---
+Short notes without context or introduction.
+
+<p>
+<ul class="short-list">
+{% assign sortedPages = site.pages | where: 'layout', 'short' | sort: 'date' | reverse %}
+{% for page in sortedPages %}
+<li class="short-item">
+	<span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span> <hr class="hr-eol" />
+  {{ page.content }}
+</li>
+{% endfor %}
+</ul>
+</p>

@@ -29,6 +29,7 @@ take inspiration or just have stumbled upon:
 * <a href="https://fgiesen.wordpress.com/">https://fgiesen.wordpress.com/</a>
 * <a href="https://leandromoreira.com.br">https://leandromoreira.com.br</a>
 * <a href="https://rwmj.wordpress.com">https://rwmj.wordpress.com</a>
+* <a href="https://paul-moore.com/blog">https://paul-moore.com/blog</a>
 
 Honorable mentions:
 

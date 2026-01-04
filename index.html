@@ -5,6 +5,8 @@ title: index.html
 permalink: /
 ---
 
+<a class="link-other" href="l/">All posts in one long page</a>
+
 <p>
 <ul class="main-list">
 {% if site.host == "127.0.0.1" %}
@@ -33,7 +35,11 @@ permalink: /
 </p>
 
 <!--
+-->
+
 <hr />
+
+<h1>Research</h1>
 
 <p>
 {% assign sortedPages = site.pages | where: 'layout', 'standalone' | sort: 'date' | reverse %}
@@ -42,4 +48,3 @@ permalink: /
 {% endfor %}
 </p>
 
--->
