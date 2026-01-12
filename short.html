@@ -12,6 +12,7 @@ Short notes without context or introduction.
 {% for page in sortedPages %}
 <li class="short-item">
 	<span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span>
+	<a class="short-linkref" href="{{ page.url }}">(link)</a>
   {{ page.content }}
 </li>
 {% endfor %}
