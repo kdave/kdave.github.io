@@ -54,6 +54,13 @@ a.link-other {
 	text-decoration: underline dotted;
 }
 
+a.short-linkref {
+	color: white;
+	text-decoration: underline dotted;
+	font-size: 0.7em;
+	vertical-align: super;
+}
+
 .container {
     width: 80%; /* Fixed width similar to terminals, adjust as needed */
     margin: 0 auto; /* Centers the container horizontally */
