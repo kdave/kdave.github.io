@@ -8,7 +8,7 @@ permalink: /m/
 Sources worth reading or paging through in no particular order from where I
 take inspiration or just have stumbled upon:
 
-Personal page aggregator: https://hnpwd.github.io
+Personal page aggregator: https://hnpwd.github.io (Source: https://news.ycombinator.com/item?id=46618714)
 
 * <a href="https://gustedt.wordpress.com">https://gustedt.wordpress.com</a>
 * <a href="https://opensourcesecuritypodcast.libsyn.com/">https://opensourcesecuritypodcast.libsyn.com</a>
