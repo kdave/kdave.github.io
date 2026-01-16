@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>short.html</title>
+  <title>(void)VOID_MAX;</title>
   <meta name="description" content="aligned words
 ">
 
   <link rel="stylesheet" href="/css/site-dark.css" id="theme-style">
-  <link rel="canonical" href="https://kdave.github.io/short">
+  <link rel="canonical" href="https://kdave.github.io/short-3/">
   <link rel="alternate" type="application/rss+xml" title="(void)VOID_MAX;" href="https://kdave.github.io/rss-all.xml" />
   <script type="text/javascript" src="https://kdave.github.io/css/lib.js"></script>
 </head>
@@ -41,20 +41,10 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
 
     <div class="page-content">
       <div class="wrapper">
-        
-<h1>short.html</h1>
-
-
-Short notes without context or introduction.
-
-<p>
-<ul class="short-list">
-
-
-<li class="short-item">
-	<span class="list-date">2026-01-16</span>
-	<a class="short-linkref" href="/short-3/">(link)</a>
-  <p>The cycle of development:</p>
+        <script src="http://localhost:35729/livereload.js"></script>
+<span class="list-date">2026-01-16</span>
+<div class="short">
+    <p>The cycle of development:</p>
 
 <ol>
   <li>you hunt a bug and spot a lot of opportunities for cleanups</li>
@@ -62,32 +52,7 @@ Short notes without context or introduction.
   <li>goto 1</li>
 </ol>
 
-</li>
-
-<li class="short-item">
-	<span class="list-date">2026-01-12</span>
-	<a class="short-linkref" href="/short-2/">(link)</a>
-  <p>In addition to <a href="errno.h/">errno listing</a> there’s a command <code class="language-plaintext highlighter-rouge">errno</code> from the
-package <code class="language-plaintext highlighter-rouge">moreutils</code> that also prints the message for the error number, though
-it accepts only positive numbers and does not even try to parse hexadecimal
-numbers.</p>
-
-</li>
-
-<li class="short-item">
-	<span class="list-date">2026-01-02</span>
-	<a class="short-linkref" href="/short-1/">(link)</a>
-  <p>Looks like the first thing one needs when using <code class="language-plaintext highlighter-rouge">{{ page.content }}</code> is to get
-rid of the enclosing <code class="language-plaintext highlighter-rouge">&lt;p&gt;...&lt;/p&gt;</code>, while also keeping any nested paragraphs. So
-<code class="language-plaintext highlighter-rouge">remove_first</code> but there’s no <code class="language-plaintext highlighter-rouge">remove_last</code>. Reversing and removing the
-reversed enclosing tag somehow works but does not return a string when <code class="language-plaintext highlighter-rouge">join</code>ing. So there’s a local
-string filter <code class="language-plaintext highlighter-rouge">chop_paragraph</code> (<a href="_plugins/custom_filters.rb">_plugins/custom_filters.rb in git</a>).</p>
-
-</li>
-
-</ul>
-</p>
-
+</div>
 
       </div>
     </div>
