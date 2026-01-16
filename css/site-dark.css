@@ -1,16 +1,15 @@
 @import url("base16.monokai.dark.css");
 
-/* General body setup */
 body {
-    /* Monospaced font similar to terminals */
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #000; /* Dark background typical of terminal interfaces */
-    color: #0F0; /* Bright green text, typical for positive feedback in terminals */
-    margin: 0;
-    padding: 20px;
-    max-width: 60%;
-    margin-left: auto;
-    margin-right: auto;
+	/* Monospaced font similar to terminals */
+	font-family: 'Courier New', Courier, monospace;
+	background-color: #000;
+	color: #0F0;
+	margin: 0;
+	padding: 20px;
+	max-width: 80%;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 h1, h2, h3 {
@@ -22,31 +21,32 @@ p {
 }
 
 blockquote {
-    border-left: 4px solid #0F0; /* Green color for contrast and to mimic indentation in terminals */
-    padding-left: 10px;
-    margin-left: 5px;
+	border-left: 4px solid #0F0;
+	padding-left: 10px;
+	margin-left: 5px;
 }
 
 img, video, iframe {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 20px 0;
+	max-width: 100%;
+	height: auto;
+	display: block;
+	margin: 20px 0;
 }
 
 .img-nav {
-    display: inline;
-    margin: 0px;
-    padding: 0px;
+	display: inline;
+	margin: 0px;
+	padding: 0px;
 }
 
 a {
-    color: #0F0;
-    text-decoration: underline;
+	/* color: #0F0; */
+	color: white;
+	text-decoration: underline dotted;
 }
 
 a:hover {
-    color: #FFF;
+	color: #0F0;
 }
 
 a.link-other {
@@ -61,9 +61,17 @@ a.short-linkref {
 	vertical-align: super;
 }
 
+.list-tags {
+	color: #0E0;
+	text-decoration: none;
+	font-size: 0.8em;
+	/* width: 12em; */
+	display: inline-block;
+}
+
 .container {
-    width: 80%; /* Fixed width similar to terminals, adjust as needed */
-    margin: 0 auto; /* Centers the container horizontally */
+	max-width: 60%;
+	margin: 0 auto;
 }
 
 /* Code blocks, simulating source code */
@@ -102,10 +110,11 @@ table, th, td {
 
 .list-date {
 	color: yellow;
+	vertical-align: top;
 }
 
 ul.main-list {
-	list-style-type: square;
+	list-style-type: none;
 }
 
 ul.short-list {
@@ -114,6 +123,17 @@ ul.short-list {
 
 li.short-item {
 	margin-bottom: 2em;
+}
+
+li.index-item {
+	margin-bottom: 0.5em;
+	vertical-align: top;
+}
+
+.index-title {
+	display: inline-block;
+	overflow-wrap: break-word;
+	/* outline: 1px solid red; */
 }
 
 #markdown-toc::before {

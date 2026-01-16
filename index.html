@@ -5,30 +5,21 @@ title: index.html
 permalink: /
 ---
 
-<a class="link-other" href="l/">All posts in one long page</a>
-
 <p>
 <ul class="main-list">
 {% if site.host == "127.0.0.1" %}
 {% assign local = true %}
 {% endif %}
 
-{% assign today = site.time | date: "%s" | plus: 0 %}
-{% assign last = today %}
-
 {% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' | reverse %}
 {% for page in sortedPages %}
-<li>
-  {% assign pagets = page.date | date: "%s" | plus: 0 %}
-  <!--
-  {% if pagets < today and today < last %} <hr/> {% endif %}
-  -->
-  {% if today < pagets or local %}
-  <span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span> -
+<li class="index-item">
+  <span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span>
     {% if page.status == "draft" %} <sup>(draft)</sup> {% endif %}
+    <span class="index-title">
     <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a>
-  {% endif %}
-  {% assign last = pagets %}
+    </span>
+    <span class="list-tags">({{ page.tags | join: ", " }})</span>
 </li>
 {% endfor %}
 </ul>
@@ -48,3 +39,5 @@ permalink: /
 </p>
 
 -->
+
+<a class="link-other" href="l/">All posts in one long page</a>

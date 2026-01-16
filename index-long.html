@@ -11,7 +11,7 @@ permalink: /l/
 <ul>
 {% assign sortedPages = site.pages | where: 'layout', 'page' | sort: 'date' | reverse %}
 {% for page in sortedPages %}
-<li>{{ page.date | date: "%Y-%m-%d" }} - <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a> <tt>[tags: {{ page.tags | sort | join: ", " }}]</tt></li>
+<li><span class="list-date">{{ page.date | date: "%Y-%m-%d" }}</span> - <a href="{{ site.base_path}}{{ page.url }}">{{ page.title }}</a> <tt>[tags: {{ page.tags | sort | join: ", " }}]</tt></li>
 <p>
 {{ page.content | markdownify }}
 </p>
